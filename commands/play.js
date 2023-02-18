@@ -4,7 +4,7 @@ const { QueryType } = require("discord-player");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("play")
-    .setDescription("Puszcza muzykę z Youtuba!")
+    .setDescription("Puszcza muzykę z Youtuba i nie tylko!")
     .addSubcommand((subcommand) =>
       subcommand
         .setName("szukaj")
@@ -28,13 +28,14 @@ module.exports = {
         )
     ),
   run: async ({ client, interaction }) => {
+    await interaction.deferReply();
     const voiceChannel = interaction.member.voice.channel;
 
     if (!voiceChannel)
       return interaction
         .editReply(":x: Musisz być na kanale głosowym!")
         .then((msg) => {
-          setTimeout(() => msg.delete(), 3000);
+          setTimeout(() => msg.delete(), 5000);
         });
 
     if (
@@ -45,10 +46,14 @@ module.exports = {
       return interaction
         .editReply(":x: Nie mogę dołączyć do kanału głosowego!")
         .then((msg) => {
-          setTimeout(() => msg.delete(), 3000);
+          setTimeout(() => msg.delete(), 5000);
         });
 
-    const queue = await client.player.createQueue(interaction.guild);
+    const queue = await client.player.createQueue(interaction.guild, {
+      leaveOnEnd: true,
+      leaveOnStop: true,
+      leaveOnEmpty: true,
+    });
     if (!queue.connection) await queue.connect(voiceChannel);
 
     let embed = new EmbedBuilder();
@@ -58,12 +63,14 @@ module.exports = {
       const result = await client.player.search(url, {
         requestedBy: interaction.user,
         searchEngine: QueryType.YOUTUBE_PLAYLIST,
-      });
-      if (result.tracks.length === 0)
+      }).catch((err) => {
+        console.log(err);
+      });;
+      if (!result || result.tracks.length === 0)
         return interaction
-          .editReply(":x: Nie znaleziono utworu")
+          .editReply(":x: Nie znaleziono playlisty")
           .then((msg) => {
-            setTimeout(() => msg.delete(), 3000);
+            setTimeout(() => msg.delete(), 5000);
           });
 
       const playlist = result.playlist;
@@ -71,7 +78,7 @@ module.exports = {
       await queue.addTracks(result.tracks);
       embed
         .setTitle(`Dodano **${result.tracks.length}** utworów do kolejki`)
-        .setDescription(`[**${playlist.title}**] (${playlist.url})`)
+        .setDescription(`[**${playlist.title}**](${playlist.url})`)
         .setThumbnail(song.thumbnail)
         .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
     } else if (interaction.options.getSubcommand() === "szukaj") {
@@ -79,12 +86,14 @@ module.exports = {
       const result = await client.player.search(url, {
         requestedBy: interaction.user,
         searchEngine: QueryType.AUTO,
+      }).catch((err) => {
+        console.log(err);
       });
-      if (result.tracks.length === 0)
+      if (!result || result.tracks.length === 0)
         return interaction
           .editReply(":x: Nie znaleziono utworu")
           .then((msg) => {
-            setTimeout(() => msg.delete(), 3000);
+            setTimeout(() => msg.delete(), 5000);
           });
 
       const song = result.tracks[0];

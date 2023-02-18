@@ -83,8 +83,8 @@ if (LOAD_SLASH) {
       const slashcmd = client.slashcommands.get(interaction.commandName);
       if (!slashcmd) interaction.reply("Command not found");
 
-      await interaction.deferReply();
       await slashcmd.run({ client, interaction });
+      
     }
     handleCommand();
   });
