@@ -30,7 +30,8 @@ module.exports = {
             .setDescription(
               `**Teraz gra:**\n [**${song.title}**](${song.url})\n Kanał **${song.author}** \n\n**Postęp:**\n${bar} `
             )
-            .setThumbnail(song.thumbnail),
+            .setThumbnail(song.thumbnail)
+            .setFooter({ text: `Głośność **${queue.volume}** :musical_note:` })
         ],
       })
       .then((msg) => {

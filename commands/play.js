@@ -54,6 +54,7 @@ module.exports = {
       leaveOnEnd: true,
       leaveOnStop: true,
       leaveOnEmpty: true,
+      volumeSmoothness: 1,
     });
     if (!queue.connection) await queue.connect(voiceChannel);
 
