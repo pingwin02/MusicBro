@@ -119,7 +119,7 @@ if (LOAD_SLASH) {
   });
 
   client.on("messageCreate", (message) => {
-    if (message.content === "!clear") {
+    if (message.content === "!!clear") {
       printMessage(message);
       const channel = message.client.channels.cache.get(
         message.channelId.toString()
