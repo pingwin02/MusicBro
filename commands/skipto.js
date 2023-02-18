@@ -30,16 +30,19 @@ module.exports = {
           setTimeout(() => msg.delete(), 5000);
         });
 
-    await queue.skipTo(songNumber - 1);
-
     const currentSong = queue.tracks[songNumber - 1];
+    await queue.skipTo(songNumber - 1);
+    queue.setRepeatMode(0);
 
     await interaction
       .editReply({
         embeds: [
           new EmbedBuilder()
+            .setTitle(
+              `Przeskoczyłem do **${currentSong.title}** :musical_note:`
+            )
             .setDescription(
-              `Przeskoczyłem do **${currentSong.title}**! :musical_note:`
+              "Pętla została wyłączona! :x: Użyj `/loop` aby ją włączyć."
             )
             .setThumbnail(currentSong.thumbnail),
         ],

@@ -8,7 +8,7 @@ module.exports = {
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);
-    if (!queue)
+    if (!queue || queue.tracks.length === 0)
       return await interaction
         .editReply(":x: Nie ma nic w kolejce! Użyj `/play` aby coś odtworzyć.")
         .then((msg) => {
@@ -16,21 +16,18 @@ module.exports = {
         });
 
     await queue.skip();
-    const currentSong = queue.current;
+    queue.setRepeatMode(0);
+
     let newSong = queue.tracks[0];
-    if (!newSong) {
-      newSong = {
-        title: "Brak kolejnych utworów. Wychodzę z kanału głosowego.",
-        thumbnail: "https://demofree.sirv.com/nope-not-here.jpg",
-      };
-    }
 
     await interaction
       .editReply({
         embeds: [
           new EmbedBuilder()
-            .setTitle(`Utwór **${currentSong.title}** pominięty! <:szymon:854508552026062879>`)
-            .setDescription(`Teraz odtwarzam **${newSong.title}**`)
+            .setTitle(`Teraz odtwarzam **${newSong.title}** :musical_note:`)
+            .setDescription(
+              "Pętla została wyłączona! :x: Użyj `/loop` aby ją włączyć."
+            )
             .setThumbnail(newSong.thumbnail),
         ],
       })

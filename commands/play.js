@@ -55,19 +55,23 @@ module.exports = {
       leaveOnStop: true,
       leaveOnEmpty: true,
       volumeSmoothness: 1,
+      metadata: interaction.channel,
     });
+
     if (!queue.connection) await queue.connect(voiceChannel);
 
     let embed = new EmbedBuilder();
 
     if (interaction.options.getSubcommand() === "playlista") {
       let url = interaction.options.getString("url");
-      const result = await client.player.search(url, {
-        requestedBy: interaction.user,
-        searchEngine: QueryType.YOUTUBE_PLAYLIST,
-      }).catch((err) => {
-        console.log(err);
-      });;
+      const result = await client.player
+        .search(url, {
+          requestedBy: interaction.user,
+          searchEngine: QueryType.YOUTUBE_PLAYLIST,
+        })
+        .catch((err) => {
+          console.log(err);
+        });
       if (!result || result.tracks.length === 0)
         return interaction
           .editReply(":x: Nie znaleziono playlisty")
@@ -85,12 +89,14 @@ module.exports = {
         .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
     } else if (interaction.options.getSubcommand() === "szukaj") {
       let url = interaction.options.getString("fraza");
-      const result = await client.player.search(url, {
-        requestedBy: interaction.user,
-        searchEngine: QueryType.AUTO,
-      }).catch((err) => {
-        console.log(err);
-      });
+      const result = await client.player
+        .search(url, {
+          requestedBy: interaction.user,
+          searchEngine: QueryType.AUTO,
+        })
+        .catch((err) => {
+          console.log(err);
+        });
       if (!result || result.tracks.length === 0)
         return interaction
           .editReply(":x: Nie znaleziono utworu")

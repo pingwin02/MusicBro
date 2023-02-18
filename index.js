@@ -6,7 +6,7 @@ const {
   ActivityType,
 } = require("discord.js");
 const dotenv = require("dotenv");
-const { REST, Routes } = require("discord.js");
+const { REST, Routes, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const { Player } = require("discord-player");
 
@@ -35,6 +35,97 @@ client.player = new Player(client, {
     quality: "highestaudio",
     highWaterMark: 1 << 25,
   },
+});
+
+client.player.on("error", (queue, error) => {
+  queue.metadata.send({
+    embeds: [
+      new EmbedBuilder()
+        .setTitle(`Coś się zepsuło <:sus:833956789421735976>`)
+        .setDescription(`Spróbuj ponownie później!\n Błąd: \`${error}\``)
+        .setColor("Red"),
+    ],
+  });
+});
+
+client.player.on("connectionError", (queue, error) => {
+  queue.metadata.send({
+    embeds: [
+      new EmbedBuilder()
+        .setTitle(`Coś się zepsuło <:sus:833956789421735976>`)
+        .setDescription(`Spróbuj ponownie później!\n Błąd: \`${error}\``)
+        .setColor("Red"),
+    ],
+  });
+});
+
+client.player.on("trackStart", (queue, track) => {
+  //if (!client.config.opt.loopMessage && queue.repeatMode !== 0) return;
+  let bar = queue.createProgressBar({
+    queue: false,
+    length: 19,
+    timecodes: true,
+  });
+
+  queue.metadata
+    .send({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle("Teraz gra:")
+          .setDescription(
+            `[**${track.title}**](${track.url})\n Kanał **${track.author}** \n\n**Postęp:**\n${bar} `
+          )
+          .setThumbnail(track.thumbnail)
+          .setFooter({ text: `Głośność: ${queue.volume}` }),
+      ],
+    })
+    .then((msg) => {
+      setTimeout(() => msg.delete(), 20000);
+    });
+});
+
+client.player.on("trackAdd", (queue, track) => {
+  console.log(`Track ${track.title} added in the queue`);
+});
+
+client.player.on("botDisconnect", (queue) => {
+  queue.metadata
+    .send({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(
+            `"Zostałem wywalony z kanału głosowego! <:jakiedy1:801039061540012052>"`
+          )
+          .setColor("Red"),
+      ],
+    })
+    .then((msg) => {
+      setTimeout(() => msg.delete(), 10000);
+    });
+});
+
+client.player.on("channelEmpty", (queue) => {
+  queue.metadata
+    .send({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(
+            "Nie ma już nikogo, więc wychodzę z kanału głosowego! :crying_cat_face:"
+          )
+          .setColor("Red"),
+      ],
+    })
+    .then((msg) => {
+      setTimeout(() => msg.delete(), 10000);
+    });
+});
+
+client.player.on("queueEnd", (queue) => {
+  queue.metadata
+    .send("Kolejka się skończyła, więc wychodzę z kanału głosowego! ")
+    .then((msg) => {
+      setTimeout(() => msg.delete(), 10000);
+    });
 });
 
 function printMessage(message) {

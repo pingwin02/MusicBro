@@ -8,8 +8,8 @@ module.exports = {
     await interaction.reply({
       content:
         `**${client.user.username}#${client.user.discriminator}**\n` +
-        `🏓 Ping wynosi ${Date.now() - interaction.createdTimestamp}ms.\n` +
-        'Stworzony z ❤️ przez <@!393430226341986324>',
+        `:ping_pong: Ping wynosi ${Date.now() - interaction.createdTimestamp}ms.\n` +
+        'Stworzony z :heart: przez <@!393430226341986324>',
       ephemeral: true,
     });
   },
