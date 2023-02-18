@@ -10,7 +10,8 @@ module.exports = {
         .setDescription("Numer utworu w kolejce")
         .setMinValue(1)
         .setRequired(true)
-    ),
+    )
+    .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);

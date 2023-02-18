@@ -3,7 +3,8 @@ const { SlashCommandBuilder } = require("discord.js");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leave")
-    .setDescription("Wyrzuca bota z kanału głosowego oraz czyści kolejkę"),
+    .setDescription("Wyrzuca bota z kanału głosowego oraz czyści kolejkę")
+    .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);

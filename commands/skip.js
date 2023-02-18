@@ -3,7 +3,8 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("skip")
-    .setDescription("Pomija aktualnie odtwarzany utwór"),
+    .setDescription("Pomija aktualnie odtwarzany utwór")
+    .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);

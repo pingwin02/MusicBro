@@ -6,7 +6,8 @@ module.exports = {
     .setDescription("Wyświetla kolejkę")
     .addNumberOption((option) =>
       option.setName("strona").setDescription("Strona kolejki").setMinValue(1)
-    ),
+    )
+    .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);

@@ -3,7 +3,8 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("jakatomelodia")
-    .setDescription("Wyświetla informacje o aktualnie granym utworze"),
+    .setDescription("Wyświetla informacje o aktualnie granym utworze")
+    .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);

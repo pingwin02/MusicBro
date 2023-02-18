@@ -28,6 +28,26 @@ client.player = new Player(client, {
   },
 });
 
+function printMessage(message) {
+  var currentdate = new Date().toISOString().
+  replace(/T/, ' ').      // replace T with a space
+  replace(/\..+/, '')     // delete the dot and everything after
+
+  let user = message.author;
+  if (message.author === undefined) user = message.user;
+
+  let commandName = message.commandName;
+  if (commandName === undefined) commandName = message.content;
+
+  if (message.guild === null)
+    return console.log(
+      `${currentdate} - ${user.username}#${user.discriminator} (${user.id}) used ${commandName} command in DMs`
+    );
+  return console.log(
+    `${currentdate} - ${user.username}#${user.discriminator} (${user.id}) used ${commandName} command in ${message.channel.name} (${message.channel.id}) at ${message.guild.name} (${message.guild.id})`
+  );
+}
+
 let commands = [];
 const slashFiles = fs
   .readdirSync("./commands")
@@ -79,6 +99,8 @@ if (LOAD_SLASH) {
   client.on("interactionCreate", (interaction) => {
     async function handleCommand() {
       if (!interaction.isCommand()) return;
+
+      printMessage(interaction);
 
       const slashcmd = client.slashcommands.get(interaction.commandName);
       if (!slashcmd) interaction.reply("Command not found");

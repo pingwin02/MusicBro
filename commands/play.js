@@ -26,7 +26,8 @@ module.exports = {
             .setDescription("URL do playlisty")
             .setRequired(true)
         )
-    ),
+    )
+    .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
     const voiceChannel = interaction.member.voice.channel;
