@@ -1,4 +1,10 @@
-const { Client, GatewayIntentBits, Collection, ActivityType } = require("discord.js");
+const {
+  Client,
+  GatewayIntentBits,
+  Partials,
+  Collection,
+  ActivityType,
+} = require("discord.js");
 const dotenv = require("dotenv");
 const { REST, Routes } = require("discord.js");
 const fs = require("fs");
@@ -17,7 +23,10 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.MessageContent,
   ],
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
 client.slashcommands = new Collection();
@@ -29,9 +38,10 @@ client.player = new Player(client, {
 });
 
 function printMessage(message) {
-  var currentdate = new Date().toISOString().
-  replace(/T/, ' ').      // replace T with a space
-  replace(/\..+/, '')     // delete the dot and everything after
+  var currentdate = new Date()
+    .toISOString()
+    .replace(/T/, " ") // replace T with a space
+    .replace(/\..+/, ""); // delete the dot and everything after
 
   let user = message.author;
   if (message.author === undefined) user = message.user;
@@ -89,9 +99,7 @@ if (LOAD_SLASH) {
   client.on("ready", () => {
     console.log(`Logged in as ${client.user.tag}!`);
     client.user.setPresence({
-      activities: [
-        { name: `/play`, type: ActivityType.Listening },
-      ],
+      activities: [{ name: `/play`, type: ActivityType.Listening }],
       status: "online",
     });
   });
@@ -106,9 +114,52 @@ if (LOAD_SLASH) {
       if (!slashcmd) interaction.reply("Command not found");
 
       await slashcmd.run({ client, interaction });
-      
     }
     handleCommand();
+  });
+
+  client.on("messageCreate", (message) => {
+    if (message.content === "!clear") {
+      printMessage(message);
+      const channel = message.client.channels.cache.get(
+        message.channelId.toString()
+      );
+
+      const toDelete = [];
+
+      channel.messages.fetch({ limit: 100 }).then((messages) => {
+        messages.forEach((element) => {
+          if (element.author.id === message.client.user.id)
+            toDelete.push(element.id);
+        });
+        if (toDelete.length === 0) {
+          message
+            .reply({
+              content: `Nie znaleziono żadnych wiadomości do usunięcia`,
+              ephemeral: true,
+            })
+            .then((msg) => {
+              setTimeout(() => msg.delete(), 3000);
+            });
+        } else {
+          message.client.channels.fetch(message.channelId).then((chl) => {
+            toDelete.forEach((msgid) => {
+              chl.messages.delete(msgid);
+            });
+
+            message
+              .reply({
+                content: `Usunąłem **${toDelete.length}** moich wiadomości`,
+                ephemeral: true,
+              })
+              .then((msg) => {
+                setTimeout(() => msg.delete(), 3000);
+              });
+          });
+        }
+        if (message.guild) setTimeout(() => message.delete(), 4000);
+      });
+    }
   });
   client.login(TOKEN);
 }
