@@ -190,7 +190,7 @@ if (LOAD_SLASH) {
   client.on("ready", () => {
     console.log(`Logged in as ${client.user.tag}!`);
     client.user.setPresence({
-      activities: [{ name: `/play`, type: ActivityType.Listening }],
+      activities: [{ name: `/add`, type: ActivityType.Listening }],
       status: "online",
     });
   });

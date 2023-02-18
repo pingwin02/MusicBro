@@ -3,8 +3,8 @@ const { QueryType } = require("discord-player");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("play")
-    .setDescription("Puszcza muzykę z Youtuba i nie tylko!")
+    .setName("add")
+    .setDescription("Dodaje muzykę do kolejki")
     .addSubcommand((subcommand) =>
       subcommand
         .setName("szukaj")
