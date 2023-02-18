@@ -13,7 +13,7 @@ module.exports = {
     const queue = client.player.getQueue(interaction.guildId);
     if (!queue || !queue.playing)
       return await interaction
-        .editReply(":x: Nie ma nic w kolejce! Zapodaj coś! :musical_note:")
+        .editReply(":x: Nie ma nic w kolejce! Użyj `/play` aby coś odtworzyć.")
         .then((msg) => {
           setTimeout(() => msg.delete(), 5000);
         });
@@ -29,9 +29,11 @@ module.exports = {
           setTimeout(() => msg.delete(), 5000);
         });
     const queueString = queue.tracks
-      .slice(page * howManyonPage, (page + 1 )* howManyonPage)
+      .slice(page * howManyonPage, (page + 1) * howManyonPage)
       .map((song, i) => {
-        return `*${page * howManyonPage + i + 1}*. **${song.title}** [${song.duration}]`;
+        return `*${page * howManyonPage + i + 1}*. **${song.title}** [${
+          song.duration
+        }]`;
       });
 
     const currentSong = queue.current;
@@ -40,6 +42,13 @@ module.exports = {
       .editReply({
         embeds: [
           new EmbedBuilder()
+            .setTitle(
+              `Kolejka` +
+                (queue.repeatMode == 1
+                  ? " (:repeat_one: powtarzanie utworu)"
+                  : "") +
+                (queue.repeatMode == 2 ? " (:repeat: powtarzanie całej kolejki)" : "")
+            )
             .setDescription(
               `**Teraz gra:**\n` +
                 (currentSong
@@ -47,8 +56,8 @@ module.exports = {
                   : "Nic nie gra") +
                 `\n\n**Kolejka:**\n${queueString.join("\n")}`
             )
-            .setFooter({ text: `Strona ${page + 1} z ${totalPages}` })
-            .setThumbnail(currentSong.thumbnail),
+            .setThumbnail(currentSong.thumbnail)
+            .setFooter({ text: `Strona ${page + 1} z ${totalPages}` }),
         ],
       })
       .then((msg) => {

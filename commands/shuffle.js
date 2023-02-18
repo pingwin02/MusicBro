@@ -10,7 +10,7 @@ module.exports = {
     const queue = client.player.getQueue(interaction.guildId);
     if (!queue)
       return await interaction
-        .editReply(":x: Nie ma nic w kolejce!")
+        .editReply(":x: Nie ma nic w kolejce! Użyj `/play` aby coś odtworzyć.")
         .then((msg) => {
           setTimeout(() => msg.delete(), 5000);
         });

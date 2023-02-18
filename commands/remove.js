@@ -2,8 +2,8 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("skipto")
-    .setDescription("Przeskakuje do wybranego utworu w kolejce")
+    .setName("remove")
+    .setDescription("Usuwa utwór z kolejki")
     .addIntegerOption((option) =>
       option
         .setName("numer")
@@ -30,16 +30,16 @@ module.exports = {
           setTimeout(() => msg.delete(), 5000);
         });
 
-    await queue.skipTo(songNumber - 1);
-
     const currentSong = queue.tracks[songNumber - 1];
+
+    await queue.remove(songNumber - 1);
 
     await interaction
       .editReply({
         embeds: [
           new EmbedBuilder()
             .setDescription(
-              `Przeskoczyłem do **${currentSong.title}**! :musical_note:`
+              `Usunąłem **${currentSong.title}** z kolejki :wastebasket:!`
             )
             .setThumbnail(currentSong.thumbnail),
         ],

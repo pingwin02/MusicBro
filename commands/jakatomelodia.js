@@ -8,9 +8,9 @@ module.exports = {
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);
-    if (!queue)
+    if (!queue || !queue.playing)
       return await interaction
-        .editReply(":x: Nic nie jest teraz odtwarzane :broken_heart:!")
+        .editReply(":x: Nic nie jest teraz odtwarzane :broken_heart:")
         .then((msg) => {
           setTimeout(() => msg.delete(), 5000);
         });
@@ -27,11 +27,12 @@ module.exports = {
       .editReply({
         embeds: [
           new EmbedBuilder()
+            .setTitle("Teraz gra:")
             .setDescription(
-              `**Teraz gra:**\n [**${song.title}**](${song.url})\n Kanał **${song.author}** \n\n**Postęp:**\n${bar} `
+              `[**${song.title}**](${song.url})\n Kanał **${song.author}** \n\n**Postęp:**\n${bar} `
             )
             .setThumbnail(song.thumbnail)
-            .setFooter({ text: `Głośność **${queue.volume}** :musical_note:` })
+            .setFooter({ text: `Głośność: ${queue.volume}` }),
         ],
       })
       .then((msg) => {
