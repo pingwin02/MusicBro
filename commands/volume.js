@@ -1,5 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
 
+const { printError, printInfo } = require("../index.js");
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("volume")
@@ -17,22 +19,16 @@ module.exports = {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);
     if (!queue)
-      return await interaction
-        .editReply(":x: Nie ma nic w kolejce! Użyj `/play` aby coś odtworzyć.")
-        .then((msg) => {
-          setTimeout(() => msg.delete(), 5000);
-        });
+      return printError(
+        interaction,
+        "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
+      );
 
     await queue.setVolume(interaction.options.getInteger("wartość"));
-
-    await interaction
-      .editReply(
-        `:white_check_mark: Ustawiono głośność na **${interaction.options.getInteger(
-          "wartość"
-        )}**`
-      )
-      .then((msg) => {
-        setTimeout(() => msg.delete(), 5000);
-      });
+    await printInfo(
+      interaction,
+      `:loud_sound: Głośność zmieniona!`,
+      `Ustawiono głośność na **${interaction.options.getInteger("wartość")}**`
+    );
   },
 };

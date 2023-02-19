@@ -1,4 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
+
+const { printError, printTrackInfo } = require("../index.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -9,27 +11,25 @@ module.exports = {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);
     if (!queue)
-      return await interaction
-        .editReply(":x: Nie ma nic w kolejce! Użyj `/play` aby coś odtworzyć.")
-        .then((msg) => {
-          setTimeout(() => msg.delete(), 5000);
-        });
+      return printError(
+        interaction,
+        "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
+      );
+    if (!queue.connection.paused) {
+      return printError(
+        interaction,
+        "Aktualnie odtwarzacz gra!\nUżyj `/pause` aby zatrzymać odtwarzanie."
+      );
+    }
     queue.setPaused(false);
 
     const currentSong = queue.current;
 
-    await interaction
-      .editReply({
-        embeds: [
-          new EmbedBuilder()
-            .setDescription(
-              `:arrow_forward: Wznawiam odtwarzanie **${currentSong.title}** <:chad:794955065387515954>`
-            )
-            .setThumbnail(currentSong.thumbnail),
-        ],
-      })
-      .then((msg) => {
-        setTimeout(() => msg.delete(), 10000);
-      });
+    await printTrackInfo(
+      interaction,
+      currentSong,
+      ":arrow_forward: Odtwórz!",
+      `Wznawiam odtwarzanie **${currentSong.title}**`
+    );
   },
 };

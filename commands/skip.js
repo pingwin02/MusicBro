@@ -1,4 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
+
+const { printError, printTrackInfo } = require("../index.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -8,31 +10,25 @@ module.exports = {
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);
-    if (!queue || queue.tracks.length === 0)
-      return await interaction
-        .editReply(":x: Nie ma nic w kolejce! Użyj `/play` aby coś odtworzyć.")
-        .then((msg) => {
-          setTimeout(() => msg.delete(), 5000);
-        });
+    if (!queue)
+      return printError(
+        interaction,
+        "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
+      );
 
+    const currentSong = queue.current;
+    const repeatMode = queue.repeatMode;
     await queue.skip();
     queue.setRepeatMode(0);
+    if (queue.connection.paused) queue.setPaused(false);
 
-    let newSong = queue.tracks[0];
-
-    await interaction
-      .editReply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle(`Teraz odtwarzam **${newSong.title}** :musical_note:`)
-            .setDescription(
-              "Pętla została wyłączona! :x: Użyj `/loop` aby ją włączyć."
-            )
-            .setThumbnail(newSong.thumbnail),
-        ],
-      })
-      .then((msg) => {
-        setTimeout(() => msg.delete(), 10000);
-      });
+    await printTrackInfo(
+      interaction,
+      currentSong,
+      `:arrow_forward: Pominięto **${currentSong.title}**!`,
+      (repeatMode
+        ? " :x: Pętla została wyłączona! Użyj `/loop` aby ją włączyć."
+        : " ")
+    );
   },
 };

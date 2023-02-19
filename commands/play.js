@@ -1,24 +1,26 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { QueryType } = require("discord-player");
 
+const { printError, INFO_TIMEOUT } = require("../index.js");
+
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("add")
+    .setName("play")
     .setDescription("Dodaje muzykę do kolejki")
     .addSubcommand((subcommand) =>
       subcommand
-        .setName("szukaj")
+        .setName("search")
         .setDescription("Szuka utworu po frazie lub linku")
         .addStringOption((option) =>
           option
-            .setName("fraza")
+            .setName("query")
             .setDescription("Wyszukiwana fraza lub link do utworu")
             .setRequired(true)
         )
     )
     .addSubcommand((subcommand) =>
       subcommand
-        .setName("playlista")
+        .setName("playlist")
         .setDescription("Szuka playlisty po linku")
         .addStringOption((option) =>
           option
@@ -33,28 +35,23 @@ module.exports = {
     const voiceChannel = interaction.member.voice.channel;
 
     if (!voiceChannel)
-      return interaction
-        .editReply(":x: Musisz być na kanale głosowym!")
-        .then((msg) => {
-          setTimeout(() => msg.delete(), 5000);
-        });
+      return printError(interaction, "Musisz być na kanale głosowym!");
 
     if (
       !voiceChannel.permissionsFor(client.user).has("ViewChannel") ||
       !voiceChannel.permissionsFor(client.user).has("Connect") ||
       !voiceChannel.permissionsFor(client.user).has("Speak")
     )
-      return interaction
-        .editReply(":x: Nie mogę dołączyć do kanału głosowego!")
-        .then((msg) => {
-          setTimeout(() => msg.delete(), 5000);
-        });
+      return printError(
+        interaction,
+        "Nie mam uprawnień do połączenia się z kanałem głosowym!"
+      );
 
     const queue = await client.player.createQueue(interaction.guild, {
       leaveOnEnd: true,
       leaveOnStop: true,
       leaveOnEmpty: true,
-      volumeSmoothness: 1,
+      volumeSmoothness: 1.0,
       metadata: interaction.channel,
     });
 
@@ -62,7 +59,7 @@ module.exports = {
 
     let embed = new EmbedBuilder();
 
-    if (interaction.options.getSubcommand() === "playlista") {
+    if (interaction.options.getSubcommand() === "playlist") {
       let url = interaction.options.getString("url");
       const result = await client.player
         .search(url, {
@@ -73,11 +70,10 @@ module.exports = {
           console.log(err);
         });
       if (!result || result.tracks.length === 0)
-        return interaction
-          .editReply(":x: Nie znaleziono playlisty")
-          .then((msg) => {
-            setTimeout(() => msg.delete(), 5000);
-          });
+        return printError(
+          interaction,
+          "Nie znaleziono playlisty! Upewnij się, że link jest poprawny."
+        );
 
       const playlist = result.playlist;
       const song = result.tracks[0];
@@ -87,8 +83,8 @@ module.exports = {
         .setDescription(`[**${playlist.title}**](${playlist.url})`)
         .setThumbnail(song.thumbnail)
         .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
-    } else if (interaction.options.getSubcommand() === "szukaj") {
-      let url = interaction.options.getString("fraza");
+    } else if (interaction.options.getSubcommand() === "search") {
+      let url = interaction.options.getString("query");
       const result = await client.player
         .search(url, {
           requestedBy: interaction.user,
@@ -98,11 +94,10 @@ module.exports = {
           console.log(err);
         });
       if (!result || result.tracks.length === 0)
-        return interaction
-          .editReply(":x: Nie znaleziono utworu")
-          .then((msg) => {
-            setTimeout(() => msg.delete(), 5000);
-          });
+        return printError(
+          interaction,
+          "Nie znaleziono utworu! Upewnij się, że link lub fraza jest poprawna."
+        );
 
       const song = result.tracks[0];
       await queue.addTrack(song);
@@ -113,8 +108,9 @@ module.exports = {
         .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
     }
     if (!queue.playing) await queue.play();
+    embed.setColor("Green")
     await interaction.editReply({ embeds: [embed] }).then((msg) => {
-      setTimeout(() => msg.delete(), 10000);
+      setTimeout(() => msg.delete(), INFO_TIMEOUT);
     });
   },
 };

@@ -18,6 +18,20 @@ const LOAD_SLASH = process.argv[2] == "load";
 const CLIENT_ID = process.env.CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
 
+const ERROR_TIMEOUT = 5000;
+const INFO_TIMEOUT = 15000;
+const QUEUE_TIMEOUT = 30000;
+
+module.exports = {
+  printError,
+  printNowPlaying,
+  printTrackInfo,
+  printInfo,
+  ERROR_TIMEOUT,
+  INFO_TIMEOUT,
+  QUEUE_TIMEOUT,
+};
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -41,8 +55,8 @@ client.player.on("error", (queue, error) => {
   queue.metadata.send({
     embeds: [
       new EmbedBuilder()
-        .setTitle(`Coś się zepsuło <:sus:833956789421735976>`)
-        .setDescription(`Spróbuj ponownie później!\n Błąd: \`${error}\``)
+        .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
+        .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
         .setColor("Red"),
     ],
   });
@@ -52,8 +66,8 @@ client.player.on("connectionError", (queue, error) => {
   queue.metadata.send({
     embeds: [
       new EmbedBuilder()
-        .setTitle(`Coś się zepsuło <:sus:833956789421735976>`)
-        .setDescription(`Spróbuj ponownie później!\n Błąd: \`${error}\``)
+        .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
+        .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
         .setColor("Red"),
     ],
   });
@@ -61,27 +75,7 @@ client.player.on("connectionError", (queue, error) => {
 
 client.player.on("trackStart", (queue, track) => {
   //if (!client.config.opt.loopMessage && queue.repeatMode !== 0) return;
-  let bar = queue.createProgressBar({
-    queue: false,
-    length: 19,
-    timecodes: true,
-  });
-
-  queue.metadata
-    .send({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle("Teraz gra:")
-          .setDescription(
-            `[**${track.title}**](${track.url})\n Kanał **${track.author}** \n\n**Postęp:**\n${bar} `
-          )
-          .setThumbnail(track.thumbnail)
-          .setFooter({ text: `Głośność: ${queue.volume}` }),
-      ],
-    })
-    .then((msg) => {
-      setTimeout(() => msg.delete(), 20000);
-    });
+  printNowPlaying(queue.metadata, queue, false);
 });
 
 client.player.on("trackAdd", (queue, track) => {
@@ -89,19 +83,7 @@ client.player.on("trackAdd", (queue, track) => {
 });
 
 client.player.on("botDisconnect", (queue) => {
-  queue.metadata
-    .send({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle(
-            `"Zostałem wywalony z kanału głosowego! <:jakiedy1:801039061540012052>"`
-          )
-          .setColor("Red"),
-      ],
-    })
-    .then((msg) => {
-      setTimeout(() => msg.delete(), 10000);
-    });
+  console.log(`Bot was disconnected from ${queue.guild.name}`);
 });
 
 client.player.on("channelEmpty", (queue) => {
@@ -110,21 +92,29 @@ client.player.on("channelEmpty", (queue) => {
       embeds: [
         new EmbedBuilder()
           .setTitle(
-            "Nie ma już nikogo, więc wychodzę z kanału głosowego! :crying_cat_face:"
+            "<:jakiedy1:801039061540012052> Nie ma już nikogo, więc wychodzę z kanału głosowego!"
           )
           .setColor("Red"),
       ],
     })
     .then((msg) => {
-      setTimeout(() => msg.delete(), 10000);
+      setTimeout(() => msg.delete(), INFO_TIMEOUT);
     });
 });
 
 client.player.on("queueEnd", (queue) => {
   queue.metadata
-    .send("Kolejka się skończyła, więc wychodzę z kanału głosowego! ")
+    .send({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(
+            "<:jakiedy1:801039061540012052> Kolejka się skończyła, więc wychodzę z kanału głosowego!"
+          )
+          .setColor("Red"),
+      ],
+    })
     .then((msg) => {
-      setTimeout(() => msg.delete(), 10000);
+      setTimeout(() => msg.delete(), INFO_TIMEOUT);
     });
 });
 
@@ -147,6 +137,94 @@ function printMessage(message) {
   return console.log(
     `${currentdate} - ${user.username}#${user.discriminator} (${user.id}) used ${commandName} command in ${message.channel.name} (${message.channel.id}) at ${message.guild.name} (${message.guild.id})`
   );
+}
+
+function printError(interaction, error) {
+  return interaction
+    .editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(":x: Błąd!")
+          .setDescription(error)
+          .setColor("Red"),
+      ],
+    })
+    .then((msg) => {
+      setTimeout(() => msg.delete(), ERROR_TIMEOUT);
+    });
+}
+
+function printNowPlaying(interaction, queue, reply) {
+  let bar = queue.createProgressBar({
+    queue: false,
+    length: 19,
+    timecodes: true,
+  });
+
+  let embed = new EmbedBuilder()
+    .setTitle(
+      "Teraz gra" +
+        (queue.repeatMode == 1 ? " (:repeat_one: powtarzanie utworu)" : "") +
+        (queue.repeatMode == 2 ? " (:repeat: powtarzanie całej kolejki)" : "") +
+        (queue.connection.paused ? "\n(:pause_button: wstrzymane)" : "")
+    )
+    .setDescription(
+      `[**${queue.current.title}**](${queue.current.url})\n Kanał **${queue.current.author}**\n *dodane przez <@${queue.current.requestedBy.id}>* \n\n**Postęp:**\n${bar} `
+    )
+    .setThumbnail(queue.current.thumbnail)
+    .setFooter({ text: `Głośność: ${queue.volume}` })
+    .setColor("Blue");
+
+  if (!reply) {
+    interaction
+      .send({
+        embeds: [embed],
+      })
+      .then((msg) => {
+        setTimeout(() => msg.delete(), INFO_TIMEOUT);
+      });
+  } else {
+    interaction
+      .editReply({
+        embeds: [embed],
+      })
+      .then((msg) => {
+        setTimeout(() => msg.delete(), INFO_TIMEOUT);
+      });
+  }
+}
+
+function printTrackInfo(interaction, track, title, description) {
+  return interaction
+    .editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(title)
+          .setDescription(description + " :musical_note:")
+          .setThumbnail(track.thumbnail)
+          .setFooter({ text: `Przez ${track.requestedBy.tag}` })
+          .setColor("Yellow"),
+      ],
+    })
+    .then((msg) => {
+      setTimeout(() => msg.delete(), INFO_TIMEOUT);
+    });
+}
+
+function printInfo(interaction, title, description) {
+  return interaction
+    .editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(title)
+          .setDescription(description + " :musical_note:")
+          .setFooter({ text: `Przez ${interaction.user.tag}` })
+          .setColor("Green"),
+      ],
+    })
+    .then((msg) => {
+      setTimeout(() => msg.delete(), INFO_TIMEOUT);
+    });
 }
 
 let commands = [];
@@ -190,7 +268,7 @@ if (LOAD_SLASH) {
   client.on("ready", () => {
     console.log(`Logged in as ${client.user.tag}!`);
     client.user.setPresence({
-      activities: [{ name: `/add`, type: ActivityType.Listening }],
+      activities: [{ name: `/play`, type: ActivityType.Listening }],
       status: "online",
     });
   });
@@ -210,7 +288,7 @@ if (LOAD_SLASH) {
   });
 
   client.on("messageCreate", (message) => {
-    if (message.content === "!!clear") {
+    if (message.content === "!!clear" && message.author.id === process.env.OWNER_ID) {
       printMessage(message);
       const channel = message.client.channels.cache.get(
         message.channelId.toString()

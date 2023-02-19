@@ -1,5 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
 
+const { printError, printInfo } = require("../index.js");
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("loop")
@@ -18,38 +20,37 @@ module.exports = {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);
     if (!queue)
-      return await interaction
-        .editReply(":x: Nie ma nic w kolejce! Użyj `/play` aby coś odtworzyć.")
-        .then((msg) => {
-          setTimeout(() => msg.delete(), 5000);
-        });
+      return printError(
+        interaction,
+        "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
+      );
 
     const subcommand = interaction.options.getSubcommand();
 
     switch (subcommand) {
       case "track":
         queue.setRepeatMode(1);
-        await interaction
-          .editReply("Pętla utworu została włączona! :repeat:")
-          .then((msg) => {
-            setTimeout(() => msg.delete(), 5000);
-          });
+        await printInfo(
+          interaction,
+          ":repeat_one: Pętla!",
+          "Pętla utworu została włączona!"
+        );
         break;
       case "queue":
         queue.setRepeatMode(2);
-        await interaction
-          .editReply("Pętla kolejki została włączona! :repeat:")
-          .then((msg) => {
-            setTimeout(() => msg.delete(), 5000);
-          });
+        await printInfo(
+          interaction,
+          ":repeat: Pętla!",
+          "Pętla kolejki została włączona!"
+        );
         break;
       case "off":
         queue.setRepeatMode(0);
-        await interaction
-          .editReply("Pętla została wyłączona! :x:")
-          .then((msg) => {
-            setTimeout(() => msg.delete(), 5000);
-          });
+        await printInfo(
+          interaction,
+          ":x: Pętla wyłączona!",
+          "Pętla została wyłączona!"
+        );
         break;
     }
   },

@@ -1,5 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
 
+const { printError, printInfo } = require("../index.js");
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("shuffle")
@@ -9,18 +11,15 @@ module.exports = {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);
     if (!queue)
-      return await interaction
-        .editReply(":x: Nie ma nic w kolejce! Użyj `/play` aby coś odtworzyć.")
-        .then((msg) => {
-          setTimeout(() => msg.delete(), 5000);
-        });
+      return printError(
+        interaction,
+        "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
+      );
     await queue.shuffle();
-    await interaction
-      .editReply(
-        "Kolejność utworów w kolejce została zmieszana! Użyj `/queue` aby ją zobaczyć. :musical_note:"
-      )
-      .then((msg) => {
-        setTimeout(() => msg.delete(), 10000);
-      });
+    await printInfo(
+      interaction,
+      ":twisted_rightwards_arrows: Losowo!",
+      "Kolejność utworów w kolejce została zmieszana! Użyj `/queue` aby ją zobaczyć."
+    );
   },
 };

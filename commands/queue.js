@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
+const { printError, QUEUE_TIMEOUT } = require("../index.js");
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("queue")
@@ -12,22 +14,20 @@ module.exports = {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);
     if (!queue || !queue.playing)
-      return await interaction
-        .editReply(":x: Nie ma nic w kolejce! Użyj `/play` aby coś odtworzyć.")
-        .then((msg) => {
-          setTimeout(() => msg.delete(), 5000);
-        });
+      return printError(
+        interaction,
+        "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
+      );
 
     const howManyonPage = 15;
     const totalPages = Math.ceil(queue.tracks.length / howManyonPage) || 1;
     const page = (interaction.options.getNumber("strona") || 1) - 1;
 
     if (page > totalPages - 1)
-      return await interaction
-        .editReply(`:x: Nie ma takiej strony! (${totalPages} stron)`)
-        .then((msg) => {
-          setTimeout(() => msg.delete(), 5000);
-        });
+      return printError(
+        interaction,
+        `Nie ma takiej strony! (jest łącznie ${totalPages} stron)`
+      );
     const queueString = queue.tracks
       .slice(page * howManyonPage, (page + 1) * howManyonPage)
       .map((song, i) => {
@@ -47,7 +47,12 @@ module.exports = {
                 (queue.repeatMode == 1
                   ? " (:repeat_one: powtarzanie utworu)"
                   : "") +
-                (queue.repeatMode == 2 ? " (:repeat: powtarzanie całej kolejki)" : "")
+                (queue.repeatMode == 2
+                  ? " (:repeat: powtarzanie całej kolejki)"
+                  : "") +
+                (queue.connection.paused
+                  ? "\n(:pause_button: wstrzymane)"
+                  : "")
             )
             .setDescription(
               `**Teraz gra:**\n` +
@@ -57,11 +62,12 @@ module.exports = {
                 `\n\n**Kolejka:**\n${queueString.join("\n")}`
             )
             .setThumbnail(currentSong.thumbnail)
-            .setFooter({ text: `Strona ${page + 1} z ${totalPages}` }),
+            .setFooter({ text: `Strona ${page + 1} z ${totalPages}` })
+            .setColor("Blue"),
         ],
       })
       .then((msg) => {
-        setTimeout(() => msg.delete(), 60000);
+        setTimeout(() => msg.delete(), QUEUE_TIMEOUT);
       });
   },
 };

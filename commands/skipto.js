@@ -1,4 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
+
+const { printError, printTrackInfo } = require("../index.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,39 +18,31 @@ module.exports = {
     await interaction.deferReply();
     const queue = client.player.getQueue(interaction.guildId);
     if (!queue)
-      return await interaction
-        .editReply(":x: Nie ma nic w kolejce! Użyj `/play` aby coś odtworzyć.")
-        .then((msg) => {
-          setTimeout(() => msg.delete(), 5000);
-        });
+      return printError(
+        interaction,
+        "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
+      );
 
     const songNumber = interaction.options.getInteger("numer");
     if (songNumber > queue.tracks.length)
-      return await interaction
-        .editReply(":x: Nie ma takiego utworu w kolejce!")
-        .then((msg) => {
-          setTimeout(() => msg.delete(), 5000);
-        });
+      return printError(
+        interaction,
+        "Nie ma takiego utworu w kolejce! Upewnij się, że podałeś poprawny numer."
+      );
 
-    const currentSong = queue.tracks[songNumber - 1];
+    const currentSong = queue.current;
+    const repeatMode = queue.repeatMode;
     await queue.skipTo(songNumber - 1);
     queue.setRepeatMode(0);
+    if (queue.connection.paused) queue.setPaused(false);
 
-    await interaction
-      .editReply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle(
-              `Przeskoczyłem do **${currentSong.title}** :musical_note:`
-            )
-            .setDescription(
-              "Pętla została wyłączona! :x: Użyj `/loop` aby ją włączyć."
-            )
-            .setThumbnail(currentSong.thumbnail),
-        ],
-      })
-      .then((msg) => {
-        setTimeout(() => msg.delete(), 10000);
-      });
+    await printTrackInfo(
+      interaction,
+      currentSong,
+      `:arrow_forward: Pominięto **${currentSong.title}**!`,
+      (repeatMode
+        ? " :x: Pętla została wyłączona! Użyj `/loop` aby ją włączyć."
+        : " ")
+    );
   },
 };
