@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { QueryType } = require("discord-player");
 
-const { printError, INFO_TIMEOUT } = require("../index.js");
+const { printError, sendError, INFO_TIMEOUT } = require("../index.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -108,9 +108,15 @@ module.exports = {
         .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
     }
     if (!queue.playing) await queue.play();
-    embed.setColor("Green")
+    embed.setColor("Green");
     await interaction.editReply({ embeds: [embed] }).then((msg) => {
-      setTimeout(() => msg.delete(), INFO_TIMEOUT);
+      setTimeout(
+        () =>
+          msg.delete().catch((err) => {
+            sendError("Kasowanie wiadomości", err, interaction);
+          }),
+        INFO_TIMEOUT
+      );
     });
   },
 };

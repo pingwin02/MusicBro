@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
-const { printError, QUEUE_TIMEOUT } = require("../index.js");
+const { printError, sendError, QUEUE_TIMEOUT } = require("../index.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -50,9 +50,7 @@ module.exports = {
                 (queue.repeatMode == 2
                   ? " (:repeat: powtarzanie całej kolejki)"
                   : "") +
-                (queue.connection.paused
-                  ? "\n(:pause_button: wstrzymane)"
-                  : "")
+                (queue.connection.paused ? "\n(:pause_button: wstrzymane)" : "")
             )
             .setDescription(
               `**Teraz gra:**\n` +
@@ -67,7 +65,13 @@ module.exports = {
         ],
       })
       .then((msg) => {
-        setTimeout(() => msg.delete(), QUEUE_TIMEOUT);
+        setTimeout(
+          () =>
+            msg.delete().catch((err) => {
+              sendError("Kasowanie wiadomości", err, interaction);
+            }),
+          QUEUE_TIMEOUT
+        );
       });
   },
 };

@@ -6,7 +6,7 @@ const {
   ActivityType,
 } = require("discord.js");
 const dotenv = require("dotenv");
-const { REST, Routes, EmbedBuilder } = require("discord.js");
+const { REST, Routes, EmbedBuilder, Events } = require("discord.js");
 const fs = require("fs");
 const { Player } = require("discord-player");
 
@@ -24,6 +24,7 @@ const QUEUE_TIMEOUT = 30000;
 
 module.exports = {
   printError,
+  sendError,
   printNowPlaying,
   printTrackInfo,
   printInfo,
@@ -51,78 +52,17 @@ client.player = new Player(client, {
   },
 });
 
-client.player.on("error", (queue, error) => {
-  queue.metadata.send({
-    embeds: [
-      new EmbedBuilder()
-        .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
-        .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
-        .setColor("Red"),
-    ],
-  });
-});
-
-client.player.on("connectionError", (queue, error) => {
-  queue.metadata.send({
-    embeds: [
-      new EmbedBuilder()
-        .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
-        .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
-        .setColor("Red"),
-    ],
-  });
-});
-
-client.player.on("trackStart", (queue, track) => {
-  //if (!client.config.opt.loopMessage && queue.repeatMode !== 0) return;
-  printNowPlaying(queue.metadata, queue, false);
-});
-
-client.player.on("trackAdd", (queue, track) => {
-  console.log(`Track ${track.title} added in the queue`);
-});
-
-client.player.on("botDisconnect", (queue) => {
-  console.log(`Bot was disconnected from ${queue.guild.name}`);
-});
-
-client.player.on("channelEmpty", (queue) => {
-  queue.metadata
-    .send({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle(
-            "<:jakiedy1:801039061540012052> Nie ma już nikogo, więc wychodzę z kanału głosowego!"
-          )
-          .setColor("Red"),
-      ],
-    })
-    .then((msg) => {
-      setTimeout(() => msg.delete(), INFO_TIMEOUT);
-    });
-});
-
-client.player.on("queueEnd", (queue) => {
-  queue.metadata
-    .send({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle(
-            "<:jakiedy1:801039061540012052> Kolejka się skończyła, więc wychodzę z kanału głosowego!"
-          )
-          .setColor("Red"),
-      ],
-    })
-    .then((msg) => {
-      setTimeout(() => msg.delete(), INFO_TIMEOUT);
-    });
-});
+function sendError(title, err, interaction) {
+  interaction.channel.send(
+    `:x: Wystąpił nieoczekiwany błąd: ${title}\n\`${err}\``
+  );
+}
 
 function printMessage(message) {
   var currentdate = new Date()
     .toISOString()
-    .replace(/T/, " ") // replace T with a space
-    .replace(/\..+/, ""); // delete the dot and everything after
+    .replace(/T/, " ")
+    .replace(/\..+/, "");
 
   let user = message.author;
   if (message.author === undefined) user = message.user;
@@ -150,7 +90,13 @@ function printError(interaction, error) {
       ],
     })
     .then((msg) => {
-      setTimeout(() => msg.delete(), ERROR_TIMEOUT);
+      setTimeout(
+        () =>
+          msg.delete().catch((err) => {
+            sendError("Kasowanie wiadomości", err, interaction);
+          }),
+        ERROR_TIMEOUT
+      );
     });
 }
 
@@ -181,7 +127,13 @@ function printNowPlaying(interaction, queue, reply) {
         embeds: [embed],
       })
       .then((msg) => {
-        setTimeout(() => msg.delete(), INFO_TIMEOUT);
+        setTimeout(
+          () =>
+            msg.delete().catch((err) => {
+              sendError("Kasowanie wiadomości", err, interaction);
+            }),
+          INFO_TIMEOUT
+        );
       });
   } else {
     interaction
@@ -189,7 +141,13 @@ function printNowPlaying(interaction, queue, reply) {
         embeds: [embed],
       })
       .then((msg) => {
-        setTimeout(() => msg.delete(), INFO_TIMEOUT);
+        setTimeout(
+          () =>
+            msg.delete().catch((err) => {
+              sendError("Kasowanie wiadomości", err, interaction);
+            }),
+          INFO_TIMEOUT
+        );
       });
   }
 }
@@ -207,7 +165,13 @@ function printTrackInfo(interaction, track, title, description) {
       ],
     })
     .then((msg) => {
-      setTimeout(() => msg.delete(), INFO_TIMEOUT);
+      setTimeout(
+        () =>
+          msg.delete().catch((err) => {
+            sendError("Kasowanie wiadomości", err, interaction);
+          }),
+        INFO_TIMEOUT
+      );
     });
 }
 
@@ -223,7 +187,13 @@ function printInfo(interaction, title, description) {
       ],
     })
     .then((msg) => {
-      setTimeout(() => msg.delete(), INFO_TIMEOUT);
+      setTimeout(
+        () =>
+          msg.delete().catch((err) => {
+            sendError("Kasowanie wiadomości", err, interaction);
+          }),
+        INFO_TIMEOUT
+      );
     });
 }
 
@@ -265,7 +235,7 @@ if (LOAD_SLASH) {
     }
   })();
 } else {
-  client.on("ready", () => {
+  client.on(Events.ClientReady, () => {
     console.log(`Logged in as ${client.user.tag}!`);
     client.user.setPresence({
       activities: [{ name: `/play`, type: ActivityType.Listening }],
@@ -273,7 +243,7 @@ if (LOAD_SLASH) {
     });
   });
 
-  client.on("interactionCreate", (interaction) => {
+  client.on(Events.InteractionCreate, (interaction) => {
     async function handleCommand() {
       if (!interaction.isCommand()) return;
 
@@ -287,8 +257,8 @@ if (LOAD_SLASH) {
     handleCommand();
   });
 
-  client.on("messageCreate", (message) => {
-    if (message.content === "!!clear" && message.author.id === process.env.OWNER_ID) {
+  client.on(Events.MessageCreate, (message) => {
+    if (message.content === "!!clear") {
       printMessage(message);
       const channel = message.client.channels.cache.get(
         message.channelId.toString()
@@ -308,12 +278,20 @@ if (LOAD_SLASH) {
               ephemeral: true,
             })
             .then((msg) => {
-              setTimeout(() => msg.delete(), 3000);
+              setTimeout(
+                () =>
+                  msg.delete().catch((err) => {
+                    sendError("Kasowanie wiadomości", err, message);
+                  }),
+                3000
+              );
             });
         } else {
           message.client.channels.fetch(message.channelId).then((chl) => {
             toDelete.forEach((msgid) => {
-              chl.messages.delete(msgid);
+              chl.messages.delete(msgid).catch((err) => {
+                sendError("Kasowanie wiadomości", err, message);
+              });
             });
 
             message
@@ -322,13 +300,106 @@ if (LOAD_SLASH) {
                 ephemeral: true,
               })
               .then((msg) => {
-                setTimeout(() => msg.delete(), 3000);
+                setTimeout(
+                  () =>
+                    msg.delete().catch((err) => {
+                      sendError("Kasowanie wiadomości", err, message);
+                    }),
+                  3000
+                );
               });
           });
         }
-        if (message.guild) setTimeout(() => message.delete(), 4000);
+        if (message.guild)
+          setTimeout(
+            () =>
+              message.delete().catch((err) => {
+                sendError("Kasowanie wiadomości", err, message);
+              }),
+            4000
+          );
       });
     }
   });
+
+  client.player.on("trackStart", (queue, track) => {
+    //if (!client.config.opt.loopMessage && queue.repeatMode !== 0) return;
+    printNowPlaying(queue.metadata, queue, false);
+  });
+
+  client.player.on("trackAdd", (queue, track) => {
+    console.log(`Track ${track.title} added in the queue`);
+  });
+
+  client.player.on("botDisconnect", (queue) => {
+    console.log(`Bot was disconnected from ${queue.guild.name}`);
+  });
+
+  client.player.on("error", (queue, error) => {
+    queue.metadata.send({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
+          .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
+          .setColor("Red"),
+      ],
+    });
+  });
+
+  client.player.on("connectionError", (queue, error) => {
+    queue.metadata.send({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
+          .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
+          .setColor("Red"),
+      ],
+    });
+  });
+
+  client.player.on("channelEmpty", (queue) => {
+    queue.metadata
+      .send({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(
+              "<:jakiedy1:801039061540012052> Nie ma już nikogo, więc wychodzę z kanału głosowego!"
+            )
+            .setColor("Red"),
+        ],
+      })
+      .then((msg) => {
+        setTimeout(
+          () =>
+            msg.delete().catch((err) => {
+              sendError("Kasowanie wiadomości", err, interaction);
+            }),
+          INFO_TIMEOUT
+        );
+      });
+  });
+
+  client.player.on("queueEnd", (queue) => {
+    queue.metadata
+      .send({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(
+              "<:jakiedy1:801039061540012052> Kolejka się skończyła, więc wychodzę z kanału głosowego!"
+            )
+            .setColor("Red"),
+        ],
+      })
+      .then((msg) => {
+        setTimeout(
+          () =>
+            msg.delete().catch((err) => {
+              sendError("Kasowanie wiadomości", err, interaction);
+            }),
+          INFO_TIMEOUT
+        );
+      });
+  });
+
   client.login(TOKEN);
 }
