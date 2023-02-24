@@ -67,7 +67,7 @@ module.exports = {
           searchEngine: QueryType.YOUTUBE_PLAYLIST,
         })
         .catch((err) => {
-          console.log(err);
+          console.log(`ERROR: ${err}`);
         });
       if (!result || result.tracks.length === 0)
         return printError(
@@ -91,19 +91,21 @@ module.exports = {
           searchEngine: QueryType.AUTO,
         })
         .catch((err) => {
-          console.log(err);
+          console.log(`ERROR: ${err}`);
         });
       if (!result || result.tracks.length === 0)
         return printError(
           interaction,
-          "Nie znaleziono utworu! Upewnij się, że link lub fraza jest poprawna."
+          "Nie znaleziono utworu! Upewnij się, że link lub fraza jest poprawna.\nSprawdź również, czy na film nie nałożono ograniczenia wiekowego. :underage:"
         );
 
       const song = result.tracks[0];
       await queue.addTrack(song);
       embed
         .setTitle("Dodano utwór do kolejki")
-        .setDescription(`[**${song.title}**](${song.url}) [${song.duration}]`)
+        .setDescription(
+          `[**${queue.current.title}**](${queue.current.url}) [${song.duration}]\n Kanał **${queue.current.author}**`
+        )
         .setThumbnail(song.thumbnail)
         .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
     }

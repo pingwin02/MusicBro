@@ -53,9 +53,11 @@ client.player = new Player(client, {
 });
 
 function sendError(title, err, interaction) {
-  interaction.channel.send(
-    `:x: Wystąpił nieoczekiwany błąd: ${title}\n\`${err}\``
-  );
+  interaction.channel
+    .send(`:x: Wystąpił nieoczekiwany błąd: ${title}\n\`${err}\``)
+    .catch((err) => {
+      console.log(`ERROR: ${err}`);
+    });
 }
 
 function printMessage(message) {
@@ -134,6 +136,9 @@ function printNowPlaying(interaction, queue, reply) {
             }),
           INFO_TIMEOUT
         );
+      })
+      .catch((err) => {
+        console.log(`ERROR: ${err}`);
       });
   } else {
     interaction
@@ -328,7 +333,7 @@ if (LOAD_SLASH) {
   });
 
   client.player.on("trackAdd", (queue, track) => {
-    console.log(`Track ${track.title} added in the queue`);
+    console.log(`Track ${track.title} (${track.url}) added in the queue`);
   });
 
   client.player.on("botDisconnect", (queue) => {
@@ -336,25 +341,33 @@ if (LOAD_SLASH) {
   });
 
   client.player.on("error", (queue, error) => {
-    queue.metadata.send({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
-          .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
-          .setColor("Red"),
-      ],
-    });
+    queue.metadata
+      .send({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
+            .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
+            .setColor("Red"),
+        ],
+      })
+      .catch((err) => {
+        console.log(`ERROR: ${err}`);
+      });
   });
 
   client.player.on("connectionError", (queue, error) => {
-    queue.metadata.send({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
-          .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
-          .setColor("Red"),
-      ],
-    });
+    queue.metadata
+      .send({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
+            .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
+            .setColor("Red"),
+        ],
+      })
+      .catch((err) => {
+        console.log(`ERROR: ${err}`);
+      });
   });
 
   client.player.on("channelEmpty", (queue) => {
@@ -376,6 +389,9 @@ if (LOAD_SLASH) {
             }),
           INFO_TIMEOUT
         );
+      })
+      .catch((err) => {
+        console.log(`ERROR: ${err}`);
       });
   });
 
@@ -398,6 +414,9 @@ if (LOAD_SLASH) {
             }),
           INFO_TIMEOUT
         );
+      })
+      .catch((err) => {
+        console.log(`ERROR: ${err}`);
       });
   });
 
