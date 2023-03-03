@@ -254,8 +254,22 @@ if (LOAD_SLASH) {
 
       printMessage(interaction);
 
+      const channel = client.channels.cache.get(interaction.channelId);
+      if (
+        !channel.permissionsFor(client.user).has("SendMessages") ||
+        !channel.permissionsFor(client.user).has("ViewChannel")
+      ) {
+        return interaction.reply({
+          content: ":x: Nie mam uprawnień do wysyłania wiadomości",
+          ephemeral: true,
+        });
+      }
+
       const slashcmd = client.slashcommands.get(interaction.commandName);
-      if (!slashcmd) interaction.reply("Command not found");
+      if (!slashcmd)
+        return interaction.reply(
+          ":x: Wystąpił nieoczekiwany błąd: `Unknown Command`"
+        );
 
       await slashcmd.run({ client, interaction });
     }
