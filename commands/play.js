@@ -104,7 +104,7 @@ module.exports = {
       embed
         .setTitle("Dodano utwór do kolejki")
         .setDescription(
-          `[**${queue.current.title}**](${queue.current.url}) [${song.duration}]\n Kanał **${queue.current.author}**`
+          `[**${song.title}**](${song.url}) [${song.duration}]\n Kanał **${song.author}**`
         )
         .setThumbnail(song.thumbnail)
         .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
