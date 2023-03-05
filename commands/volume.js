@@ -17,14 +17,14 @@ module.exports = {
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
-    const queue = client.player.getQueue(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
     if (!queue)
       return printError(
         interaction,
         "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
       );
 
-    await queue.setVolume(interaction.options.getInteger("wartość"));
+    await queue.node.setVolume(interaction.options.getInteger("wartość"));
     await printInfo(
       interaction,
       `:loud_sound: Głośność zmieniona!`,

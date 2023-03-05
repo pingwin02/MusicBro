@@ -8,6 +8,7 @@ const {
 const dotenv = require("dotenv");
 const { REST, Routes, EmbedBuilder, Events } = require("discord.js");
 const fs = require("fs");
+const { Console } = require("console");
 const { Player } = require("discord-player");
 
 dotenv.config();
@@ -22,12 +23,22 @@ const ERROR_TIMEOUT = 5000;
 const INFO_TIMEOUT = 15000;
 const QUEUE_TIMEOUT = 30000;
 
+const logger = new Console({
+  stdout: fs.createWriteStream("logs/log.log", { start: 0 }),
+  stderr: fs.createWriteStream("logs/error.log", { start: 0 }),
+});
+
+const debug = new Console({
+  stdout: fs.createWriteStream("logs/debug.log", { start: 0 }),
+});
+
 module.exports = {
   printError,
   sendError,
   printNowPlaying,
   printTrackInfo,
   printInfo,
+  logger,
   ERROR_TIMEOUT,
   INFO_TIMEOUT,
   QUEUE_TIMEOUT,
@@ -56,7 +67,7 @@ function sendError(title, err, interaction) {
   interaction.channel
     .send(`:x: Wystąpił nieoczekiwany błąd: ${title}\n\`${err}\``)
     .catch((err) => {
-      console.log(`ERROR: ${err}`);
+      logger.error(`ERROR: ${err}`);
     });
 }
 
@@ -73,10 +84,10 @@ function printMessage(message) {
   if (commandName === undefined) commandName = message.content;
 
   if (message.guild === null)
-    return console.log(
+    return logger.log(
       `${currentdate} - ${user.username}#${user.discriminator} (${user.id}) used ${commandName} command in DMs`
     );
-  return console.log(
+  return logger.log(
     `${currentdate} - ${user.username}#${user.discriminator} (${user.id}) used ${commandName} command in ${message.channel.name} (${message.channel.id}) at ${message.guild.name} (${message.guild.id})`
   );
 }
@@ -103,7 +114,7 @@ function printError(interaction, error) {
 }
 
 function printNowPlaying(interaction, queue, reply) {
-  let bar = queue.createProgressBar({
+  let bar = queue.node.createProgressBar({
     queue: false,
     length: 19,
     timecodes: true,
@@ -114,13 +125,13 @@ function printNowPlaying(interaction, queue, reply) {
       "Teraz gra" +
         (queue.repeatMode == 1 ? " (:repeat_one: powtarzanie utworu)" : "") +
         (queue.repeatMode == 2 ? " (:repeat: powtarzanie całej kolejki)" : "") +
-        (queue.connection.paused ? "\n(:pause_button: wstrzymane)" : "")
+        (queue.node.isPaused() ? "\n(:pause_button: wstrzymane)" : "")
     )
     .setDescription(
-      `[**${queue.current.title}**](${queue.current.url})\n Kanał **${queue.current.author}**\n *dodane przez <@${queue.current.requestedBy.id}>* \n\n**Postęp:**\n${bar} `
+      `[**${queue.currentTrack.title}**](${queue.currentTrack.url})\n Kanał **${queue.currentTrack.author}**\n *dodane przez <@${queue.currentTrack.requestedBy.id}>* \n\n**Postęp:**\n${bar} `
     )
-    .setThumbnail(queue.current.thumbnail)
-    .setFooter({ text: `Głośność: ${queue.volume}` })
+    .setThumbnail(queue.currentTrack.thumbnail)
+    .setFooter({ text: `Głośność: ${queue.node.volume}` })
     .setColor("Blue");
 
   if (!reply) {
@@ -138,7 +149,7 @@ function printNowPlaying(interaction, queue, reply) {
         );
       })
       .catch((err) => {
-        console.log(`ERROR: ${err}`);
+        logger.error(`ERROR: ${err}`);
       });
   } else {
     interaction
@@ -341,33 +352,24 @@ if (LOAD_SLASH) {
     }
   });
 
-  client.player.on("connectionCreate", (queue) => {
-    queue.connection.voiceConnection.on("stateChange", (oldState, newState) => {
-      const oldNetworking = Reflect.get(oldState, "networking");
-      const newNetworking = Reflect.get(newState, "networking");
-      const networkStateChangeHandler = (oldNetworkState, newNetworkState) => {
-        const newUdp = Reflect.get(newNetworkState, "udp");
-        clearInterval(newUdp?.keepAliveInterval);
-      };
-      oldNetworking?.off("stateChange", networkStateChangeHandler);
-      newNetworking?.on("stateChange", networkStateChangeHandler);
-    });
-  });
-
-  client.player.on("trackStart", (queue, track) => {
+  client.player.events.on("playerStart", (queue, track) => {
     //if (!client.config.opt.loopMessage && queue.repeatMode !== 0) return;
     printNowPlaying(queue.metadata, queue, false);
   });
 
-  client.player.on("trackAdd", (queue, track) => {
-    console.log(`Track ${track.title} (${track.url}) added in the queue`);
+  client.player.events.on("audioTrackAdd", (queue, track) => {
+    logger.log(`Track ${track.title} (${track.url}) added in the queue`);
   });
 
-  client.player.on("botDisconnect", (queue) => {
-    console.log(`Bot was disconnected from ${queue.guild.name}`);
+  client.player.events.on("disconnect", (queue) => {
+    logger.log(`Bot was disconnected from ${queue.guild.name}`);
   });
 
-  client.player.on("error", (queue, error) => {
+  client.player.events.on("debug", (queue, message) => {
+    debug.log(message);
+  });
+
+  client.player.events.on("error", (queue, error) => {
     queue.metadata
       .send({
         embeds: [
@@ -378,11 +380,11 @@ if (LOAD_SLASH) {
         ],
       })
       .catch((err) => {
-        console.log(`ERROR: ${err}`);
+        logger.error(`ERROR: ${err}`);
       });
   });
 
-  client.player.on("connectionError", (queue, error) => {
+  client.player.events.on("playerError", (queue, error) => {
     queue.metadata
       .send({
         embeds: [
@@ -393,11 +395,11 @@ if (LOAD_SLASH) {
         ],
       })
       .catch((err) => {
-        console.log(`ERROR: ${err}`);
+        logger.error(`ERROR: ${err}`);
       });
   });
 
-  client.player.on("channelEmpty", (queue) => {
+  client.player.events.on("emptyChannel", (queue) => {
     queue.metadata
       .send({
         embeds: [
@@ -418,11 +420,11 @@ if (LOAD_SLASH) {
         );
       })
       .catch((err) => {
-        console.log(`ERROR: ${err}`);
+        logger.error(`ERROR: ${err}`);
       });
   });
 
-  client.player.on("queueEnd", (queue) => {
+  client.player.events.on("emptyQueue", (queue) => {
     queue.metadata
       .send({
         embeds: [
@@ -443,7 +445,7 @@ if (LOAD_SLASH) {
         );
       })
       .catch((err) => {
-        console.log(`ERROR: ${err}`);
+        logger.error(`ERROR: ${err}`);
       });
   });
 

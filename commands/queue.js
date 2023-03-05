@@ -12,15 +12,15 @@ module.exports = {
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
-    const queue = client.player.getQueue(interaction.guildId);
-    if (!queue || !queue.playing)
+    const queue = client.player.nodes.get(interaction.guildId);
+    if (!queue || !queue.node.isPlaying())
       return printError(
         interaction,
         "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
       );
 
     const howManyonPage = 15;
-    const totalPages = Math.ceil(queue.tracks.length / howManyonPage) || 1;
+    const totalPages = Math.ceil(queue.getSize() / howManyonPage) || 1;
     const page = (interaction.options.getNumber("strona") || 1) - 1;
 
     if (page > totalPages - 1)
@@ -29,6 +29,7 @@ module.exports = {
         `Nie ma takiej strony! (jest łącznie ${totalPages} stron)`
       );
     const queueString = queue.tracks
+      .toArray()
       .slice(page * howManyonPage, (page + 1) * howManyonPage)
       .map((song, i) => {
         return `*${page * howManyonPage + i + 1}*. **${song.title}** [${
@@ -36,7 +37,7 @@ module.exports = {
         }]`;
       });
 
-    const currentSong = queue.current;
+    const currentSong = queue.currentTrack;
 
     await interaction
       .editReply({
@@ -50,7 +51,7 @@ module.exports = {
                 (queue.repeatMode == 2
                   ? " (:repeat: powtarzanie całej kolejki)"
                   : "") +
-                (queue.connection.paused ? "\n(:pause_button: wstrzymane)" : "")
+                (queue.node.isPaused() ? "\n(:pause_button: wstrzymane)" : "")
             )
             .setDescription(
               `**Teraz gra:**\n` +

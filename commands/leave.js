@@ -9,13 +9,13 @@ module.exports = {
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
-    const queue = client.player.getQueue(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
     if (!queue)
       return printError(
         interaction,
         "Nie ma mnie na kanale! Użyj `/play` aby mnie dodać i puścić utwór."
       );
-    await queue.destroy();
+    await queue.delete();
     await printInfo(
       interaction,
       ":wave: Do usłyszenia!",

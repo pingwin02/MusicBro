@@ -9,14 +9,14 @@ module.exports = {
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
-    const queue = client.player.getQueue(interaction.guildId);
-    if (!queue || !queue.playing)
+    const queue = client.player.nodes.get(interaction.guildId);
+    if (!queue || !queue.node.isPlaying())
       return printError(
         interaction,
         "Nic nie jest teraz odtwarzane! Użyj `/play` aby coś odtworzyć."
       );
 
-    const song = queue.current;
+    const song = queue.currentTrack;
 
     printNowPlaying(interaction, queue, true);
   },

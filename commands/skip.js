@@ -9,26 +9,26 @@ module.exports = {
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
-    const queue = client.player.getQueue(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
     if (!queue)
       return printError(
         interaction,
         "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
       );
 
-    const currentSong = queue.current;
+    const currentSong = queue.currentTrack;
     const repeatMode = queue.repeatMode;
-    await queue.skip();
+    await queue.node.skip();
     queue.setRepeatMode(0);
-    if (queue.connection.paused) queue.setPaused(false);
+    if (queue.node.isPaused()) queue.node.resume();
 
     await printTrackInfo(
       interaction,
       currentSong,
       `:arrow_forward: Pominięto **${currentSong.title}**!`,
-      (repeatMode
+      repeatMode
         ? " :x: Pętla została wyłączona! Użyj `/loop` aby ją włączyć."
-        : " ")
+        : " "
     );
   },
 };

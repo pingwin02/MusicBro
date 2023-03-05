@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { QueryType } = require("discord-player");
 
-const { printError, sendError, INFO_TIMEOUT } = require("../index.js");
+const { printError, sendError, INFO_TIMEOUT, logger } = require("../index.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -47,7 +47,7 @@ module.exports = {
         "Nie mam uprawnień do połączenia się z kanałem głosowym!"
       );
 
-    const queue = await client.player.createQueue(interaction.guild, {
+    const queue = await client.player.nodes.create(interaction.guild, {
       leaveOnEnd: true,
       leaveOnStop: true,
       leaveOnEmpty: true,
@@ -67,7 +67,7 @@ module.exports = {
           searchEngine: QueryType.YOUTUBE_PLAYLIST,
         })
         .catch((err) => {
-          console.log(`ERROR: ${err}`);
+          logger.error(`ERROR: ${err}`);
         });
       if (!result || result.tracks.length === 0)
         return printError(
@@ -77,7 +77,7 @@ module.exports = {
 
       const playlist = result.playlist;
       const song = result.tracks[0];
-      await queue.addTracks(result.tracks);
+      await queue.addTrack(result.tracks);
       embed
         .setTitle(`Dodano **${result.tracks.length}** utworów do kolejki`)
         .setDescription(`[**${playlist.title}**](${playlist.url})`)
@@ -91,7 +91,7 @@ module.exports = {
           searchEngine: QueryType.AUTO,
         })
         .catch((err) => {
-          console.log(`ERROR: ${err}`);
+          logger.error(`ERROR: ${err}`);
         });
       if (!result || result.tracks.length === 0)
         return printError(
@@ -109,7 +109,7 @@ module.exports = {
         .setThumbnail(song.thumbnail)
         .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
     }
-    if (!queue.playing) await queue.play();
+    if (!queue.node.isPlaying()) await queue.node.play();
     embed.setColor("Green");
     await interaction.editReply({ embeds: [embed] }).then((msg) => {
       setTimeout(

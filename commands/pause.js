@@ -9,21 +9,21 @@ module.exports = {
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
-    const queue = client.player.getQueue(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
     if (!queue)
       return printError(
         interaction,
         "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
       );
-    if (queue.connection.paused) {
+    if (queue.node.isPaused()) {
       return printError(
         interaction,
         "Utwór został już wstrzymany!\nUżyj `/resume` aby wznowić odtwarzanie."
       );
     }
-    queue.setPaused(true);
+    queue.node.pause();
 
-    const currentSong = queue.current;
+    const currentSong = queue.currentTrack;
 
     await printTrackInfo(
       interaction,

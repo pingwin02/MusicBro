@@ -16,7 +16,7 @@ module.exports = {
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
-    const queue = client.player.getQueue(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
     if (!queue)
       return printError(
         interaction,
@@ -24,25 +24,25 @@ module.exports = {
       );
 
     const songNumber = interaction.options.getInteger("numer");
-    if (songNumber > queue.tracks.length)
+    if (songNumber > queue.getSize())
       return printError(
         interaction,
         "Nie ma takiego utworu w kolejce! Upewnij się, że podałeś poprawny numer."
       );
 
-    const currentSong = queue.current;
+    const currentSong = queue.currentTrack;
     const repeatMode = queue.repeatMode;
-    await queue.skipTo(songNumber - 1);
+    await queue.node.skipTo(songNumber - 1);
     queue.setRepeatMode(0);
-    if (queue.connection.paused) queue.setPaused(false);
+    if (queue.node.isPaused()) queue.node.resume();
 
     await printTrackInfo(
       interaction,
       currentSong,
       `:arrow_forward: Pominięto **${currentSong.title}**!`,
-      (repeatMode
+      repeatMode
         ? " :x: Pętla została wyłączona! Użyj `/loop` aby ją włączyć."
-        : " ")
+        : " "
     );
   },
 };
