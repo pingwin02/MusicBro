@@ -9,7 +9,7 @@ const dotenv = require("dotenv");
 const { REST, Routes, EmbedBuilder, Events } = require("discord.js");
 const fs = require("fs");
 const { Console } = require("console");
-const { Player } = require("discord-player");
+const { Player, GuildQueueEvent } = require("discord-player");
 
 dotenv.config();
 const TOKEN = process.env.TOKEN;
@@ -90,6 +90,15 @@ function printMessage(message) {
   return logger.log(
     `${currentdate} - ${user.username}#${user.discriminator} (${user.id}) used ${commandName} command in ${message.channel.name} (${message.channel.id}) at ${message.guild.name} (${message.guild.id})`
   );
+}
+
+function logInfo(info) {
+  var currentdate = new Date()
+    .toISOString()
+    .replace(/T/, " ")
+    .replace(/\..+/, "");
+
+  return logger.log(`${currentdate} - ${info}`);
 }
 
 function printError(interaction, error) {
@@ -266,12 +275,15 @@ if (LOAD_SLASH) {
       printMessage(interaction);
 
       const channel = client.channels.cache.get(interaction.channelId);
+
       if (
-        !channel.permissionsFor(client.user).has("SendMessages") ||
-        !channel.permissionsFor(client.user).has("ViewChannel")
+        interaction.guild &&
+        (!channel.permissionsFor(interaction.client.user).has("SendMessages") ||
+          !channel.permissionsFor(interaction.client.user).has("ViewChannel"))
       ) {
         return interaction.reply({
-          content: ":x: Nie mam uprawnień do wysyłania wiadomości",
+          content:
+            ":x: Nie mam uprawnień do wysyłania wiadomości lub nie widzę tego kanału",
           ephemeral: true,
         });
       }
@@ -352,60 +364,24 @@ if (LOAD_SLASH) {
     }
   });
 
-  client.player.events.on("playerStart", (queue, track) => {
+  client.player.events.on(GuildQueueEvent.playerStart, (queue, track) => {
     //if (!client.config.opt.loopMessage && queue.repeatMode !== 0) return;
     printNowPlaying(queue.metadata, queue, false);
   });
 
-  client.player.events.on("audioTrackAdd", (queue, track) => {
-    logger.log(`Track ${track.title} (${track.url}) added in the queue`);
+  client.player.events.on(GuildQueueEvent.audioTrackAdd, (queue, track) => {
+    logInfo(
+      `Track ${track.title} (${track.url}) added in the queue in ${queue.guild.name} (${queue.guild.id})`
+    );
   });
 
-  client.player.events.on("disconnect", (queue) => {
-    logger.log(`Bot was disconnected from ${queue.guild.name}`);
-  });
-
-  client.player.events.on("debug", (queue, message) => {
-    debug.log(message);
-  });
-
-  client.player.events.on("error", (queue, error) => {
-    queue.metadata
-      .send({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
-            .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
-            .setColor("Red"),
-        ],
-      })
-      .catch((err) => {
-        logger.error(`ERROR: ${err}`);
-      });
-  });
-
-  client.player.events.on("playerError", (queue, error) => {
-    queue.metadata
-      .send({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
-            .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
-            .setColor("Red"),
-        ],
-      })
-      .catch((err) => {
-        logger.error(`ERROR: ${err}`);
-      });
-  });
-
-  client.player.events.on("emptyChannel", (queue) => {
+  client.player.events.on(GuildQueueEvent.disconnect, (queue) => {
     queue.metadata
       .send({
         embeds: [
           new EmbedBuilder()
             .setTitle(
-              "<:jakiedy1:801039061540012052> Nie ma już nikogo, więc wychodzę z kanału głosowego!"
+              "<:jakiedy1:801039061540012052> Rozłączyłem się! Do usłyszenia :wave:"
             )
             .setColor("Red"),
         ],
@@ -424,13 +400,51 @@ if (LOAD_SLASH) {
       });
   });
 
-  client.player.events.on("emptyQueue", (queue) => {
+  client.player.events.on(GuildQueueEvent.emptyQueue, (queue) => {
+    logInfo(`Queue is empty in ${queue.guild.name} (${queue.guild.id})`);
+  });
+
+  client.player.events.on(GuildQueueEvent.debug, (queue, message) => {
+    debug.log(message);
+  });
+
+  client.player.events.on(GuildQueueEvent.error, (queue, error) => {
+    queue.metadata
+      .send({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
+            .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
+            .setColor("Red"),
+        ],
+      })
+      .catch((err) => {
+        logger.error(`ERROR: ${err}`);
+      });
+  });
+
+  client.player.events.on(GuildQueueEvent.playerError, (queue, error) => {
+    queue.metadata
+      .send({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
+            .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
+            .setColor("Red"),
+        ],
+      })
+      .catch((err) => {
+        logger.error(`ERROR: ${err}`);
+      });
+  });
+
+  client.player.events.on(GuildQueueEvent.emptyChannel, (queue) => {
     queue.metadata
       .send({
         embeds: [
           new EmbedBuilder()
             .setTitle(
-              "<:jakiedy1:801039061540012052> Kolejka się skończyła, więc wychodzę z kanału głosowego!"
+              "<:jakiedy1:801039061540012052> Nie ma już nikogo, więc wychodzę z kanału głosowego!"
             )
             .setColor("Red"),
         ],

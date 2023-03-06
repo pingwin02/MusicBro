@@ -51,7 +51,6 @@ module.exports = {
       leaveOnEnd: true,
       leaveOnStop: true,
       leaveOnEmpty: true,
-      volumeSmoothness: 1.0,
       metadata: interaction.channel,
     });
 

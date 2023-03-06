@@ -19,7 +19,7 @@ module.exports = {
     await printInfo(
       interaction,
       ":wave: Do usłyszenia!",
-      "Wyrzuciłem się z kanału głosowego. <:szymon:854508552026062879>\n Użyj `/play` aby mnie dodać i puścić utwór."
+      "Wyrzuciłeś mnie z kanału głosowego. <:szymon:854508552026062879>\n Użyj `/play` aby mnie dodać i puścić utwór."
     );
   },
 };
