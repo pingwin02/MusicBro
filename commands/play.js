@@ -47,6 +47,9 @@ module.exports = {
         "Nie mam uprawnień do połączenia się z kanałem głosowym!"
       );
 
+    if (voiceChannel.full)
+      return printError(interaction, "Kanał jest pełny! Spróbuj później.");
+
     const queue = await client.player.nodes.create(interaction.guild, {
       leaveOnEnd: true,
       leaveOnStop: true,
@@ -108,7 +111,9 @@ module.exports = {
         .setThumbnail(song.thumbnail)
         .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
     }
-    if (!queue.node.isPlaying()) await queue.node.play();
+
+    if (!queue.node.isPlaying() && !queue.currentTrack) await queue.node.play();
+
     embed.setColor("Green");
     await interaction.editReply({ embeds: [embed] }).then((msg) => {
       setTimeout(

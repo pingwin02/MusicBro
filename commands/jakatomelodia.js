@@ -16,8 +16,6 @@ module.exports = {
         "Nic nie jest teraz odtwarzane! Użyj `/play` aby coś odtworzyć."
       );
 
-    const song = queue.currentTrack;
-
     printNowPlaying(interaction, queue, true);
   },
 };

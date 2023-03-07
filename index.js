@@ -92,12 +92,12 @@ function printMessage(message) {
   );
 }
 
-function logInfo(info) {
+function logInfo(info, error) {
   var currentdate = new Date()
     .toISOString()
     .replace(/T/, " ")
     .replace(/\..+/, "");
-
+  if (error) return logger.error(`${currentdate} - ${info}`);
   return logger.log(`${currentdate} - ${info}`);
 }
 
@@ -362,6 +362,11 @@ if (LOAD_SLASH) {
           );
       });
     }
+  });
+
+  process.on("uncaughtException", (err) => {
+    logInfo("Uncaught Exception: " + err.message, true);
+    process.exit(1);
   });
 
   client.player.events.on(GuildQueueEvent.playerStart, (queue, track) => {
