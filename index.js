@@ -374,7 +374,7 @@ if (LOAD_SLASH) {
     printNowPlaying(queue.metadata, queue, false);
   });
 
-  client.player.events.on(GuildQueueEvent.audioTrackAdd, (queue, track) => {
+  client.player.events.on("audioTrackAdd", (queue, track) => {
     logInfo(
       `Track ${track.title} (${track.url}) added in the queue in ${queue.guild.name} (${queue.guild.id})`
     );
@@ -410,7 +410,7 @@ if (LOAD_SLASH) {
   });
 
   client.player.events.on(GuildQueueEvent.debug, (queue, message) => {
-    debug.log(message);
+    //debug.log(message);
   });
 
   client.player.events.on(GuildQueueEvent.error, (queue, error) => {
