@@ -377,7 +377,7 @@ if (LOAD_SLASH) {
 
   client.player.events.on("audioTrackAdd", (queue, track) => {
     logInfo(
-      `Track ${track.title} (${track.url}) added in the queue in ${queue.guild.name} (${queue.guild.id})`
+      `Track ${track.title} (${track.url}) added in the queue in ${queue.guild.name}`
     );
   });
 
@@ -407,7 +407,7 @@ if (LOAD_SLASH) {
   });
 
   client.player.events.on(GuildQueueEvent.emptyQueue, (queue) => {
-    logInfo(`Queue is empty in ${queue.guild.name} (${queue.guild.id})`);
+    logInfo(`Queue is empty in ${queue.guild.name}`);
   });
 
   client.player.events.on(GuildQueueEvent.debug, (queue, message) => {
