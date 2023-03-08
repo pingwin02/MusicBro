@@ -63,11 +63,21 @@ client.player = new Player(client, {
   },
 });
 
+function logInfo(info, error) {
+  var currentdate = new Date()
+    .toISOString()
+    .replace(/T/, " ")
+    .replace(/\..+/, "");
+  if (error) return logger.error(`${currentdate} - ${info}`);
+  return logger.log(`${currentdate} - ${info}`);
+}
+
 function sendError(title, err, interaction) {
+  logInfo(`ERROR: ${err}`, true);
   interaction.channel
     .send(`:x: Wystąpił nieoczekiwany błąd: ${title}\n\`${err}\``)
     .catch((err) => {
-      logger.error(`ERROR: ${err}`);
+      logInfo(`ERROR: ${err}`, true);
     });
 }
 
@@ -85,20 +95,11 @@ function printMessage(message) {
 
   if (message.guild === null)
     return logger.log(
-      `${currentdate} - ${user.username}#${user.discriminator} (${user.id}) used ${commandName} command in DMs`
+      `${currentdate} - ${user.username}#${user.discriminator} used ${commandName} command in DMs`
     );
   return logger.log(
-    `${currentdate} - ${user.username}#${user.discriminator} (${user.id}) used ${commandName} command in ${message.channel.name} (${message.channel.id}) at ${message.guild.name} (${message.guild.id})`
+    `${currentdate} - ${user.username}#${user.discriminator} used ${commandName} command in ${message.channel.name} at ${message.guild.name}`
   );
-}
-
-function logInfo(info, error) {
-  var currentdate = new Date()
-    .toISOString()
-    .replace(/T/, " ")
-    .replace(/\..+/, "");
-  if (error) return logger.error(`${currentdate} - ${info}`);
-  return logger.log(`${currentdate} - ${info}`);
 }
 
 function printError(interaction, error) {
@@ -158,7 +159,7 @@ function printNowPlaying(interaction, queue, reply) {
         );
       })
       .catch((err) => {
-        logger.error(`ERROR: ${err}`);
+        logInfo(`ERROR: ${err}`, true);
       });
   } else {
     interaction
@@ -365,7 +366,7 @@ if (LOAD_SLASH) {
   });
 
   process.on("uncaughtException", (err) => {
-    logInfo("Uncaught Exception: " + err.message, true);
+    logInfo("Uncaught Exception: " + err, true);
     process.exit(1);
   });
 
@@ -401,7 +402,7 @@ if (LOAD_SLASH) {
         );
       })
       .catch((err) => {
-        logger.error(`ERROR: ${err}`);
+        logInfo(`ERROR: ${err}`, true);
       });
   });
 
@@ -424,7 +425,7 @@ if (LOAD_SLASH) {
         ],
       })
       .catch((err) => {
-        logger.error(`ERROR: ${err}`);
+        logInfo(`ERROR: ${err}`, true);
       });
   });
 
@@ -439,7 +440,7 @@ if (LOAD_SLASH) {
         ],
       })
       .catch((err) => {
-        logger.error(`ERROR: ${err}`);
+        logInfo(`ERROR: ${err}`, true);
       });
   });
 
@@ -464,7 +465,7 @@ if (LOAD_SLASH) {
         );
       })
       .catch((err) => {
-        logger.error(`ERROR: ${err}`);
+        logInfo(`ERROR: ${err}`, true);
       });
   });
 

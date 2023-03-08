@@ -69,7 +69,7 @@ module.exports = {
           searchEngine: QueryType.YOUTUBE_PLAYLIST,
         })
         .catch((err) => {
-          logger.error(`ERROR: ${err}`);
+          sendError("Szukanie playlisty", err, interaction);
         });
       if (!result || result.tracks.length === 0)
         return printError(
@@ -93,7 +93,7 @@ module.exports = {
           searchEngine: QueryType.AUTO,
         })
         .catch((err) => {
-          logger.error(`ERROR: ${err}`);
+          sendError("Szukanie utworu", err, interaction);
         });
       if (!result || result.tracks.length === 0)
         return printError(
@@ -112,7 +112,10 @@ module.exports = {
         .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
     }
 
-    if (!queue.node.isPlaying() && !queue.currentTrack) await queue.node.play();
+    if (!queue.node.isPlaying() && !queue.currentTrack)
+      await queue.node.play().catch((err) => {
+        sendError("Odtwarzanie utworu", err, interaction);
+      });
 
     embed.setColor("Green");
     await interaction.editReply({ embeds: [embed] }).then((msg) => {
