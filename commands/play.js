@@ -62,15 +62,23 @@ module.exports = {
     let embed = new EmbedBuilder();
 
     if (interaction.options.getSubcommand() === "playlist") {
-      let url = interaction.options.getString("url");
+      const url = interaction.options.getString("url");
+      let searchType = QueryType.YOUTUBE_PLAYLIST;
+      if (url.includes("spotify")) {
+        searchType = QueryType.SPOTIFY_PLAYLIST;
+      } else if (url.includes("soundcloud")) {
+        searchType = QueryType.SOUNDCLOUD_PLAYLIST;
+      }
+
       const result = await client.player
         .search(url, {
           requestedBy: interaction.user,
-          searchEngine: QueryType.YOUTUBE_PLAYLIST,
+          searchEngine: searchType,
         })
         .catch((err) => {
           sendError("Szukanie playlisty", err, interaction);
         });
+
       if (!result || result.tracks.length === 0)
         return printError(
           interaction,
@@ -86,7 +94,7 @@ module.exports = {
         .setThumbnail(song.thumbnail)
         .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
     } else if (interaction.options.getSubcommand() === "search") {
-      let url = interaction.options.getString("query");
+      const url = interaction.options.getString("query");
       const result = await client.player
         .search(url, {
           requestedBy: interaction.user,
