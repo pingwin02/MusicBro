@@ -396,7 +396,7 @@ if (LOAD_SLASH) {
         setTimeout(
           () =>
             msg.delete().catch((err) => {
-              sendError("Kasowanie wiadomości", err, interaction);
+              logInfo(`ERROR: ${err}`, true);
             }),
           INFO_TIMEOUT
         );
@@ -459,7 +459,7 @@ if (LOAD_SLASH) {
         setTimeout(
           () =>
             msg.delete().catch((err) => {
-              sendError("Kasowanie wiadomości", err, interaction);
+              logInfo(`ERROR: ${err}`, true);
             }),
           INFO_TIMEOUT
         );
