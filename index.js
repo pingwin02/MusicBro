@@ -24,12 +24,12 @@ const INFO_TIMEOUT = 15000;
 const QUEUE_TIMEOUT = 30000;
 
 const logger = new Console({
-  stdout: fs.createWriteStream("logs/log.log", { start: 0 }),
-  stderr: fs.createWriteStream("logs/error.log", { start: 0 }),
+  stdout: fs.createWriteStream("logs/log.log", { flags: "a" }),
+  stderr: fs.createWriteStream("logs/error.log", { flags: "a" }),
 });
 
 const debug = new Console({
-  stdout: fs.createWriteStream("logs/debug.log", { start: 0 }),
+  stdout: fs.createWriteStream("logs/debug.log", { flags: "a" }),
 });
 
 module.exports = {
