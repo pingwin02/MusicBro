@@ -411,7 +411,7 @@ if (LOAD_SLASH) {
   });
 
   client.player.events.on(GuildQueueEvent.debug, (queue, message) => {
-    //debug.log(message);
+    debug.log(message);
   });
 
   client.player.events.on(GuildQueueEvent.error, (queue, error) => {
