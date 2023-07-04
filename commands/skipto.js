@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-
+const { useQueue } = require("discord-player");
 const { printError, printTrackInfo } = require("../index.js");
 
 module.exports = {
@@ -8,7 +8,7 @@ module.exports = {
     .setDescription("Przeskakuje do wybranego utworu w kolejce")
     .addIntegerOption((option) =>
       option
-        .setName("numer")
+        .setName("number")
         .setDescription("Numer utworu w kolejce")
         .setMinValue(1)
         .setRequired(true)
@@ -16,14 +16,14 @@ module.exports = {
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
-    const queue = client.player.nodes.get(interaction.guildId);
+    const queue = useQueue(interaction.guild.id);
     if (!queue)
       return printError(
         interaction,
         "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
       );
 
-    const songNumber = interaction.options.getInteger("numer");
+    const songNumber = interaction.options.getInteger("number");
     if (songNumber > queue.getSize())
       return printError(
         interaction,

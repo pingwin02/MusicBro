@@ -1,35 +1,33 @@
 const { SlashCommandBuilder } = require("discord.js");
-
+const { useQueue } = require("discord-player");
 const { printError, printTrackInfo } = require("../index.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("pause")
-    .setDescription("Wstrzymuje odtwarzanie utworu")
+    .setDescription("Wstrzymuje/wznawia odtwarzanie utworu")
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
-    const queue = client.player.nodes.get(interaction.guildId);
+    const queue = useQueue(interaction.guild.id);
     if (!queue)
       return printError(
         interaction,
         "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
       );
-    if (queue.node.isPaused()) {
-      return printError(
-        interaction,
-        "Utwór został już wstrzymany!\nUżyj `/resume` aby wznowić odtwarzanie."
-      );
-    }
-    queue.node.pause();
+    const paused = queue.node.isPaused();
+
+    queue.node.setPaused(!paused);
 
     const currentSong = queue.currentTrack;
 
-    await printTrackInfo(
+    (await printTrackInfo(
       interaction,
       currentSong,
-      ":pause_button: Pauza!",
-      `Wstrzymałem odtwarzanie **${currentSong.title}**\nUżyj \`/resume\` aby wznowić odtwarzanie.`
-    );
+      !paused ? ":pause_button: Pauza!" : ":arrow_forward: Wznowiono!",
+      (!paused ? "Wstrzymałem" : "Wznowiłem") +
+        ` odtwarzanie **${currentSong.title}**\nUżyj \`/pause\` aby ` +
+        (!paused ? "wznowić" : "zatrzymać")
+    )) + ` odtwarzanie.`;
   },
 };

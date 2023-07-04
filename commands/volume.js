@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-
+const { useQueue } = require("discord-player");
 const { printError, printInfo } = require("../index.js");
 
 module.exports = {
@@ -8,7 +8,7 @@ module.exports = {
     .setDescription("Ustawia głośność odtwarzacza")
     .addIntegerOption((option) =>
       option
-        .setName("wartość")
+        .setName("value")
         .setDescription("Wartość głośności")
         .setMinValue(1)
         .setMaxValue(1000)
@@ -17,18 +17,18 @@ module.exports = {
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
-    const queue = client.player.nodes.get(interaction.guildId);
+    const queue = useQueue(interaction.guild.id);
     if (!queue)
       return printError(
         interaction,
         "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
       );
 
-    await queue.node.setVolume(interaction.options.getInteger("wartość"));
+    await queue.node.setVolume(interaction.options.getInteger("value"));
     await printInfo(
       interaction,
       `:loud_sound: Głośność zmieniona!`,
-      `Ustawiono głośność na **${interaction.options.getInteger("wartość")}**`
+      `Ustawiono głośność na **${interaction.options.getInteger("value")}**`
     );
   },
 };

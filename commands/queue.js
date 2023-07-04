@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-
+const { useQueue } = require("discord-player");
 const { printError, sendError, QUEUE_TIMEOUT } = require("../index.js");
 
 module.exports = {
@@ -7,12 +7,12 @@ module.exports = {
     .setName("queue")
     .setDescription("Wyświetla kolejkę")
     .addNumberOption((option) =>
-      option.setName("strona").setDescription("Strona kolejki").setMinValue(1)
+      option.setName("page").setDescription("Strona kolejki").setMinValue(1)
     )
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
-    const queue = client.player.nodes.get(interaction.guildId);
+    const queue = useQueue(interaction.guild.id);
     if (!queue)
       return printError(
         interaction,
@@ -21,7 +21,7 @@ module.exports = {
 
     const howManyonPage = 15;
     const totalPages = Math.ceil(queue.getSize() / howManyonPage) || 1;
-    const page = (interaction.options.getNumber("strona") || 1) - 1;
+    const page = (interaction.options.getNumber("page") || 1) - 1;
 
     if (page > totalPages - 1)
       return printError(

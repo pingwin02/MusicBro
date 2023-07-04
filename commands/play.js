@@ -1,33 +1,16 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { QueryType } = require("discord-player");
-
 const { printError, sendError, INFO_TIMEOUT, logger } = require("../index.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("play")
     .setDescription("Dodaje muzykę do kolejki")
-    .addSubcommand((subcommand) =>
-      subcommand
-        .setName("search")
-        .setDescription("Szuka utworu po frazie lub linku")
-        .addStringOption((option) =>
-          option
-            .setName("query")
-            .setDescription("Wyszukiwana fraza lub link do utworu")
-            .setRequired(true)
-        )
-    )
-    .addSubcommand((subcommand) =>
-      subcommand
-        .setName("playlist")
-        .setDescription("Szuka playlisty po linku")
-        .addStringOption((option) =>
-          option
-            .setName("url")
-            .setDescription("URL do playlisty")
-            .setRequired(true)
-        )
+    .addStringOption((option) =>
+      option
+        .setName("query")
+        .setDescription("Wyszukiwana fraza lub link do utworu/playlisty")
+        .setRequired(true)
     )
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
@@ -61,64 +44,43 @@ module.exports = {
 
     let embed = new EmbedBuilder();
 
-    if (interaction.options.getSubcommand() === "playlist") {
-      const url = interaction.options.getString("url");
-      let searchType = QueryType.YOUTUBE_PLAYLIST;
-      if (url.includes("spotify")) {
-        searchType = QueryType.SPOTIFY_PLAYLIST;
-      } else if (url.includes("soundcloud")) {
-        searchType = QueryType.SOUNDCLOUD_PLAYLIST;
-      }
+    const url = interaction.options.getString("query");
+    const result = await client.player
+      .search(url, {
+        requestedBy: interaction.user,
+        searchEngine: QueryType.AUTO,
+      })
+      .catch((err) => {
+        sendError("Szukanie utworu", err, interaction);
+      });
+    if (!result || result.tracks.length === 0)
+      return printError(
+        interaction,
+        "Nie znaleziono! Upewnij się, że link lub fraza jest poprawna.\nSprawdź również, czy na film nie nałożono ograniczenia wiekowego. :underage:"
+      );
 
-      const result = await client.player
-        .search(url, {
-          requestedBy: interaction.user,
-          searchEngine: searchType,
-        })
-        .catch((err) => {
-          sendError("Szukanie playlisty", err, interaction);
-        });
+    const songs = result.tracks;
+    const song = songs[0];
 
-      if (!result || result.tracks.length === 0)
-        return printError(
-          interaction,
-          "Nie znaleziono playlisty! Upewnij się, że link jest poprawny."
-        );
-
-      const playlist = result.playlist;
-      const song = result.tracks[0];
-      await queue.addTrack(result.tracks);
-      embed
-        .setTitle(`Dodano **${result.tracks.length}** utworów do kolejki`)
-        .setDescription(`[**${playlist.title}**](${playlist.url})`)
-        .setThumbnail(song.thumbnail)
-        .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
-    } else if (interaction.options.getSubcommand() === "search") {
-      const url = interaction.options.getString("query");
-      const result = await client.player
-        .search(url, {
-          requestedBy: interaction.user,
-          searchEngine: QueryType.AUTO,
-        })
-        .catch((err) => {
-          sendError("Szukanie utworu", err, interaction);
-        });
-      if (!result || result.tracks.length === 0)
-        return printError(
-          interaction,
-          "Nie znaleziono utworu! Upewnij się, że link lub fraza jest poprawna.\nSprawdź również, czy na film nie nałożono ograniczenia wiekowego. :underage:"
-        );
-
-      const song = result.tracks[0];
-      await queue.addTrack(song);
+    if (!result.playlist) {
       embed
         .setTitle("Dodano utwór do kolejki")
         .setDescription(
           `[**${song.title}**](${song.url}) [${song.duration}]\n Kanał **${song.author}**`
-        )
-        .setThumbnail(song.thumbnail)
-        .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
+        );
+      await queue.addTrack(song);
+    } else {
+      embed
+        .setTitle(`Dodano **${result.tracks.length}** utworów do kolejki`)
+        .setDescription(
+          `[**${result.playlist.title}**](${result.playlist.url})`
+        );
+      await queue.addTrack(songs);
     }
+
+    embed
+      .setThumbnail(song.thumbnail)
+      .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
 
     if (!queue.node.isPlaying() && !queue.currentTrack)
       await queue.node.play().catch((err) => {

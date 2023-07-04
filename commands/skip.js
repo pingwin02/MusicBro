@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-
+const { useQueue } = require("discord-player");
 const { printError, printTrackInfo } = require("../index.js");
 
 module.exports = {
@@ -9,7 +9,7 @@ module.exports = {
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
-    const queue = client.player.nodes.get(interaction.guildId);
+    const queue = useQueue(interaction.guild.id);
     if (!queue)
       return printError(
         interaction,

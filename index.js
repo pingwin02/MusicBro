@@ -23,6 +23,10 @@ const ERROR_TIMEOUT = 5000;
 const INFO_TIMEOUT = 15000;
 const QUEUE_TIMEOUT = 30000;
 
+if (!fs.existsSync("logs")) {
+  fs.mkdirSync("logs");
+}
+
 const logger = new Console({
   stdout: fs.createWriteStream("logs/log.log", { flags: "a" }),
   stderr: fs.createWriteStream("logs/error.log", { flags: "a" }),
@@ -62,6 +66,8 @@ client.player = new Player(client, {
     highWaterMark: 1 << 25,
   },
 });
+
+client.player.extractors.loadDefault();
 
 function logInfo(info, error) {
   var currentdate = new Date()
@@ -375,7 +381,7 @@ if (LOAD_SLASH) {
     printNowPlaying(queue.metadata, queue, false);
   });
 
-  client.player.events.on("audioTrackAdd", (queue, track) => {
+  client.player.events.on(GuildQueueEvent.audioTrackAdd, (queue, track) => {
     logInfo(
       `Track ${track.title} (${track.url}) added in the queue in ${queue.guild.name}`
     );
@@ -411,7 +417,7 @@ if (LOAD_SLASH) {
   });
 
   client.player.events.on(GuildQueueEvent.debug, (queue, message) => {
-    debug.log(message);
+    //debug.log(message); // uncomment to enable debug logs from discord-player
   });
 
   client.player.events.on(GuildQueueEvent.error, (queue, error) => {
