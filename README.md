@@ -59,7 +59,13 @@ CLIENT_ID=your_discord_bot_client_id
 
 Replace `your_discord_bot_token` with your actual Discord bot token and `your_discord_bot_client_id` with your actual Discord bot client ID.
 
-4. Run the bot using the following command:
+4. Register your bot's slash commands using the following command:
+
+```
+npm run deploy
+```
+
+5. Run the bot using the following command:
 
 ```
 npm start
