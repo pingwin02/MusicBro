@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { QueryType } = require("discord-player");
-const { printError, sendError, INFO_TIMEOUT, logger } = require("../index.js");
+const { printError, sendError, INFO_TIMEOUT } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -80,7 +80,7 @@ module.exports = {
 
     embed
       .setThumbnail(song.thumbnail)
-      .setFooter({ text: `Dodano przez ${song.requestedBy.tag}` });
+      .setFooter({ text: `Dodano przez ${song.requestedBy.username}` });
 
     if (!queue.node.isPlaying() && !queue.currentTrack)
       await queue.node.play().catch((err) => {
@@ -92,7 +92,11 @@ module.exports = {
       setTimeout(
         () =>
           msg.delete().catch((err) => {
-            sendError("Kasowanie wiadomości", err, interaction);
+            sendError(
+              "Kasowanie wiadomości odtworzenia utworu",
+              err,
+              interaction
+            );
           }),
         INFO_TIMEOUT
       );

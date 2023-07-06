@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { useQueue } = require("discord-player");
-const { printError, printInfo } = require("../index.js");
+const { printError, printInfo } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,7 +15,7 @@ module.exports = {
         .setRequired(true)
     )
     .setDMPermission(false),
-  run: async ({ client, interaction }) => {
+  run: async ({ interaction }) => {
     await interaction.deferReply();
     const queue = useQueue(interaction.guild.id);
     if (!queue)
@@ -24,8 +24,8 @@ module.exports = {
         "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
       );
 
-    await queue.node.setVolume(interaction.options.getInteger("value"));
-    await printInfo(
+    queue.node.setVolume(interaction.options.getInteger("value"));
+    printInfo(
       interaction,
       `:loud_sound: Głośność zmieniona!`,
       `Ustawiono głośność na **${interaction.options.getInteger("value")}**`

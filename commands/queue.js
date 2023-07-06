@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { useQueue } = require("discord-player");
-const { printError, sendError, QUEUE_TIMEOUT } = require("../index.js");
+const { printError, sendError, QUEUE_TIMEOUT } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -10,7 +10,7 @@ module.exports = {
       option.setName("page").setDescription("Strona kolejki").setMinValue(1)
     )
     .setDMPermission(false),
-  run: async ({ client, interaction }) => {
+  run: async ({ interaction }) => {
     await interaction.deferReply();
     const queue = useQueue(interaction.guild.id);
     if (!queue)
@@ -26,7 +26,7 @@ module.exports = {
     if (page > totalPages - 1)
       return printError(
         interaction,
-        `Nie ma takiej strony! (jest łącznie ${totalPages} stron)`
+        `Nie ma takiej strony! (jest łącznie ${totalPages} stron).`
       );
     const queueString = queue.tracks
       .toArray()
@@ -69,7 +69,7 @@ module.exports = {
         setTimeout(
           () =>
             msg.delete().catch((err) => {
-              sendError("Kasowanie wiadomości", err, interaction);
+              sendError("Kasowanie wiadomości kolejki", err, interaction);
             }),
           QUEUE_TIMEOUT
         );

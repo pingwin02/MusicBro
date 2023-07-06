@@ -1,6 +1,6 @@
 # MusicBot
 
-<img src="bot_logo.png" width="150" height="150">
+<img src="img/bot_logo.png" width="150" height="150">
 
 MusicBot is a music bot for Discord, built using discord.js and discord-player.
 
@@ -35,11 +35,10 @@ Additionally, MusicBot provides the ability to clear leftover messages from the 
 
 ## Logging
 
-MusicBot logs events in 3 different files:
+MusicBot logs events in 2 different files:
 
-1. `error.log` - Logs critical errors.
-2. `debug.log` - Logs debug messages from discord-player.
-3. `log.log` - Logs all other messages and usage of commands.
+1. `log.log` - Logs all events.
+2. `debug.log` - Logs only debug events from the `discord-player` package. (Disabled by default)
 
 ## Setup
 

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { useQueue } = require("discord-player");
-const { printError, printInfo } = require("../index.js");
+const { printError, printInfo } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,7 +16,7 @@ module.exports = {
       subcommand.setName("off").setDescription("Wyłącza pętlę")
     )
     .setDMPermission(false),
-  run: async ({ client, interaction }) => {
+  run: async ({ interaction }) => {
     await interaction.deferReply();
     const queue = useQueue(interaction.guild.id);
     if (!queue)

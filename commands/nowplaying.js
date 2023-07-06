@@ -1,13 +1,13 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { useQueue } = require("discord-player");
-const { printError, printNowPlaying } = require("../index.js");
+const { printError, printNowPlaying } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("nowplaying")
     .setDescription("Wyświetla informacje o aktualnie granym utworze")
     .setDMPermission(false),
-  run: async ({ client, interaction }) => {
+  run: async ({ interaction }) => {
     await interaction.deferReply();
     const queue = useQueue(interaction.guild.id);
     if (!queue || !queue.node.isPlaying())

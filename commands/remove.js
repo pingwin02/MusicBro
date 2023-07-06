@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { useQueue } = require("discord-player");
-const { printError, printTrackInfo } = require("../index.js");
+const { printError, printTrackInfo } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -14,7 +14,7 @@ module.exports = {
         .setRequired(true)
     )
     .setDMPermission(false),
-  run: async ({ client, interaction }) => {
+  run: async ({ interaction }) => {
     await interaction.deferReply();
     const queue = useQueue(interaction.guild.id);
     if (!queue)
@@ -32,9 +32,9 @@ module.exports = {
 
     const currentSong = queue.tracks.toArray()[songNumber - 1];
 
-    await queue.node.remove(songNumber - 1);
+    queue.node.remove(songNumber - 1);
 
-    await printTrackInfo(
+    printTrackInfo(
       interaction,
       currentSong,
       ":wastebasket: Usunięto!",

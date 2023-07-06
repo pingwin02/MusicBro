@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { useQueue } = require("discord-player");
-const { printError, printTrackInfo } = require("../index.js");
+const { printError, printTrackInfo } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -14,7 +14,7 @@ module.exports = {
         .setRequired(true)
     )
     .setDMPermission(false),
-  run: async ({ client, interaction }) => {
+  run: async ({ interaction }) => {
     await interaction.deferReply();
     const queue = useQueue(interaction.guild.id);
     if (!queue)
@@ -32,11 +32,11 @@ module.exports = {
 
     const currentSong = queue.currentTrack;
     const repeatMode = queue.repeatMode;
-    await queue.node.skipTo(songNumber - 1);
+    queue.node.skipTo(songNumber - 1);
     queue.setRepeatMode(0);
     if (queue.node.isPaused()) queue.node.resume();
 
-    await printTrackInfo(
+    printTrackInfo(
       interaction,
       currentSong,
       `:arrow_forward: Pominięto **${currentSong.title}**!`,
