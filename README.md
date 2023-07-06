@@ -6,9 +6,9 @@ MusicBot is a music bot for Discord, built using discord.js and discord-player.
 
 ## Requirements
 
-- "@discord-player/extractor": "^4.3.1"
+- "@discord-player/extractor": "^4.4.0",
 - "@discordjs/opus": "^0.9.0"
-- "discord-player": "^6.6.0"
+- "discord-player": "^6.6.1",
 - "discord.js": "^14.11.0"
 - "dotenv": "^16.3.1"
 - "ffmpeg-static": "^5.1.0"
@@ -77,6 +77,11 @@ nodemon
 ```
 
 The bot should now be online and ready to use in your Discord server.
+
+## Known Issues
+
+- When in queue is NSFW or premium video, bot will crash, because of
+  extractor error `ERR_NO_RESULT: Could not extract stream for this track`.
 
 ## License
 

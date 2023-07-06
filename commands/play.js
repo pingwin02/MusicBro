@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { QueryType } = require("discord-player");
-const { printError, sendError, INFO_TIMEOUT } = require("../functions");
+const { printError, logInfoDate, INFO_TIMEOUT } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -33,70 +33,114 @@ module.exports = {
     if (voiceChannel.full)
       return printError(interaction, "Kanał jest pełny! Spróbuj później.");
 
-    const queue = await client.player.nodes.create(interaction.guild, {
-      leaveOnEnd: true,
-      leaveOnStop: true,
-      leaveOnEmpty: true,
-      metadata: interaction.channel,
-    });
-
-    if (!queue.connection) await queue.connect(voiceChannel);
+    let queue;
+    try {
+      queue = await client.player.nodes.create(interaction.guild, {
+        leaveOnEnd: true,
+        leaveOnStop: true,
+        leaveOnEmpty: true,
+        metadata: interaction.channel,
+      });
+    } catch (err) {
+      logInfoDate(`Creating node: ${err}`, 1);
+      return printError(
+        interaction,
+        "Wystąpił błąd podczas tworzenia węzła! Spróbuj ponownie później."
+      );
+    }
 
     let embed = new EmbedBuilder();
 
     const url = interaction.options.getString("query");
-    const result = await client.player
-      .search(url, {
+    try {
+      const result = await client.player.search(url, {
         requestedBy: interaction.user,
         searchEngine: QueryType.AUTO,
-      })
-      .catch((err) => {
-        sendError("Szukanie utworu", err, interaction);
       });
-    if (!result || result.tracks.length === 0)
+      if (!result || result.tracks.length === 0) {
+        return printError(
+          interaction,
+          "Nie znaleziono! Spróbuj ponownie później.\nUpewnij się, że link lub fraza jest poprawna."
+        );
+      }
+
+      const songs = result.tracks;
+      const song = songs[0];
+
+      songs.forEach((song) => {
+        if (song.__metadata.nsfw) {
+          printError(
+            interaction,
+            `Żądany utwór [**${song.title}**](${song.url}) [${song.duration}]\n jest oznaczony jako NSFW i nie może zostać odtworzony! :underage:`,
+            true
+          );
+          logInfoDate(
+            `NSFW song: ${song.title} (${song.url}) was tried to play at ${interaction.guild.name} by ${interaction.user.username}`,
+            2
+          );
+          songs.splice(songs.indexOf(song), 1);
+        }
+      });
+
+      if (songs.length === 0) return;
+
+      if (!result.playlist) {
+        embed
+          .setTitle("Dodano utwór do kolejki")
+          .setDescription(
+            `[**${song.title}**](${song.url}) [${song.duration}]\n Autor **${song.author}**`
+          );
+        await queue.addTrack(song);
+      } else {
+        embed
+          .setTitle(`Dodano **${result.tracks.length}** utworów do kolejki`)
+          .setDescription(
+            `[**${result.playlist.title}**](${result.playlist.url})`
+          );
+        await queue.addTrack(songs);
+      }
+
+      embed
+        .setThumbnail(song.thumbnail)
+        .setFooter({ text: `Dodano przez ${song.requestedBy.username}` });
+    } catch (err) {
+      queue.delete();
+      logInfoDate(`Searching song: ${err}`, 1);
       return printError(
         interaction,
-        "Nie znaleziono! Upewnij się, że link lub fraza jest poprawna.\nSprawdź również, czy na film nie nałożono ograniczenia wiekowego. :underage:"
+        "Wystąpił błąd podczas wyszukiwania utworu!\nSpróbuj ponownie później."
       );
-
-    const songs = result.tracks;
-    const song = songs[0];
-
-    if (!result.playlist) {
-      embed
-        .setTitle("Dodano utwór do kolejki")
-        .setDescription(
-          `[**${song.title}**](${song.url}) [${song.duration}]\n Kanał **${song.author}**`
-        );
-      await queue.addTrack(song);
-    } else {
-      embed
-        .setTitle(`Dodano **${result.tracks.length}** utworów do kolejki`)
-        .setDescription(
-          `[**${result.playlist.title}**](${result.playlist.url})`
-        );
-      await queue.addTrack(songs);
     }
 
-    embed
-      .setThumbnail(song.thumbnail)
-      .setFooter({ text: `Dodano przez ${song.requestedBy.username}` });
+    try {
+      if (!queue.connection) await queue.connect(voiceChannel);
+    } catch (err) {
+      queue.delete();
+      logInfoDate(`Connecting to voice channel: ${err}`, 1);
+      return printError(
+        interaction,
+        "Wystąpił błąd podczas łączenia z kanałem głosowym!"
+      );
+    }
 
-    if (!queue.node.isPlaying() && !queue.currentTrack)
-      await queue.node.play().catch((err) => {
-        sendError("Odtwarzanie utworu", err, interaction);
-      });
+    try {
+      if (!queue.node.isPlaying() && !queue.currentTrack)
+        await queue.node.play();
+    } catch (err) {
+      queue.delete();
+      logInfoDate(`Playing song: ${err.name}`, 1);
+      return printError(
+        interaction,
+        "Wystąpił błąd podczas odtwarzania utworu!\nSpróbuj ponownie później."
+      );
+    }
 
     embed.setColor("Green");
     await interaction.editReply({ embeds: [embed] }).then((msg) => {
       setTimeout(
         () =>
           msg.delete().catch((err) => {
-            sendError(
-              "Kasowanie wiadomości odtworzenia utworu",
-              err,
-              interaction
-            );
+            logInfoDate(`Deleting play message: ${err}`, 1);
           }),
         INFO_TIMEOUT
       );

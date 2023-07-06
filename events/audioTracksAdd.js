@@ -6,7 +6,7 @@ module.exports = {
   type: "player",
   async execute(queue, track) {
     logInfoDate(
-      `Playlist ${track[0].playlist.description} (${track[0].playlist.url}) [${track.length} tracks] was added in ${queue.guild.name}`,
+      `Playlist ${track[0].playlist.description} (${track[0].playlist.url}) [${track.length} tracks] was added at ${queue.guild.name}`,
       2
     );
   },

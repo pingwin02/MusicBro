@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { useQueue } = require("discord-player");
-const { printError, sendError, QUEUE_TIMEOUT } = require("../functions");
+const { printError, logInfoDate, QUEUE_TIMEOUT } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -56,7 +56,7 @@ module.exports = {
             .setDescription(
               `**Teraz gra:**\n` +
                 (currentSong
-                  ? `[**${currentSong.title}**](${currentSong.url}) [${currentSong.duration}]\n Kanał **${currentSong.author}** \n *dodane przez <@${currentSong.requestedBy.id}>*`
+                  ? `[**${currentSong.title}**](${currentSong.url}) [${currentSong.duration}]\n Autor **${currentSong.author}** \n *dodane przez <@${currentSong.requestedBy.id}>*`
                   : "Nic nie gra") +
                 `\n\n**Kolejka:**\n${queueString.join("\n")}`
             )
@@ -69,7 +69,7 @@ module.exports = {
         setTimeout(
           () =>
             msg.delete().catch((err) => {
-              sendError("Kasowanie wiadomości kolejki", err, interaction);
+              logInfoDate(`printQueue: ${err}`, 1);
             }),
           QUEUE_TIMEOUT
         );

@@ -1,11 +1,17 @@
+const fs = require("fs");
 const { Events } = require("discord.js");
-const { logCommandUse, sendError } = require("../functions");
+const { logCommandUse, logInfoDate } = require("../functions");
 
 module.exports = {
   name: Events.MessageCreate,
   async execute(message) {
     if (message.content === "!!clear") {
-      logCommandUse(message);
+      fs.writeFile("logs/log.log", "", (err) => {
+        if (err) {
+          console.error("Error clearing log file:", err);
+        }
+      });
+      logInfoDate(`Log file cleared by ${message.author.username}`, 2);
 
       const channel = message.client.channels.cache.get(
         message.channelId.toString()
@@ -28,10 +34,9 @@ module.exports = {
               setTimeout(
                 () =>
                   msg.delete().catch((err) => {
-                    sendError(
-                      "Kasowanie wiadomości brak wiadomości do usunięcia",
-                      err,
-                      message
+                    logInfoDate(
+                      `Deleting "no message found" message: ${err}`,
+                      1
                     );
                   }),
                 3000
@@ -52,10 +57,9 @@ module.exports = {
                 setTimeout(
                   () =>
                     msg.delete().catch((err) => {
-                      sendError(
-                        "Kasowanie wiadomości o usuniętych wiadomościach",
-                        err,
-                        message
+                      logInfoDate(
+                        `Deleting "number of deleted" message: ${err}`,
+                        1
                       );
                     }),
                   3000
@@ -67,11 +71,7 @@ module.exports = {
           setTimeout(
             () =>
               message.delete().catch((err) => {
-                sendError(
-                  "Kasowanie wiadomości !!clear użytkownika",
-                  err,
-                  message
-                );
+                logInfoDate(`Deleting "!!clear" message: ${err}`, 1);
               }),
             4000
           );

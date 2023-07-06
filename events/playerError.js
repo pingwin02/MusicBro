@@ -5,7 +5,8 @@ const { logInfoDate } = require("../functions");
 module.exports = {
   name: GuildQueueEvent.playerError,
   type: "player",
-  async execute(queue, error) {
+  async execute(queue, error, track) {
+    logInfoDate(`playerError event: ${error}`, 1);
     queue.metadata
       .send({
         embeds: [
@@ -16,7 +17,7 @@ module.exports = {
         ],
       })
       .catch((err) => {
-        logInfoDate(`playerError event: ${err.message}`, 1);
+        logInfoDate(`playerError event: ${err}`, 1);
       });
   },
 };

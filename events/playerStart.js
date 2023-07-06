@@ -5,6 +5,6 @@ module.exports = {
   name: GuildQueueEvent.playerStart,
   type: "player",
   async execute(queue) {
-    printNowPlaying(queue.metadata, queue, false);
+    printNowPlaying(queue.metadata, queue);
   },
 };

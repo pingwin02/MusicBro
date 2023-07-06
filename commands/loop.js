@@ -30,7 +30,7 @@ module.exports = {
     switch (subcommand) {
       case "track":
         queue.setRepeatMode(1);
-        await printInfo(
+        printInfo(
           interaction,
           ":repeat_one: Pętla!",
           "Pętla utworu została włączona!"
@@ -38,7 +38,7 @@ module.exports = {
         break;
       case "queue":
         queue.setRepeatMode(2);
-        await printInfo(
+        printInfo(
           interaction,
           ":repeat: Pętla!",
           "Pętla kolejki została włączona!"
@@ -46,7 +46,7 @@ module.exports = {
         break;
       case "off":
         queue.setRepeatMode(0);
-        await printInfo(
+        printInfo(
           interaction,
           ":x: Pętla wyłączona!",
           "Pętla została wyłączona!"
