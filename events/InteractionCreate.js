@@ -1,5 +1,5 @@
 const { Events } = require("discord.js");
-const { logCommandUse } = require("../functions");
+const { logCommandUse, logInfoDate } = require("../functions");
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -29,6 +29,14 @@ module.exports = {
         ":x: Wystąpił nieoczekiwany błąd: `Unknown Command`"
       );
 
-    await slashcmd.run({ client, interaction });
+    try {
+      await slashcmd.run({ client, interaction });
+    } catch (err) {
+      logInfoDate(err, 1);
+      return interaction.reply({
+        content: `:x: Wystąpił nieoczekiwany błąd: \`${err}\``,
+        ephemeral: true,
+      });
+    }
   },
 };

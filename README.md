@@ -12,7 +12,7 @@ MusicBot is a music bot for Discord, built using discord.js and discord-player.
 - "discord.js": "^14.11.0"
 - "dotenv": "^16.3.1"
 - "ffmpeg-static": "^5.1.0"
-- "ytdl-core": "^4.11.4"
+- "ytdl-core": "^4.11.5"
 
 ## Commands
 

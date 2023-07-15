@@ -1,6 +1,6 @@
 const fs = require("fs");
 const { Events } = require("discord.js");
-const { logCommandUse, logInfoDate } = require("../functions");
+const { logInfoDate } = require("../functions");
 
 module.exports = {
   name: Events.MessageCreate,
