@@ -32,6 +32,11 @@ if (!fs.existsSync("logs")) {
   fs.mkdirSync("logs");
 }
 
+// Delete old debug logs
+if (fs.existsSync("logs/debug.log")) {
+  fs.unlinkSync("logs/debug.log");
+}
+
 // Create Discord client with required intents
 const client = new Client({
   intents: [
