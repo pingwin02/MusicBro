@@ -12,6 +12,26 @@ module.exports = {
         .setDescription("Wyszukiwana fraza lub link do utworu/playlisty")
         .setRequired(true)
     )
+    .addStringOption((option) =>
+      option
+        .setName("search_engine")
+        .setDescription("Wybierz źródło wyszukiwania (opcjonalne)")
+        .setRequired(false)
+        .addChoices(
+          {
+            name: "YouTube",
+            value: "YouTube",
+          },
+          {
+            name: "Spotify",
+            value: "Spotify",
+          },
+          {
+            name: "SoundCloud",
+            value: "SoundCloud",
+          }
+        )
+    )
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
@@ -51,11 +71,29 @@ module.exports = {
 
     let embed = new EmbedBuilder();
 
+    const searchEngine = interaction.options.getString("search_engine");
+
+    let engine;
+    switch (searchEngine) {
+      case "YouTube":
+        engine = QueryType.YOUTUBE;
+        break;
+      case "Spotify":
+        engine = QueryType.SPOTIFY_SEARCH;
+        break;
+      case "SoundCloud":
+        engine = QueryType.SOUNDCLOUD;
+        break;
+      default:
+        engine = QueryType.AUTO;
+        break;
+    }
+
     const url = interaction.options.getString("query");
     try {
       const result = await client.player.search(url, {
         requestedBy: interaction.user,
-        searchEngine: QueryType.AUTO,
+        searchEngine: engine,
       });
       if (!result || result.tracks.length === 0) {
         return printError(
