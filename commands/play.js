@@ -32,6 +32,12 @@ module.exports = {
           }
         )
     )
+    .addBooleanOption((option) =>
+      option
+        .setName("force")
+        .setDescription("Jeśli włączone, dodaje utwór na początek kolejki")
+        .setRequired(false)
+    )
     .setDMPermission(false),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
@@ -122,13 +128,16 @@ module.exports = {
 
       if (songs.length === 0) return;
 
+      const force = interaction.options.getBoolean("force") || false;
+
       if (!result.playlist) {
         embed
           .setTitle("Dodano utwór do kolejki")
           .setDescription(
             `[**${song.title}**](${song.url}) [${song.duration}]\n Autor **${song.author}**`
           );
-        await queue.addTrack(song);
+        if (force) await queue.insertTrack(song, 0);
+        else await queue.addTrack(song);
       } else {
         embed
           .setTitle(`Dodano **${result.tracks.length}** utworów do kolejki`)

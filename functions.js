@@ -2,9 +2,9 @@ const fs = require("fs");
 const { EmbedBuilder, Message } = require("discord.js");
 const { Track } = require("discord-player");
 
-const ERROR_TIMEOUT = 10000;
-const INFO_TIMEOUT = 15000;
-const QUEUE_TIMEOUT = 30000;
+const ERROR_TIMEOUT = 15000;
+const INFO_TIMEOUT = 25000;
+const QUEUE_TIMEOUT = 35000;
 
 module.exports = {
   ERROR_TIMEOUT,
