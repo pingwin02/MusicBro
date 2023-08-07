@@ -4,6 +4,7 @@ const path = require("path");
 
 const generateHTML = (title, content, styles = "") => `
   <!DOCTYPE html>
+  <html>
   <head>
     <title>${title}</title>
     <link rel="icon" type="image/png" href="bot_logo.png">
@@ -33,7 +34,7 @@ const server = http.createServer(async (req, res) => {
   try {
     if (req.url === "/log") {
       const filePath = path.join(__dirname, "../logs/log.log");
-      fs.readFile(filePath, (err, data) => {
+      fs.readFile(filePath, "utf-8", (err, data) => {
         if (err) throw err;
         else {
           const fileContent = data
@@ -42,7 +43,7 @@ const server = http.createServer(async (req, res) => {
             .replace(/>/g, "&gt;")
             .replace(/\n/g, "<br>");
 
-          const htmlContent = generateHTML("Logi - MusicBot", fileContent);
+          const htmlContent = generateHTML("Logi - MusicBro", fileContent);
           res.end(htmlContent);
         }
       });
@@ -64,7 +65,7 @@ const server = http.createServer(async (req, res) => {
       const styles =
         ".rectangle { width: 30%; font-size: 24px; font-weight: bold; text-align: center; white-space: normal; min-width: 300px; }";
       const htmlContent = generateHTML(
-        "Jestem aktywny! - MusicBot",
+        "Jestem aktywny! - MusicBro",
         mainContent,
         styles
       );
