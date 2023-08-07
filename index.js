@@ -10,7 +10,7 @@ const { REST, Routes } = require("discord.js");
 const fs = require("node:fs");
 const { Player } = require("discord-player");
 
-const keep_alive = require("./keep_alive.js");
+const keep_alive = require("./website/server.js");
 
 // Load environment variables
 dotenv.config();

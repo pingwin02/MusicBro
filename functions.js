@@ -90,14 +90,13 @@ function logCommandUse(message) {
   let user = message.author;
   if (message.author === undefined) user = message.user;
 
-  let commandName = message.commandName;
-  if (commandName === undefined) commandName = message.content;
+  let commandName = message;
 
   if (message.guild === null)
-    logInfoDate(`${user.username} used ${commandName} command in DMs`, 0);
+    logInfoDate(`${user.username} used ${commandName} in DMs`, 0);
   else {
     logInfoDate(
-      `${user.username} used ${commandName} command in #${message.channel.name} at ${message.guild.name}`,
+      `${user.username} used ${commandName} in #${message.channel.name} at ${message.guild.name}`,
       0
     );
   }
