@@ -9,6 +9,7 @@ const generateHTML = (title, content, styles = "") => `
     <title>${title}</title>
     <link rel="icon" type="image/png" href="bot_logo.png">
     <link rel="stylesheet" href="styles.css">
+    <meta charset="utf-8">
     <script src="script.js" defer></script>
     <style>${styles}</style>
   </head>
@@ -60,7 +61,9 @@ const server = http.createServer(async (req, res) => {
       <br><br>
       Strona odświeża się automatycznie co minutę w celu podtrzymania aktywności bota.
       <br><br>
-      Miłego korzystania! ~pingwiniasty
+      Miłego korzystania! 
+      <br><br>
+      ~pingwiniasty
       `;
       const styles =
         ".rectangle { width: 30%; font-size: 24px; font-weight: bold; text-align: center; white-space: normal; min-width: 300px; }";

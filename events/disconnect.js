@@ -6,7 +6,7 @@ module.exports = {
   name: GuildQueueEvent.disconnect,
   type: "player",
   async execute(queue) {
-    logInfoDate(`Disconnected from ${queue.guild.name} (${queue.guild.id})`, 2);
+    logInfoDate(`Disconnected from ${queue.guild.name}`, 2);
     queue.metadata
       .send({
         embeds: [
