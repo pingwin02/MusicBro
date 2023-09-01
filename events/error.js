@@ -4,7 +4,7 @@ const { logInfoDate } = require("../functions");
 
 module.exports = {
   name: GuildQueueEvent.error,
-  type: "player",
+  type: "player.events",
   async execute(queue, error) {
     logInfoDate(`error event: ${error}`, 1);
     queue.metadata

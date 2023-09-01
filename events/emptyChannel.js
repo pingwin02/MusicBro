@@ -4,7 +4,7 @@ const { logInfoDate, INFO_TIMEOUT } = require("../functions");
 
 module.exports = {
   name: GuildQueueEvent.emptyChannel,
-  type: "player",
+  type: "player.events",
   async execute(queue) {
     logInfoDate(
       `Channel #${queue.metadata.name} is empty at ${queue.guild.name}`,

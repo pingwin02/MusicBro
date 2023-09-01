@@ -11,6 +11,7 @@ const fs = require("node:fs");
 const { Player } = require("discord-player");
 
 const keep_alive = require("./website/server.js");
+const { YouTubeExtractor } = require("@discord-player/extractor");
 
 // Load environment variables
 dotenv.config();
@@ -57,8 +58,8 @@ client.player = new Player(client, {
   },
 });
 
-// Load default extractors
-client.player.extractors.loadDefault();
+// Load extractors
+client.player.extractors.register(YouTubeExtractor, {});
 
 // Load slash commands from commands folder
 client.slashcommands = new Collection();
@@ -109,8 +110,10 @@ if (LOAD_SLASH) {
     const event = require(`./events/${file}`);
 
     var receiver = client;
-    if (event.type == "player") {
+    if (event.type == "player.events") {
       receiver = client.player.events;
+    } else if (event.type == "player") {
+      receiver = client.player;
     } else if (event.type == "process") {
       receiver = process;
     }

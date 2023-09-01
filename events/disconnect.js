@@ -4,7 +4,7 @@ const { logInfoDate, INFO_TIMEOUT } = require("../functions");
 
 module.exports = {
   name: GuildQueueEvent.disconnect,
-  type: "player",
+  type: "player.events",
   async execute(queue) {
     logInfoDate(`Disconnected from ${queue.guild.name}`, 2);
     queue.metadata
