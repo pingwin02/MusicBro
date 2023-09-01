@@ -33,10 +33,12 @@ module.exports = {
       await slashcmd.run({ client, interaction });
     } catch (err) {
       logInfoDate(err, 1);
-      return interaction.reply({
-        content: `:x: Wystąpił nieoczekiwany błąd: \`${err}\``,
-        ephemeral: true,
-      });
+      const msg = `:x: Wystąpił nieoczekiwany błąd: \`${err}\``;
+      if (interaction.deferred || interaction.replied) {
+        interaction.editReply(msg);
+      } else {
+        interaction.reply(msg);
+      }
     }
   },
 };

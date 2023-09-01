@@ -4,12 +4,10 @@ const { Track } = require("discord-player");
 
 const ERROR_TIMEOUT = 15000;
 const INFO_TIMEOUT = 25000;
-const QUEUE_TIMEOUT = 35000;
 
 module.exports = {
   ERROR_TIMEOUT,
   INFO_TIMEOUT,
-  QUEUE_TIMEOUT,
   logInfoDate,
   logDebug,
   logCommandUse,

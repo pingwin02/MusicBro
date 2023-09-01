@@ -71,6 +71,8 @@ module.exports = {
       const songs = result.tracks;
       const song = songs[0];
 
+      let nsfwSongs = [];
+
       songs.forEach((song) => {
         if (song.__metadata.nsfw) {
           printError(
@@ -82,8 +84,12 @@ module.exports = {
             `NSFW song: ${song.title} (${song.url}) was tried to play at ${interaction.guild.name} by ${interaction.user.username}`,
             2
           );
-          songs.splice(songs.indexOf(song), 1);
+          nsfwSongs.push(song);
         }
+      });
+
+      nsfwSongs.forEach((song) => {
+        songs.splice(songs.indexOf(song), 1);
       });
 
       if (songs.length === 0) return;
