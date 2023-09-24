@@ -3,6 +3,8 @@ const {
   GatewayIntentBits,
   Partials,
   Collection,
+  ActivityType,
+  PresenceUpdateStatus,
 } = require("discord.js");
 
 const dotenv = require("dotenv");
@@ -48,6 +50,10 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction],
+  presence: {
+    activities: [{ name: "/play", type: ActivityType.Listening }],
+    status: PresenceUpdateStatus.Online,
+  },
 });
 
 // Create Discord player
