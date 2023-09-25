@@ -6,8 +6,7 @@ module.exports = {
   type: "player.events",
   async execute(queue, track) {
     logInfoDate(
-      `Track ${track.title} (${track.url}) was added at ${queue.guild.name}`,
-      2
+      `Track ${track.title} (${track.url}) was added at ${queue.guild.name}`
     );
   },
 };

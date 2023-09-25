@@ -32,7 +32,7 @@ module.exports = {
     try {
       await slashcmd.run({ client, interaction });
     } catch (err) {
-      logInfoDate(err, 1);
+      logInfoDate(`/${interaction.commandName} command`, err);
       const msg = `:x: Wystąpił nieoczekiwany błąd: \`${err}\``;
       if (interaction.deferred || interaction.replied) {
         interaction.editReply(msg);

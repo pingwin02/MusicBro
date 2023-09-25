@@ -1,4 +1,5 @@
 const fs = require("fs");
+const { inspect } = require("util");
 const { EmbedBuilder, Message } = require("discord.js");
 const { Track } = require("discord-player");
 
@@ -20,15 +21,11 @@ module.exports = {
 /**
  * Logs information to the console and appends it to a log file.
  * @param {string} info - Information to log.
- * @param {integer} type - Type of information to log.
- *
- * type = 0: Command;
- * type = 1: Error;
- * type = 2: Info;
+ * @param {Error} error - Error to log (optional)
  *
  * @returns {void}
  */
-function logInfoDate(info, type) {
+function logInfoDate(info, error = null) {
   /**
    * @type {string}
    * @description Current date and time in ISO format without milliseconds.
@@ -38,22 +35,15 @@ function logInfoDate(info, type) {
 
   var logMessage = `[${currentdate}] - `;
 
-  switch (type) {
-    case 0:
-      logMessage += "[COMMAND] ";
-      break;
-    case 1:
-      logMessage += "[ERROR] ";
-      break;
-    case 2:
-      logMessage += "[INFO] ";
-      break;
-    default:
-      logMessage += "[OTHER] ";
-      break;
+  if (error) {
+    logMessage += `[ERROR] ${info}: ${inspect(error, {
+      breakLength: 80,
+      showHidden: true,
+      depth: 0,
+    })}`;
+  } else {
+    logMessage += `[INFO] ${info}`;
   }
-
-  logMessage += info;
 
   fs.appendFile("logs/log.log", `${logMessage}\n`, (err) => {
     if (err) {
@@ -91,11 +81,10 @@ function logCommandUse(message) {
   let commandName = message;
 
   if (message.guild === null)
-    logInfoDate(`${user.username} used ${commandName} in DMs`, 0);
+    logInfoDate(`${user.username} used ${commandName} in DMs`);
   else {
     logInfoDate(
-      `${user.username} used ${commandName} in #${message.channel.name} at ${message.guild.name}`,
-      0
+      `${user.username} used ${commandName} in #${message.channel.name} at ${message.guild.name}`
     );
   }
 }
@@ -125,7 +114,7 @@ function printError(interaction, error, followUp = false) {
           setTimeout(
             () =>
               msg.delete().catch((err) => {
-                logInfoDate(`printError: ${err}`, 1);
+                logInfoDate("printError", err);
               }),
             ERROR_TIMEOUT
           );
@@ -144,14 +133,14 @@ function printError(interaction, error, followUp = false) {
           setTimeout(
             () =>
               msg.delete().catch((err) => {
-                logInfoDate(`printError: ${err}`, 1);
+                logInfoDate("printError", err);
               }),
             ERROR_TIMEOUT
           );
         });
     }
   } catch (err) {
-    logInfoDate(`printError: ${err}`, 1);
+    logInfoDate("printError", err);
   }
 }
 
@@ -197,13 +186,13 @@ function printNowPlaying(interaction, queue, reply = false) {
           setTimeout(
             () =>
               msg.delete().catch((err) => {
-                logInfoDate(`printNowPlaying: ${err}`, 1);
+                logInfoDate("printNowPlaying", err);
               }),
             INFO_TIMEOUT
           );
         })
         .catch((err) => {
-          logInfoDate(`printNowPlaying: ${err}`, 1);
+          logInfoDate("printNowPlaying", err);
         });
     } else {
       interaction
@@ -214,17 +203,17 @@ function printNowPlaying(interaction, queue, reply = false) {
           setTimeout(
             () =>
               msg.delete().catch((err) => {
-                logInfoDate(`printNowPlaying: ${err}`, 1);
+                logInfoDate("printNowPlaying", err);
               }),
             INFO_TIMEOUT
           );
         })
         .catch((err) => {
-          logInfoDate(`printNowPlaying: ${err}`, 1);
+          logInfoDate("printNowPlaying", err);
         });
     }
   } catch (err) {
-    logInfoDate(`printNowPlaying: ${err}`, 1);
+    logInfoDate("printNowPlaying", err);
   }
 }
 
@@ -253,13 +242,13 @@ function printTrackInfo(interaction, track, title, description) {
       setTimeout(
         () =>
           msg.delete().catch((err) => {
-            logInfoDate(`printTrackInfo: ${err}`, 1);
+            logInfoDate("printTrackInfo", err);
           }),
         INFO_TIMEOUT
       );
     })
     .catch((err) => {
-      logInfoDate(`printTrackInfo: ${err}`, 1);
+      logInfoDate("printTrackInfo", err);
     });
 }
 
@@ -286,12 +275,12 @@ function printInfo(interaction, title, description) {
       setTimeout(
         () =>
           msg.delete().catch((err) => {
-            logInfoDate(`printInfo: ${err}`, 1);
+            logInfoDate("printInfo", err);
           }),
         INFO_TIMEOUT
       );
     })
     .catch((err) => {
-      logInfoDate(`printInfo: ${err}`, 1);
+      logInfoDate("printInfo", err);
     });
 }

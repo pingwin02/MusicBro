@@ -37,18 +37,17 @@ module.exports = {
         await interaction.update(generatePage(queue, currentPage - 1));
       } else if (interaction.customId == "next") {
         await interaction.update(generatePage(queue, currentPage + 1));
-      } else if (interaction.customId == "page") {
-        await interaction.update(
-          generatePage(queue, interaction.values[0] - 1)
-        );
       } else {
-        logInfoDate(`queue: unknown customId ${interaction.customId}`, 1);
+        logInfoDate(
+          "queueCollector",
+          new Error(`Unknown customId ${interaction.customId}`)
+        );
       }
     });
 
     collector.on("end", async (collected, reason) => {
       response.delete().catch((err) => {
-        logInfoDate(`printQueue: ${err}`, 1);
+        logInfoDate("printQueue", err);
       });
     });
   },
@@ -62,19 +61,6 @@ function generatePage(queue, page = 0) {
     .setLabel("Poprzednia strona")
     .setStyle(ButtonStyle.Secondary)
     .setDisabled(page == 0);
-
-  const pageSelect = new StringSelectMenuBuilder()
-    .setCustomId("page")
-    .setPlaceholder("Wybierz stronę")
-    .addOptions(
-      new Array(totalPages).fill(0).map((_, i) =>
-        new StringSelectMenuOptionBuilder()
-          .setLabel(`${i + 1}`)
-          .setValue(`${i + 1}`)
-          .setDefault(page == i)
-      )
-    )
-    .setDisabled(totalPages == 1);
 
   const nextBtn = new ButtonBuilder()
     .setCustomId("next")
@@ -111,9 +97,7 @@ function generatePage(queue, page = 0) {
     .setFooter({ text: `Strona ${page + 1} z ${totalPages}` })
     .setColor("Blue");
 
-  const row1 = new ActionRowBuilder().addComponents(pageSelect);
+  const row = new ActionRowBuilder().addComponents(previousBtn, nextBtn);
 
-  const row2 = new ActionRowBuilder().addComponents(previousBtn, nextBtn);
-
-  return { embeds: [embed], components: [row1, row2] };
+  return { embeds: [embed], components: [row] };
 }

@@ -11,14 +11,11 @@ module.exports = {
           console.error("Error clearing log file:", err);
         }
       });
-      logInfoDate(`Log file cleared by ${message.author.username}`, 2);
-
+      logInfoDate(`Log file cleared by ${message.author.username}`);
       const channel = message.client.channels.cache.get(
         message.channelId.toString()
       );
-
       const toDelete = [];
-
       channel.messages.fetch({ limit: 100 }).then((messages) => {
         messages.forEach((element) => {
           if (element.author.id === message.client.user.id)
@@ -34,10 +31,7 @@ module.exports = {
               setTimeout(
                 () =>
                   msg.delete().catch((err) => {
-                    logInfoDate(
-                      `Deleting "no message found" message: ${err}`,
-                      1
-                    );
+                    logInfoDate(`Deleting "no message found" message`, err);
                   }),
                 3000
               );
@@ -57,10 +51,7 @@ module.exports = {
                 setTimeout(
                   () =>
                     msg.delete().catch((err) => {
-                      logInfoDate(
-                        `Deleting "number of deleted" message: ${err}`,
-                        1
-                      );
+                      logInfoDate(`Deleting "number of deleted" message`, err);
                     }),
                   3000
                 );
@@ -71,7 +62,7 @@ module.exports = {
           setTimeout(
             () =>
               message.delete().catch((err) => {
-                logInfoDate(`Deleting "!!clear" message: ${err}`, 1);
+                logInfoDate(`Deleting "!!clear" message`, err);
               }),
             4000
           );

@@ -6,8 +6,7 @@ module.exports = {
   type: "player.events",
   async execute(queue) {
     logInfoDate(
-      `Track ${queue.currentTrack.title} (${queue.currentTrack.url}) started playing at ${queue.guild.name}`,
-      2
+      `Track ${queue.currentTrack.title} (${queue.currentTrack.url}) started playing at ${queue.guild.name}`
     );
     printNowPlaying(queue.metadata, queue);
   },

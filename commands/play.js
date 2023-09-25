@@ -47,7 +47,7 @@ module.exports = {
         metadata: interaction.channel,
       });
     } catch (err) {
-      logInfoDate(`Creating node: ${err}`, 1);
+      logInfoDate("Creating node", err);
       return printError(
         interaction,
         "Wystąpił błąd podczas tworzenia węzła! Spróbuj ponownie później."
@@ -81,8 +81,7 @@ module.exports = {
             true
           );
           logInfoDate(
-            `NSFW song: ${song.title} (${song.url}) was tried to play at ${interaction.guild.name} by ${interaction.user.username}`,
-            2
+            `NSFW song: ${song.title} (${song.url}) was tried to play at ${interaction.guild.name} by ${interaction.user.username}`
           );
           nsfwSongs.push(song);
         }
@@ -118,7 +117,7 @@ module.exports = {
         .setFooter({ text: `Dodano przez ${song.requestedBy.username}` });
     } catch (err) {
       queue.delete();
-      logInfoDate(`Searching song: ${err}`, 1);
+      logInfoDate("Searching song", err);
       return printError(
         interaction,
         "Wystąpił błąd podczas wyszukiwania utworu!\nSpróbuj ponownie później."
@@ -129,7 +128,7 @@ module.exports = {
       if (!queue.connection) await queue.connect(voiceChannel);
     } catch (err) {
       queue.delete();
-      logInfoDate(`Connecting to voice channel: ${err}`, 1);
+      logInfoDate("Connecting to voice channel", err);
       return printError(
         interaction,
         "Wystąpił błąd podczas łączenia z kanałem głosowym!"
@@ -141,7 +140,7 @@ module.exports = {
         await queue.node.play();
     } catch (err) {
       queue.delete();
-      logInfoDate(`Playing song: ${err.name}`, 1);
+      logInfoDate("Playing song", err);
       return printError(
         interaction,
         "Wystąpił błąd podczas odtwarzania utworu!\nSpróbuj ponownie później."
@@ -153,7 +152,7 @@ module.exports = {
       setTimeout(
         () =>
           msg.delete().catch((err) => {
-            logInfoDate(`Deleting play message: ${err}`, 1);
+            logInfoDate("Deleting play message", err);
           }),
         INFO_TIMEOUT
       );

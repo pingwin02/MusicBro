@@ -6,7 +6,7 @@ module.exports = {
   name: GuildQueueEvent.disconnect,
   type: "player.events",
   async execute(queue) {
-    logInfoDate(`Disconnected from ${queue.guild.name}`, 2);
+    logInfoDate(`Disconnected from ${queue.guild.name}`);
     queue.metadata
       .send({
         embeds: [
@@ -21,13 +21,13 @@ module.exports = {
         setTimeout(
           () =>
             msg.delete().catch((err) => {
-              logInfoDate(`Deleting disconnect message: ${err}`, 1);
+              logInfoDate("Deleting disconnect message", err);
             }),
           INFO_TIMEOUT
         );
       })
       .catch((err) => {
-        logInfoDate(`disconnect event: ${err}`, 1);
+        logInfoDate("disconnect event", err);
       });
   },
 };

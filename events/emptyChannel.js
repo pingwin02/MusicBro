@@ -24,13 +24,13 @@ module.exports = {
         setTimeout(
           () =>
             msg.delete().catch((err) => {
-              logInfoDate(`Deleting emptyChannel message: ${err}`, 1);
+              logInfoDate("Deleting emptyChannel message", err);
             }),
           INFO_TIMEOUT
         );
       })
       .catch((err) => {
-        logInfoDate(`emptyChannel event: ${err}`, 1);
+        logInfoDate("emptyChannel event", err);
       });
   },
 };

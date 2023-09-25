@@ -6,7 +6,7 @@ module.exports = {
   name: GuildQueueEvent.error,
   type: "player.events",
   async execute(queue, error) {
-    logInfoDate(`error event: ${error}`, 1);
+    logInfoDate("error event", err);
     queue.metadata
       .send({
         embeds: [
@@ -17,7 +17,7 @@ module.exports = {
         ],
       })
       .catch((err) => {
-        logInfoDate(`error event: ${err}`, 1);
+        logInfoDate("error event", err);
       });
   },
 };
