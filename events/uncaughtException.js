@@ -4,7 +4,9 @@ module.exports = {
   name: "uncaughtException",
   type: "process",
   async execute(err) {
-    logInfoDate(`Uncaught Exception`, err);
-    process.exit(1);
+    logInfoDate("uncaughtException", err);
+    setTimeout(() => {
+      process.exit(1);
+    }, 1000);
   },
 };
