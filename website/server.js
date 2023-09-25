@@ -81,4 +81,8 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(8080);
+const args = process.argv.slice(2);
+const port = args[0] || 8080;
+
+server.listen(port);
+console.log(`Server listening on port ${server.address().port}...`);

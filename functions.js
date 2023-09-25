@@ -38,7 +38,6 @@ function logInfoDate(info, error = null) {
   if (error) {
     logMessage += `[ERROR] ${info}: ${inspect(error, {
       breakLength: 80,
-      showHidden: true,
       depth: 0,
     })}`;
   } else {
