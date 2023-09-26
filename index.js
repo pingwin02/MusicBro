@@ -6,17 +6,19 @@ const {
   ActivityType,
   PresenceUpdateStatus,
 } = require("discord.js");
-
-const dotenv = require("dotenv");
 const { REST, Routes } = require("discord.js");
 const fs = require("node:fs");
 const { Player } = require("discord-player");
-
-const keep_alive = require("./website/server.js");
 const { YouTubeExtractor } = require("@discord-player/extractor");
 
+const LOAD_SLASH = process.argv[2] == "load";
+
+if (!LOAD_SLASH) {
+  const keep_alive = require("./website/server.js");
+}
+
 // Load environment variables
-dotenv.config();
+require("dotenv").config();
 
 const TOKEN = process.env.TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -27,8 +29,6 @@ if (!TOKEN || !CLIENT_ID) {
   );
   process.exit(1);
 }
-
-const LOAD_SLASH = process.argv[2] == "load";
 
 // Create logs folder if it doesn't exist
 if (!fs.existsSync("logs")) {

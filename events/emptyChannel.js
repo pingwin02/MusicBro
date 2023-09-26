@@ -7,8 +7,7 @@ module.exports = {
   type: "player.events",
   async execute(queue) {
     logInfoDate(
-      `Channel #${queue.metadata.name} is empty at ${queue.guild.name}`,
-      2
+      `Channel #${queue.metadata.name} is empty at ${queue.guild.name}`
     );
     queue.metadata
       .send({
