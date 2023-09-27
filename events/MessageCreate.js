@@ -39,7 +39,9 @@ module.exports = {
         } else {
           message.client.channels.fetch(message.channelId).then((chl) => {
             toDelete.forEach((msgid) => {
-              chl.messages.delete(msgid);
+              chl.messages.delete(msgid).catch((err) => {
+                logInfoDate(`Deleting message`, err);
+              });
             });
 
             message
