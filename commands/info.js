@@ -1,17 +1,28 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { msToTime } = require("../functions.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("info")
     .setDescription("Wyświetla informacje o bocie"),
   run: async ({ client, interaction }) => {
+    const ping = Math.max(Date.now() - interaction.createdTimestamp, 0);
+    const apiPing = Math.max(client.ws.ping, 0);
+    const uptime = msToTime(client.uptime);
+
     await interaction.reply({
-      content:
-        `**${client.user.username}#${client.user.discriminator}**\n` +
-        `:ping_pong: Ping wynosi ${
-          Date.now() - interaction.createdTimestamp
-        }ms.\n` +
-        "Stworzony z :heart: przez <@!393430226341986324>",
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(`Informacje o ${client.user.username}`)
+          .setDescription(
+            `:ping_pong: Ping wynosi **${ping}ms**\n
+          :robot: Ping API wynosi **${apiPing}ms**\n
+          :clock1: Uptime wynosi **${uptime}**\n
+          Stworzony z :heart: przez <@!393430226341986324>`
+          )
+          .setColor("Random")
+          .setTimestamp(),
+      ],
       ephemeral: true,
     });
   },
