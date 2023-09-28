@@ -64,7 +64,8 @@ module.exports = {
       if (!result || result.tracks.length === 0) {
         return printError(
           interaction,
-          "Nie znaleziono! Spróbuj ponownie później.\nUpewnij się, że link lub fraza jest poprawna."
+          "Nie znaleziono! Spróbuj ponownie później.\nUpewnij się, że link lub fraza jest poprawna.\n\n\
+          Wspierane serwisy: <:YouTube:1156904255979016203> Youtube"
         );
       }
 
