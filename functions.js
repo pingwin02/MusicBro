@@ -146,7 +146,11 @@ async function sendStatus(queue) {
 
     const howManyonPage = 15;
     const totalPages = Math.ceil(queue.getSize() / howManyonPage) || 1;
-    const page = queue.metadata.page || 0;
+    const page =
+      (queue.metadata.page || 0) > totalPages - 1
+        ? totalPages - 1
+        : queue.metadata.page || 0;
+    queue.metadata.page = page;
 
     const bar = queue.node.createProgressBar({
       queue: false,
@@ -273,7 +277,6 @@ async function sendStatus(queue) {
     }
 
     status.setDescription(description);
-    queue.metadata.page = 0;
 
     const embed = {
       embeds: [status],
