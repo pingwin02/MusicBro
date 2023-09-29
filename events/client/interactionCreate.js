@@ -9,17 +9,16 @@ module.exports = {
     const channel = client.channels.cache.get(interaction.channelId) || null;
 
     try {
-      if (!interaction.isCommand()) {
-        return;
-      }
-
       if (!interaction.guild)
         logInfo(`[DM] @${user.username} used ${interaction}`);
-      else {
+      else if (interaction.isButton()) {
+        logInfo(
+          `[${interaction.guild.name}] @${user.username} used ${interaction.customId} button in #${interaction.channel.name}`
+        );
+      } else
         logInfo(
           `[${interaction.guild.name}] @${user.username} used ${interaction} in #${interaction.channel.name}`
         );
-      }
 
       if (
         interaction.guild &&
@@ -33,11 +32,18 @@ module.exports = {
         });
       }
 
-      await client.slashcommands
-        .get(interaction.commandName)
+      const collection = interaction.isCommand()
+        ? client.slashcommands
+        : client.buttoncommands;
+
+      await collection
+        .get(interaction.commandName || interaction.customId)
         .run({ client, interaction });
     } catch (err) {
-      logInfo(`/${interaction.commandName} command`, err);
+      logInfo(
+        `/${interaction.commandName || interaction.customId} command`,
+        err
+      );
       if (channel)
         await channel.send(`:x: Wystąpił nieoczekiwany błąd: \`${err}\``);
     }

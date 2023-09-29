@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { useQueue } = require("discord-player");
-const { printError, printNowPlaying } = require("../functions");
+const { sendStatus, printError } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -10,12 +10,12 @@ module.exports = {
   run: async ({ interaction }) => {
     await interaction.deferReply();
     const queue = useQueue(interaction.guild.id);
-    if (!queue || !queue.node.isPlaying())
+    if (!queue)
       return printError(
         interaction,
-        "Nic nie jest teraz odtwarzane! Użyj `/play` aby coś odtworzyć."
+        "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
       );
-
-    printNowPlaying(interaction, queue, true);
+    sendStatus(queue);
+    await interaction.deleteReply();
   },
 };

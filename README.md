@@ -9,29 +9,37 @@ MusicBot is a music bot for Discord, built using discord.js and discord-player.
 ## Requirements
 
 - "@discord-player/extractor"
-- "@discordjs/opus"
 - "discord-player"
 - "discord.js"
 - "dotenv"
 - "ffmpeg-static"
+- "opusscript"
 - "youtube-ext"
 
 ## Commands
 
-MusicBot provides the following 12 commands:
+MusicBot provides the following slash commands:
 
 1. `info` - Displays information about the bot's ping.
-2. `leave` - Makes the bot leave the voice channel.
-3. `loop` - Controls the looping of the currently playing track.
-4. `nowplaying` - Displays the currently playing track.
-5. `pause` - Pauses or resumes the playback.
-6. `play` - Searches for a song or songs based on a link or search query and starts playing.
-7. `queue` - Displays the current song queue.
-8. `resume` - Resumes playback after being paused.
-9. `shuffle` - Shuffles the song queue.
-10. `skip` - Skips the currently playing song.
-11. `skipto` - Skips to a specified song in the queue.
-12. `volume` - Adjusts the volume of the playback.
+2. `nowplaying` - Displays information about the currently playing song.
+3. `play` - Searches for a song or songs based on a link or search query and starts playing.
+4. `remove` - Removes a song from the queue.
+5. `skipto` - Skips to a specified song in the queue.
+6. `volume` - Adjusts the volume of the playback.
+
+And also the following button commands:
+
+1. `delete` - Deletes the message associated with the button.
+2. `loopDisable` - Disables looping.
+3. `loopQueue` - Loops the queue.
+4. `loopTrack` - Loops the current song.
+5. `next` - Changes page to the next page of the queue.
+6. `pause` - Pauses the playback.
+7. `previous` - Changes page to the previous page of the queue.
+8. `resume` - Resumes the playback.
+9. `shuffle` - Shuffles the queue.
+10. `skip` - Skips the current song.
+11. `stop` - Stops the playback and clears the queue.
 
 Additionally, MusicBot provides the ability to clear leftover messages from the bot in the channel using the `!!clear` command.
 

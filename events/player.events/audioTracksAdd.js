@@ -1,5 +1,5 @@
 const { GuildQueueEvent } = require("discord-player");
-const { logInfo } = require("../../functions");
+const { logInfo, sendStatus } = require("../../functions");
 
 module.exports = {
   name: GuildQueueEvent.audioTracksAdd,
@@ -7,5 +7,6 @@ module.exports = {
     logInfo(
       `[${queue.guild.name}] Added playlist ${track[0].playlist.description} (${track[0].playlist.url}) [${track.length} tracks]`
     );
+    sendStatus(queue);
   },
 };

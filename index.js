@@ -87,6 +87,22 @@ for (const file of slashFiles) {
   if (LOAD_SLASH) commands.push(slashcmd.data.toJSON());
 }
 
+// Load button commands from buttons folder
+client.buttoncommands = new Collection();
+const buttonFiles = fs
+  .readdirSync("./buttons")
+  .filter((file) => file.endsWith(".js"));
+for (const file of buttonFiles) {
+  const buttoncmd = require(`./buttons/${file}`);
+  if ("name" in buttoncmd && "run" in buttoncmd) {
+    client.buttoncommands.set(buttoncmd.name, buttoncmd);
+  } else {
+    console.log(
+      `[WARNING] The button at ./buttons/${file} is missing a required "name" or "run" property.`
+    );
+  }
+}
+
 // If load is passed, load slash commands and exit
 if (LOAD_SLASH) {
   const rest = new REST({ version: "10" }).setToken(TOKEN);

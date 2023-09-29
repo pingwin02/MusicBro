@@ -5,8 +5,8 @@ const { logInfo } = require("../../functions");
 module.exports = {
   name: GuildQueueEvent.playerError,
   async execute(queue, error) {
-    logInfo("playerError event", err);
-    queue.metadata
+    logInfo("playerError event", error);
+    queue.metadata.textChannel
       .send({
         embeds: [
           new EmbedBuilder()
@@ -15,8 +15,8 @@ module.exports = {
             .setColor("Red"),
         ],
       })
-      .catch((err) => {
-        logInfo("playerError event", err);
+      .catch((error) => {
+        logInfo("playerError event", error);
       });
   },
 };

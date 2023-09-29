@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { useQueue } = require("discord-player");
-const { printError, printInfo } = require("../functions");
+const { sendStatus, printError } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -23,12 +23,8 @@ module.exports = {
         interaction,
         "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
       );
-
     queue.node.setVolume(interaction.options.getInteger("value"));
-    printInfo(
-      interaction,
-      ":loud_sound: Głośność zmieniona!",
-      `Ustawiono głośność na **${interaction.options.getInteger("value")}**`
-    );
+    sendStatus(queue);
+    await interaction.deleteReply();
   },
 };

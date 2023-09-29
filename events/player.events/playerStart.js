@@ -1,5 +1,5 @@
 const { GuildQueueEvent } = require("discord-player");
-const { printNowPlaying, logInfo } = require("../../functions");
+const { sendStatus, logInfo } = require("../../functions");
 
 module.exports = {
   name: GuildQueueEvent.playerStart,
@@ -7,6 +7,6 @@ module.exports = {
     logInfo(
       `[${queue.guild.name}] Playing ${queue.currentTrack.title} (${queue.currentTrack.url})`
     );
-    printNowPlaying(queue.metadata, queue);
+    sendStatus(queue);
   },
 };

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { useQueue } = require("discord-player");
-const { printError, printTrackInfo } = require("../functions");
+const { printError, sendStatus } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -22,23 +22,14 @@ module.exports = {
         interaction,
         "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
       );
-
     const songNumber = interaction.options.getInteger("number");
     if (songNumber > queue.getSize())
       return printError(
         interaction,
         "Nie ma takiego utworu w kolejce! Upewnij się, że podałeś poprawny numer."
       );
-
-    const currentSong = queue.tracks.toArray()[songNumber - 1];
-
     queue.node.remove(songNumber - 1);
-
-    printTrackInfo(
-      interaction,
-      currentSong,
-      ":wastebasket: Usunięto!",
-      `Usunąłem **${currentSong.title}** z kolejki!`
-    );
+    sendStatus(queue);
+    await interaction.deleteReply();
   },
 };

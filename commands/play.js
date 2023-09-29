@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { printError, logInfo, INFO_TIMEOUT } = require("../functions");
+const { SlashCommandBuilder } = require("discord.js");
+const { printError, logInfo } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -21,10 +21,8 @@ module.exports = {
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
     const voiceChannel = interaction.member.voice.channel;
-
     if (!voiceChannel)
       return printError(interaction, "Musisz być na kanale głosowym!");
-
     if (
       !voiceChannel.permissionsFor(client.user).has("ViewChannel") ||
       !voiceChannel.permissionsFor(client.user).has("Connect") ||
@@ -34,17 +32,19 @@ module.exports = {
         interaction,
         "Nie mam uprawnień do połączenia się z kanałem głosowym!"
       );
-
     if (voiceChannel.full)
       return printError(interaction, "Kanał jest pełny! Spróbuj później.");
-
     let queue;
     try {
       queue = await client.player.nodes.create(interaction.guild, {
         leaveOnEnd: true,
         leaveOnStop: true,
         leaveOnEmpty: true,
-        metadata: interaction.channel,
+        metadata: {
+          textChannel: interaction.channel,
+          statusMessage: null,
+          page: 0,
+        },
       });
     } catch (err) {
       logInfo("Creating node", err);
@@ -53,9 +53,6 @@ module.exports = {
         "Wystąpił błąd podczas tworzenia węzła! Spróbuj ponownie później."
       );
     }
-
-    let embed = new EmbedBuilder();
-
     const query = interaction.options.getString("query");
     try {
       const result = await client.player.search(query, {
@@ -69,12 +66,9 @@ module.exports = {
             "Wspierane serwisy: <:YouTube:1156904255979016203> Youtube"
         );
       }
-
       const songs = result.tracks;
       const song = songs[0];
-
       let nsfwSongs = [];
-
       songs.forEach((song) => {
         if (song.__metadata.nsfw) {
           logInfo(
@@ -88,35 +82,17 @@ module.exports = {
           nsfwSongs.push(song);
         }
       });
-
       nsfwSongs.forEach((song) => {
         songs.splice(songs.indexOf(song), 1);
       });
-
       if (songs.length === 0) return;
-
       const force = interaction.options.getBoolean("force") || false;
-
       if (!result.playlist) {
-        embed
-          .setTitle("Dodano utwór do kolejki")
-          .setDescription(
-            `[**${song.title}**](${song.url}) [${song.duration}]\n Autor **${song.author}**`
-          );
         if (force) await queue.insertTrack(song, 0);
         else await queue.addTrack(song);
       } else {
-        embed
-          .setTitle(`Dodano **${result.tracks.length}** utworów do kolejki`)
-          .setDescription(
-            `[**${result.playlist.title}**](${result.playlist.url})`
-          );
         await queue.addTrack(songs);
       }
-
-      embed
-        .setThumbnail(song.thumbnail)
-        .setFooter({ text: `Dodano przez ${song.requestedBy.username}` });
     } catch (err) {
       queue.delete();
       logInfo("Searching song", err);
@@ -125,7 +101,6 @@ module.exports = {
         "Wystąpił błąd podczas wyszukiwania utworu!\nSpróbuj ponownie później."
       );
     }
-
     try {
       if (!queue.connection) await queue.connect(voiceChannel);
     } catch (err) {
@@ -136,7 +111,6 @@ module.exports = {
         "Wystąpił błąd podczas łączenia z kanałem głosowym!"
       );
     }
-
     try {
       if (!queue.node.isPlaying() && !queue.currentTrack)
         await queue.node.play();
@@ -148,16 +122,6 @@ module.exports = {
         "Wystąpił błąd podczas odtwarzania utworu!\nSpróbuj ponownie później."
       );
     }
-
-    embed.setColor("Green");
-    await interaction.editReply({ embeds: [embed] }).then((msg) => {
-      setTimeout(
-        () =>
-          msg.delete().catch((err) => {
-            logInfo("Deleting play message", err);
-          }),
-        INFO_TIMEOUT
-      );
-    });
+    await interaction.deleteReply();
   },
 };

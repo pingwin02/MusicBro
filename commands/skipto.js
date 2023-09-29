@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { useQueue } = require("discord-player");
-const { printError, printTrackInfo } = require("../functions");
+const { useQueue, QueueRepeatMode } = require("discord-player");
+const { printError, sendStatus } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -22,27 +22,16 @@ module.exports = {
         interaction,
         "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
       );
-
     const songNumber = interaction.options.getInteger("number");
     if (songNumber > queue.getSize())
       return printError(
         interaction,
         "Nie ma takiego utworu w kolejce! Upewnij się, że podałeś poprawny numer."
       );
-
-    const currentSong = queue.currentTrack;
-    const repeatMode = queue.repeatMode;
     queue.node.skipTo(songNumber - 1);
-    queue.setRepeatMode(0);
+    queue.setRepeatMode(QueueRepeatMode.OFF);
     if (queue.node.isPaused()) queue.node.resume();
-
-    printTrackInfo(
-      interaction,
-      currentSong,
-      `:arrow_forward: Pominięto **${currentSong.title}**!`,
-      repeatMode
-        ? " :x: Pętla została wyłączona! Użyj `/loop` aby ją włączyć."
-        : " "
-    );
+    sendStatus(queue);
+    await interaction.deleteReply();
   },
 };

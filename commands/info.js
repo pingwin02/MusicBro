@@ -9,7 +9,6 @@ module.exports = {
     const ping = Math.max(Date.now() - interaction.createdTimestamp, 0);
     const apiPing = Math.max(client.ws.ping, 0);
     const uptime = msToTime(client.uptime);
-
     const msg =
       `:ping_pong: Ping wynosi **${ping}ms**\n` +
       `:robot: Ping API wynosi **${apiPing}ms**\n` +

@@ -1,20 +1,20 @@
 const fs = require("fs");
 const { inspect } = require("util");
-const { EmbedBuilder } = require("discord.js");
-const { Track } = require("discord-player");
+const {
+  EmbedBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+} = require("discord.js");
 
 const ERROR_TIMEOUT = 15000;
-const INFO_TIMEOUT = 25000;
 
 module.exports = {
   ERROR_TIMEOUT,
-  INFO_TIMEOUT,
   logInfo,
   logDebug,
   printError,
-  printNowPlaying,
-  printTrackInfo,
-  printInfo,
+  sendStatus,
   msToTime,
   loadEvents,
 };
@@ -86,193 +86,213 @@ function logDebug(info) {
  */
 
 function printError(interaction, error, followUp = false) {
-  try {
-    if (followUp) {
-      return interaction
-        .followUp({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle(":x: Błąd!")
-              .setDescription(error)
-              .setColor("Red"),
-          ],
-        })
-        .then((msg) => {
-          setTimeout(
-            () =>
-              msg.delete().catch((err) => {
-                logInfo("printError", err);
-              }),
-            ERROR_TIMEOUT
-          );
-        });
-    } else {
-      return interaction
-        .editReply({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle(":x: Błąd!")
-              .setDescription(error)
-              .setColor("Red"),
-          ],
-        })
-        .then((msg) => {
-          setTimeout(
-            () =>
-              msg.delete().catch((err) => {
-                logInfo("printError", err);
-              }),
-            ERROR_TIMEOUT
-          );
-        });
-    }
-  } catch (err) {
-    logInfo("printError", err);
+  if (followUp) {
+    return interaction
+      .followUp({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(":x: Błąd!")
+            .setDescription(error)
+            .setColor("Red"),
+        ],
+      })
+      .then((msg) => {
+        setTimeout(
+          () =>
+            msg.delete().catch((err) => {
+              logInfo("printError", err);
+            }),
+          ERROR_TIMEOUT
+        );
+      });
+  } else {
+    return interaction
+      .editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(":x: Błąd!")
+            .setDescription(error)
+            .setColor("Red"),
+        ],
+      })
+      .then((msg) => {
+        setTimeout(
+          () =>
+            msg.delete().catch((err) => {
+              logInfo("printError", err);
+            }),
+          ERROR_TIMEOUT
+        );
+      });
   }
 }
 
 /**
- * Sends embed with now playing track info to the interaction channel,
- * then deletes it after INFO_TIMEOUT.
- * @param {CommandInteraction} interaction - Interaction to reply to.
- * @param {Queue} queue - Queue to get track info from.
- * @param {boolean} reply - If true, reply to interaction.
+ * Sends embed with status message to the interaction channel.
+ * @param {Queue} queue - Queue to get info from.
  * @returns {void}
+ * @async
  */
 
-function printNowPlaying(interaction, queue, reply = false) {
+async function sendStatus(queue) {
   try {
-    let bar = queue.node.createProgressBar({
+    if (
+      !queue ||
+      !queue.metadata ||
+      !queue.metadata.textChannel ||
+      !queue.currentTrack
+    )
+      return;
+
+    const howManyonPage = 15;
+    const totalPages = Math.ceil(queue.getSize() / howManyonPage) || 1;
+    const page = queue.metadata.page || 0;
+
+    const bar = queue.node.createProgressBar({
       queue: false,
       length: 10,
       timecodes: true,
     });
 
-    let embed = new EmbedBuilder()
+    let description =
+      `[**${queue.currentTrack.title}**](${queue.currentTrack.url})\n` +
+      `Autor **${queue.currentTrack.author}**\n` +
+      `*dodane przez <@${queue.currentTrack.requestedBy.id}>*\n\n` +
+      `**Postęp:**\n${bar}` +
+      `\n\n**Kolejka:**\n`;
+
+    const status = new EmbedBuilder()
       .setTitle(
         "Teraz gra" +
-          (queue.repeatMode == 1 ? " (:repeat_one: powtarzanie utworu)" : "") +
+          (queue.node.isPaused() ? " (:pause_button: wstrzymane)" : "") +
+          (queue.repeatMode == 1 ? "\n(:repeat_one: powtarzanie utworu)" : "") +
           (queue.repeatMode == 2
-            ? " (:repeat: powtarzanie całej kolejki)"
-            : "") +
-          (queue.node.isPaused() ? "\n(:pause_button: wstrzymane)" : "")
-      )
-      .setDescription(
-        `[**${queue.currentTrack.title}**](${queue.currentTrack.url})\n` +
-          `Autor **${queue.currentTrack.author}**\n` +
-          `*dodane przez <@${queue.currentTrack.requestedBy.id}>*\n\n` +
-          `**Postęp:**\n${bar} `
+            ? "\n(:repeat: powtarzanie całej kolejki)"
+            : "")
       )
       .setThumbnail(queue.currentTrack.thumbnail)
-      .setFooter({ text: `Głośność: ${queue.node.volume}` })
+      .setFooter({
+        text:
+          `Głośność: ${queue.node.volume} | ` +
+          `Strona: ${page + 1} z ${totalPages}`,
+      })
       .setColor("Blue");
 
-    if (!reply) {
-      interaction
-        .send({
-          embeds: [embed],
-        })
-        .then((msg) => {
-          setTimeout(
-            () =>
-              msg.delete().catch((err) => {
-                logInfo("printNowPlaying", err);
-              }),
-            INFO_TIMEOUT
-          );
-        })
-        .catch((err) => {
-          logInfo("printNowPlaying", err);
+    const resumeBtn = new ButtonBuilder()
+      .setCustomId("resume")
+      .setEmoji("▶")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(queue.node.isPlaying());
+
+    const pauseBtn = new ButtonBuilder()
+      .setCustomId("pause")
+      .setEmoji("⏸")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(queue.node.isPaused());
+
+    const stopBtn = new ButtonBuilder()
+      .setCustomId("stop")
+      .setEmoji("⏹")
+      .setStyle(ButtonStyle.Primary);
+
+    const skipBtn = new ButtonBuilder()
+      .setCustomId("skip")
+      .setEmoji("⏭")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(queue.node.isPaused());
+
+    const loopTrackBtn = new ButtonBuilder()
+      .setCustomId("loopTrack")
+      .setEmoji("🔂")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(queue.repeatMode == 1);
+
+    const loopQueueBtn = new ButtonBuilder()
+      .setCustomId("loopQueue")
+      .setEmoji("🔁")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(queue.repeatMode == 2);
+
+    const disableLoopBtn = new ButtonBuilder()
+      .setCustomId("loopDisable")
+      .setEmoji("➡")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(queue.repeatMode == 0);
+
+    const shuffleBtn = new ButtonBuilder()
+      .setCustomId("shuffle")
+      .setEmoji("🔀")
+      .setStyle(ButtonStyle.Primary);
+
+    const previousBtn = new ButtonBuilder()
+      .setCustomId("previous")
+      .setLabel("Poprzednia strona")
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page == 0);
+
+    const nextBtn = new ButtonBuilder()
+      .setCustomId("next")
+      .setLabel("Następna strona")
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page == totalPages - 1);
+
+    const deleteBtn = new ButtonBuilder()
+      .setCustomId("delete")
+      .setLabel("Usuń wiadomość")
+      .setStyle(ButtonStyle.Danger);
+
+    const row1 = new ActionRowBuilder().addComponents(
+      resumeBtn,
+      pauseBtn,
+      stopBtn,
+      skipBtn
+    );
+    const row2 = new ActionRowBuilder().addComponents(
+      loopTrackBtn,
+      loopQueueBtn,
+      disableLoopBtn,
+      shuffleBtn
+    );
+
+    const row3 = new ActionRowBuilder().addComponents(previousBtn, nextBtn);
+
+    const row4 = new ActionRowBuilder().addComponents(deleteBtn);
+
+    if (queue.getSize() > 0) {
+      const queueString = queue.tracks
+        .toArray()
+        .slice(page * howManyonPage, (page + 1) * howManyonPage)
+        .map((song, i) => {
+          return `*${page * howManyonPage + i + 1}*. **${song.title}** [${
+            song.duration
+          }]`;
         });
+      description += `${queueString.join("\n")}`;
     } else {
-      interaction
-        .editReply({
-          embeds: [embed],
-        })
-        .then((msg) => {
-          setTimeout(
-            () =>
-              msg.delete().catch((err) => {
-                logInfo("printNowPlaying", err);
-              }),
-            INFO_TIMEOUT
-          );
-        })
-        .catch((err) => {
-          logInfo("printNowPlaying", err);
-        });
+      description += "*Pusta*";
+    }
+
+    status.setDescription(description);
+    queue.metadata.page = 0;
+
+    const embed = {
+      embeds: [status],
+      components: [row1, row2, row3, row4],
+    };
+
+    try {
+      await queue.metadata.statusMessage.edit(embed);
+    } catch (err) {
+      if (queue.metadata.statusMessage) {
+        logInfo("Editing statusMessage", err);
+      }
+      queue.metadata.statusMessage = await queue.metadata.textChannel.send(
+        embed
+      );
     }
   } catch (err) {
-    logInfo("printNowPlaying", err);
+    logInfo("sendStatus", err);
   }
-}
-
-/**
- * Sends embed with track info to the interaction channel,
- * then deletes it after INFO_TIMEOUT.
- * @param {CommandInteraction} interaction - Interaction to reply to.
- * @param {Track} track - Track to get info from.
- * @param {string} title - Embed title.
- * @param {string} description - Embed description.
- * @returns {void}
- */
-function printTrackInfo(interaction, track, title, description) {
-  return interaction
-    .editReply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle(title)
-          .setDescription(description + " :musical_note:")
-          .setThumbnail(track.thumbnail)
-          .setFooter({ text: `Przez ${track.requestedBy.username}` })
-          .setColor("Yellow"),
-      ],
-    })
-    .then((msg) => {
-      setTimeout(
-        () =>
-          msg.delete().catch((err) => {
-            logInfo("printTrackInfo", err);
-          }),
-        INFO_TIMEOUT
-      );
-    })
-    .catch((err) => {
-      logInfo("printTrackInfo", err);
-    });
-}
-
-/**
- * Sends embed with info to the interaction channel,
- * then deletes it after INFO_TIMEOUT.
- * @param {CommandInteraction} interaction - Interaction to reply to.
- * @param {string} title - Embed title.
- * @param {string} description - Embed description.
- * @returns {void}
- */
-function printInfo(interaction, title, description) {
-  return interaction
-    .editReply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle(title)
-          .setDescription(description + " :musical_note:")
-          .setFooter({ text: `Przez ${interaction.user.username}` })
-          .setColor("Green"),
-      ],
-    })
-    .then((msg) => {
-      setTimeout(
-        () =>
-          msg.delete().catch((err) => {
-            logInfo("printInfo", err);
-          }),
-        INFO_TIMEOUT
-      );
-    })
-    .catch((err) => {
-      logInfo("printInfo", err);
-    });
 }
 
 /**
