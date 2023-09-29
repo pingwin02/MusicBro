@@ -1,6 +1,6 @@
 const fs = require("fs");
 const { Events } = require("discord.js");
-const { logInfoDate } = require("../functions");
+const { logInfo } = require("../functions");
 
 module.exports = {
   name: Events.MessageCreate,
@@ -11,7 +11,7 @@ module.exports = {
           console.error("Error clearing log file:", err);
         }
       });
-      logInfoDate(`Log file cleared by ${message.author.username}`);
+      logInfo(`Log file cleared by @${message.author.username}`);
       const channel = message.client.channels.cache.get(
         message.channelId.toString()
       );
@@ -31,7 +31,7 @@ module.exports = {
               setTimeout(
                 () =>
                   msg.delete().catch((err) => {
-                    logInfoDate(`Deleting "no message found" message`, err);
+                    logInfo(`Deleting "no message found" message`, err);
                   }),
                 3000
               );
@@ -40,7 +40,7 @@ module.exports = {
           message.client.channels.fetch(message.channelId).then((chl) => {
             toDelete.forEach((msgid) => {
               chl.messages.delete(msgid).catch((err) => {
-                logInfoDate(`Deleting message`, err);
+                logInfo(`Deleting message`, err);
               });
             });
 
@@ -53,7 +53,7 @@ module.exports = {
                 setTimeout(
                   () =>
                     msg.delete().catch((err) => {
-                      logInfoDate(`Deleting "number of deleted" message`, err);
+                      logInfo(`Deleting "number of deleted" message`, err);
                     }),
                   3000
                 );
@@ -64,7 +64,7 @@ module.exports = {
           setTimeout(
             () =>
               message.delete().catch((err) => {
-                logInfoDate(`Deleting "!!clear" message`, err);
+                logInfo(`Deleting "!!clear" message`, err);
               }),
             4000
           );

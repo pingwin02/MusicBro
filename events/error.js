@@ -1,12 +1,12 @@
 const { GuildQueueEvent } = require("discord-player");
 const { EmbedBuilder } = require("discord.js");
-const { logInfoDate } = require("../functions");
+const { logInfo } = require("../functions");
 
 module.exports = {
   name: GuildQueueEvent.error,
   type: "player.events",
   async execute(queue, error) {
-    logInfoDate("error event", err);
+    logInfo("error event", err);
     queue.metadata
       .send({
         embeds: [
@@ -17,7 +17,7 @@ module.exports = {
         ],
       })
       .catch((err) => {
-        logInfoDate("error event", err);
+        logInfo("error event", err);
       });
   },
 };

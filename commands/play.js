@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { printError, logInfoDate, INFO_TIMEOUT } = require("../functions");
+const { printError, logInfo, INFO_TIMEOUT } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -47,7 +47,7 @@ module.exports = {
         metadata: interaction.channel,
       });
     } catch (err) {
-      logInfoDate("Creating node", err);
+      logInfo("Creating node", err);
       return printError(
         interaction,
         "Wystąpił błąd podczas tworzenia węzła! Spróbuj ponownie później."
@@ -62,6 +62,7 @@ module.exports = {
         requestedBy: interaction.user,
       });
       if (!result || result.tracks.length === 0) {
+        logInfo(`[${interaction.guild.name}] No results for ${query}`);
         return printError(
           interaction,
           "Nie znaleziono! Spróbuj ponownie później.\nUpewnij się, że link lub fraza jest poprawna.\n\n\
@@ -76,13 +77,13 @@ module.exports = {
 
       songs.forEach((song) => {
         if (song.__metadata.nsfw) {
+          logInfo(
+            `[${interaction.guild.name}] NSFW song: ${song.title} (${song.url})`
+          );
           printError(
             interaction,
             `Żądany utwór [**${song.title}**](${song.url}) [${song.duration}]\n jest oznaczony jako NSFW i nie może zostać odtworzony! :underage:`,
             true
-          );
-          logInfoDate(
-            `NSFW song: ${song.title} (${song.url}) was tried to play at ${interaction.guild.name} by ${interaction.user.username}`
           );
           nsfwSongs.push(song);
         }
@@ -118,7 +119,7 @@ module.exports = {
         .setFooter({ text: `Dodano przez ${song.requestedBy.username}` });
     } catch (err) {
       queue.delete();
-      logInfoDate("Searching song", err);
+      logInfo("Searching song", err);
       return printError(
         interaction,
         "Wystąpił błąd podczas wyszukiwania utworu!\nSpróbuj ponownie później."
@@ -129,7 +130,7 @@ module.exports = {
       if (!queue.connection) await queue.connect(voiceChannel);
     } catch (err) {
       queue.delete();
-      logInfoDate("Connecting to voice channel", err);
+      logInfo("Connecting to voice channel", err);
       return printError(
         interaction,
         "Wystąpił błąd podczas łączenia z kanałem głosowym!"
@@ -141,7 +142,7 @@ module.exports = {
         await queue.node.play();
     } catch (err) {
       queue.delete();
-      logInfoDate("Playing song", err);
+      logInfo("Playing song", err);
       return printError(
         interaction,
         "Wystąpił błąd podczas odtwarzania utworu!\nSpróbuj ponownie później."
@@ -153,7 +154,7 @@ module.exports = {
       setTimeout(
         () =>
           msg.delete().catch((err) => {
-            logInfoDate("Deleting play message", err);
+            logInfo("Deleting play message", err);
           }),
         INFO_TIMEOUT
       );

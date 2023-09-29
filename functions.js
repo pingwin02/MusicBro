@@ -1,6 +1,6 @@
 const fs = require("fs");
 const { inspect } = require("util");
-const { EmbedBuilder, Message } = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const { Track } = require("discord-player");
 
 const ERROR_TIMEOUT = 15000;
@@ -9,9 +9,8 @@ const INFO_TIMEOUT = 25000;
 module.exports = {
   ERROR_TIMEOUT,
   INFO_TIMEOUT,
-  logInfoDate,
+  logInfo,
   logDebug,
-  logCommandUse,
   printError,
   printNowPlaying,
   printTrackInfo,
@@ -26,13 +25,12 @@ module.exports = {
  *
  * @returns {void}
  */
-function logInfoDate(info, error = null) {
-  /**
-   * @type {string}
-   * @description Current date and time in ISO format without milliseconds.
-   */
-  const currentdate =
-    new Date().toISOString().replace(/T/, " ").replace(/\..+/, "") + " UTC";
+function logInfo(info, error = null) {
+  var currentdate = new Date()
+    .toLocaleString("pl-PL", {
+      timeZone: "Europe/Warsaw",
+    })
+    .replace(",", "");
 
   var logMessage = `[${currentdate}] - `;
 
@@ -68,27 +66,6 @@ function logDebug(info) {
 }
 
 /**
- * Logs debug information about usage of slash commands.
- * @param {Message} message - Message to log.
- * @returns {void}
- */
-
-function logCommandUse(message) {
-  let user = message.author;
-  if (message.author === undefined) user = message.user;
-
-  let commandName = message;
-
-  if (message.guild === null)
-    logInfoDate(`${user.username} used ${commandName} in DMs`);
-  else {
-    logInfoDate(
-      `${user.username} used ${commandName} in #${message.channel.name} at ${message.guild.name}`
-    );
-  }
-}
-
-/**
  * Sends embed with error message to the interaction channel,
  * then deletes it after ERROR_TIMEOUT.
  * @param {CommandInteraction} interaction - Interaction to reply to.
@@ -113,7 +90,7 @@ function printError(interaction, error, followUp = false) {
           setTimeout(
             () =>
               msg.delete().catch((err) => {
-                logInfoDate("printError", err);
+                logInfo("printError", err);
               }),
             ERROR_TIMEOUT
           );
@@ -132,14 +109,14 @@ function printError(interaction, error, followUp = false) {
           setTimeout(
             () =>
               msg.delete().catch((err) => {
-                logInfoDate("printError", err);
+                logInfo("printError", err);
               }),
             ERROR_TIMEOUT
           );
         });
     }
   } catch (err) {
-    logInfoDate("printError", err);
+    logInfo("printError", err);
   }
 }
 
@@ -185,13 +162,13 @@ function printNowPlaying(interaction, queue, reply = false) {
           setTimeout(
             () =>
               msg.delete().catch((err) => {
-                logInfoDate("printNowPlaying", err);
+                logInfo("printNowPlaying", err);
               }),
             INFO_TIMEOUT
           );
         })
         .catch((err) => {
-          logInfoDate("printNowPlaying", err);
+          logInfo("printNowPlaying", err);
         });
     } else {
       interaction
@@ -202,17 +179,17 @@ function printNowPlaying(interaction, queue, reply = false) {
           setTimeout(
             () =>
               msg.delete().catch((err) => {
-                logInfoDate("printNowPlaying", err);
+                logInfo("printNowPlaying", err);
               }),
             INFO_TIMEOUT
           );
         })
         .catch((err) => {
-          logInfoDate("printNowPlaying", err);
+          logInfo("printNowPlaying", err);
         });
     }
   } catch (err) {
-    logInfoDate("printNowPlaying", err);
+    logInfo("printNowPlaying", err);
   }
 }
 
@@ -241,13 +218,13 @@ function printTrackInfo(interaction, track, title, description) {
       setTimeout(
         () =>
           msg.delete().catch((err) => {
-            logInfoDate("printTrackInfo", err);
+            logInfo("printTrackInfo", err);
           }),
         INFO_TIMEOUT
       );
     })
     .catch((err) => {
-      logInfoDate("printTrackInfo", err);
+      logInfo("printTrackInfo", err);
     });
 }
 
@@ -274,13 +251,13 @@ function printInfo(interaction, title, description) {
       setTimeout(
         () =>
           msg.delete().catch((err) => {
-            logInfoDate("printInfo", err);
+            logInfo("printInfo", err);
           }),
         INFO_TIMEOUT
       );
     })
     .catch((err) => {
-      logInfoDate("printInfo", err);
+      logInfo("printInfo", err);
     });
 }
 

@@ -1,12 +1,12 @@
 const { GuildQueueEvent } = require("discord-player");
-const { printNowPlaying, logInfoDate } = require("../functions");
+const { printNowPlaying, logInfo } = require("../functions");
 
 module.exports = {
   name: GuildQueueEvent.playerStart,
   type: "player.events",
   async execute(queue) {
-    logInfoDate(
-      `Track ${queue.currentTrack.title} (${queue.currentTrack.url}) started playing at ${queue.guild.name}`
+    logInfo(
+      `[${queue.guild.name}] Playing ${queue.currentTrack.title} (${queue.currentTrack.url})`
     );
     printNowPlaying(queue.metadata, queue);
   },

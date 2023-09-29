@@ -8,7 +8,7 @@ const {
   StringSelectMenuOptionBuilder,
 } = require("discord.js");
 const { useQueue } = require("discord-player");
-const { printError, logInfoDate } = require("../functions");
+const { printError, logInfo } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -38,7 +38,7 @@ module.exports = {
       } else if (interaction.customId == "next") {
         await interaction.update(generatePage(queue, currentPage + 1));
       } else {
-        logInfoDate(
+        logInfo(
           "queueCollector",
           new Error(`Unknown customId ${interaction.customId}`)
         );
@@ -47,7 +47,7 @@ module.exports = {
 
     collector.on("end", async (collected, reason) => {
       response.delete().catch((err) => {
-        logInfoDate("printQueue", err);
+        logInfo("printQueue", err);
       });
     });
   },

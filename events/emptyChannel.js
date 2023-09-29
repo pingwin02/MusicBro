@@ -1,14 +1,12 @@
 const { GuildQueueEvent } = require("discord-player");
 const { EmbedBuilder } = require("discord.js");
-const { logInfoDate, INFO_TIMEOUT } = require("../functions");
+const { logInfo, INFO_TIMEOUT } = require("../functions");
 
 module.exports = {
   name: GuildQueueEvent.emptyChannel,
   type: "player.events",
   async execute(queue) {
-    logInfoDate(
-      `Channel #${queue.metadata.name} is empty at ${queue.guild.name}`
-    );
+    logInfo(`[${queue.guild.name}] Empty channel #${queue.metadata.name}`);
     queue.metadata
       .send({
         embeds: [
@@ -23,13 +21,13 @@ module.exports = {
         setTimeout(
           () =>
             msg.delete().catch((err) => {
-              logInfoDate("Deleting emptyChannel message", err);
+              logInfo("Deleting emptyChannel message", err);
             }),
           INFO_TIMEOUT
         );
       })
       .catch((err) => {
-        logInfoDate("emptyChannel event", err);
+        logInfo("emptyChannel event", err);
       });
   },
 };

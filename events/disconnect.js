@@ -1,12 +1,12 @@
 const { GuildQueueEvent } = require("discord-player");
 const { EmbedBuilder } = require("discord.js");
-const { logInfoDate, INFO_TIMEOUT } = require("../functions");
+const { logInfo, INFO_TIMEOUT } = require("../functions");
 
 module.exports = {
   name: GuildQueueEvent.disconnect,
   type: "player.events",
   async execute(queue) {
-    logInfoDate(`Disconnected from ${queue.guild.name}`);
+    logInfo(`[${queue.guild.name}] Disconnected`);
     queue.metadata
       .send({
         embeds: [
@@ -21,13 +21,13 @@ module.exports = {
         setTimeout(
           () =>
             msg.delete().catch((err) => {
-              logInfoDate("Deleting disconnect message", err);
+              logInfo("Deleting disconnect message", err);
             }),
           INFO_TIMEOUT
         );
       })
       .catch((err) => {
-        logInfoDate("disconnect event", err);
+        logInfo("disconnect event", err);
       });
   },
 };
