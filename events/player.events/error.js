@@ -15,7 +15,7 @@ module.exports = {
             .setColor("Red"),
         ],
       })
-      .catch((err) => {
+      .catch((error) => {
         logInfo("error event", error);
       });
   },

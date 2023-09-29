@@ -44,8 +44,20 @@ module.exports = {
         `/${interaction.commandName || interaction.customId} command`,
         err
       );
-      if (channel)
-        await channel.send(`:x: Wystąpił nieoczekiwany błąd: \`${err}\``);
+      if (channel) {
+        await channel.send({
+          embeds: [
+            {
+              title: ":x: Wystąpił nieoczekiwany błąd",
+              description: "Spróbuj ponownie później",
+              color: 0xff0000,
+              footer: {
+                text: `${err}`,
+              },
+            },
+          ],
+        });
+      }
     }
   },
 };
