@@ -10,16 +10,17 @@ module.exports = {
     const apiPing = Math.max(client.ws.ping, 0);
     const uptime = msToTime(client.uptime);
 
+    const msg =
+      `:ping_pong: Ping wynosi **${ping}ms**\n` +
+      `:robot: Ping API wynosi **${apiPing}ms**\n` +
+      `:clock1: Uptime wynosi **${uptime}**\n` +
+      `Stworzony z :heart: przez <@${process.env.ADMIN_ID}>`;
+
     await interaction.reply({
       embeds: [
         new EmbedBuilder()
           .setTitle(`Informacje o ${client.user.username}`)
-          .setDescription(
-            `:ping_pong: Ping wynosi **${ping}ms**\n
-          :robot: Ping API wynosi **${apiPing}ms**\n
-          :clock1: Uptime wynosi **${uptime}**\n
-          Stworzony z :heart: przez <@!393430226341986324>`
-          )
+          .setDescription(msg)
           .setColor("Random")
           .setTimestamp(),
       ],

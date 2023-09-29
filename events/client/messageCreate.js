@@ -1,6 +1,6 @@
 const fs = require("fs");
 const { Events } = require("discord.js");
-const { logInfo } = require("../functions");
+const { logInfo } = require("../../functions");
 
 module.exports = {
   name: Events.MessageCreate,
@@ -8,7 +8,7 @@ module.exports = {
     if (message.content === "!!clear") {
       fs.writeFile("logs/log.log", "", (err) => {
         if (err) {
-          console.error("Error clearing log file:", err);
+          logInfo("!!clear command", err);
         }
       });
       logInfo(`Log file cleared by @${message.author.username}`);
@@ -24,14 +24,14 @@ module.exports = {
         if (toDelete.length === 0) {
           message
             .reply({
-              content: `Nie znaleziono żadnych wiadomości do usunięcia`,
+              content: "Nie znaleziono żadnych wiadomości do usunięcia",
               ephemeral: true,
             })
             .then((msg) => {
               setTimeout(
                 () =>
                   msg.delete().catch((err) => {
-                    logInfo(`Deleting "no message found" message`, err);
+                    logInfo("!!clear command", err);
                   }),
                 3000
               );
@@ -40,7 +40,7 @@ module.exports = {
           message.client.channels.fetch(message.channelId).then((chl) => {
             toDelete.forEach((msgid) => {
               chl.messages.delete(msgid).catch((err) => {
-                logInfo(`Deleting message`, err);
+                logInfo("!!clear command", err);
               });
             });
 
@@ -53,7 +53,7 @@ module.exports = {
                 setTimeout(
                   () =>
                     msg.delete().catch((err) => {
-                      logInfo(`Deleting "number of deleted" message`, err);
+                      logInfo("!!clear command", err);
                     }),
                   3000
                 );
@@ -64,7 +64,7 @@ module.exports = {
           setTimeout(
             () =>
               message.delete().catch((err) => {
-                logInfo(`Deleting "!!clear" message`, err);
+                logInfo("!!clear command", err);
               }),
             4000
           );

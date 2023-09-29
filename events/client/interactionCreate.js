@@ -1,5 +1,5 @@
 const { Events } = require("discord.js");
-const { logInfo } = require("../functions");
+const { logInfo } = require("../../functions");
 
 module.exports = {
   name: Events.InteractionCreate,

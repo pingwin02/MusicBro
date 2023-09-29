@@ -1,17 +1,16 @@
 const { GuildQueueEvent } = require("discord-player");
 const { EmbedBuilder } = require("discord.js");
-const { logInfo } = require("../functions");
+const { logInfo } = require("../../functions");
 
 module.exports = {
   name: GuildQueueEvent.error,
-  type: "player.events",
   async execute(queue, error) {
     logInfo("error event", err);
     queue.metadata
       .send({
         embeds: [
           new EmbedBuilder()
-            .setTitle(`<:sus:833956789421735976> Coś się zepsuło!`)
+            .setTitle("<:sus:833956789421735976> Coś się zepsuło!")
             .setDescription(`Spróbuj ponownie później!\n\`${error}\``)
             .setColor("Red"),
         ],

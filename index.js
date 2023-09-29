@@ -10,22 +10,24 @@ const { REST, Routes } = require("discord.js");
 const fs = require("node:fs");
 const { Player } = require("discord-player");
 const { YouTubeExtractor } = require("@discord-player/extractor");
+const { loadEvents } = require("./functions");
 
-const LOAD_SLASH = process.argv[2] == "load";
+// Load environment variables
+require("dotenv").config();
+
+const LOAD_SLASH = process.argv.includes("load");
 
 if (!LOAD_SLASH) {
   const keep_alive = require("./website/server.js");
 }
 
-// Load environment variables
-require("dotenv").config();
-
 const TOKEN = process.env.TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
+const ADMIN_ID = process.env.ADMIN_ID;
 
-if (!TOKEN || !CLIENT_ID) {
+if (!TOKEN || !CLIENT_ID || !ADMIN_ID) {
   console.log(
-    "[ERROR] Missing TOKEN or CLIENT_ID in .env file. Please add them and try again."
+    "[ERROR] Missing TOKEN, CLIENT_ID or ADMIN_ID in .env file. Please add them and try again."
   );
   process.exit(1);
 }
@@ -85,7 +87,7 @@ for (const file of slashFiles) {
   if (LOAD_SLASH) commands.push(slashcmd.data.toJSON());
 }
 
-// If deploy argument is passed, load slash commands and exit
+// If load is passed, load slash commands and exit
 if (LOAD_SLASH) {
   const rest = new REST({ version: "10" }).setToken(TOKEN);
 
@@ -108,28 +110,10 @@ if (LOAD_SLASH) {
   })();
 } else {
   // Otherwise, load events and login
-  const eventFiles = fs
-    .readdirSync("./events")
-    .filter((file) => file.endsWith(".js"));
-
-  for (const file of eventFiles) {
-    const event = require(`./events/${file}`);
-
-    var receiver = client;
-    if (event.type == "player.events") {
-      receiver = client.player.events;
-    } else if (event.type == "player") {
-      receiver = client.player;
-    } else if (event.type == "process") {
-      receiver = process;
-    }
-
-    if (event.once) {
-      receiver.once(event.name, (...args) => event.execute(...args));
-    } else {
-      receiver.on(event.name, (...args) => event.execute(...args));
-    }
-  }
+  loadEvents(client, "./events/client");
+  loadEvents(client.player, "./events/player");
+  loadEvents(client.player.events, "./events/player.events");
+  loadEvents(process, "./events/process");
 
   // Login to Discord
   client.login(TOKEN);

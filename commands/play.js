@@ -65,8 +65,8 @@ module.exports = {
         logInfo(`[${interaction.guild.name}] No results for ${query}`);
         return printError(
           interaction,
-          "Nie znaleziono! Spróbuj ponownie później.\nUpewnij się, że link lub fraza jest poprawna.\n\n\
-          Wspierane serwisy: <:YouTube:1156904255979016203> Youtube"
+          "Nie znaleziono! Spróbuj ponownie później.\nUpewnij się, że link lub fraza jest poprawna.\n\n" +
+            "Wspierane serwisy: <:YouTube:1156904255979016203> Youtube"
         );
       }
 

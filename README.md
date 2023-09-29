@@ -40,7 +40,7 @@ Additionally, MusicBot provides the ability to clear leftover messages from the 
 MusicBot logs events in 2 different files:
 
 1. `log.log` - Logs all events.
-2. `debug.log` - Logs only debug events from the `discord-player` package. (Disabled by default)
+2. `debug.log` - Logs only debug events from the `discord-player` package. (run `npm run debug` to enable)
 
 ## Setup
 
@@ -53,12 +53,17 @@ npm install
 
 3. Create a `.env` file in the project's root directory and add the following environment variables:
 
-```
-TOKEN=your_discord_bot_token
-CLIENT_ID=your_discord_bot_client_id
-```
+- `TOKEN`: Token of the bot.
+- `CLIENT_ID`: Client ID of the bot.
+- `ADMIN_ID`: ID of the admin.
+- `PORT`: Port on which the website will be hosted. (default: 8080)
 
-Replace `your_discord_bot_token` with your actual Discord bot token and `your_discord_bot_client_id` with your actual Discord bot client ID.
+For example:
+
+```
+TOKEN=1234567890
+CLIENT_ID=1234567890
+```
 
 4. Register your bot's slash commands using the following command:
 
@@ -72,7 +77,8 @@ npm run deploy
 npm start
 ```
 
-I personally recommend using `nodemon` to run the bot, as it will automatically restart the bot when you make changes to the code. To use `nodemon`, run the following command:
+I personally recommend using `nodemon` to run the bot, as it will automatically restart the bot when you make changes to the code.
+To use `nodemon`, run the following command:
 
 ```
 nodemon

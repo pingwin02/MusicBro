@@ -27,7 +27,7 @@ module.exports = {
     queue.node.setVolume(interaction.options.getInteger("value"));
     printInfo(
       interaction,
-      `:loud_sound: Głośność zmieniona!`,
+      ":loud_sound: Głośność zmieniona!",
       `Ustawiono głośność na **${interaction.options.getInteger("value")}**`
     );
   },

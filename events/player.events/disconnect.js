@@ -1,10 +1,9 @@
 const { GuildQueueEvent } = require("discord-player");
 const { EmbedBuilder } = require("discord.js");
-const { logInfo, INFO_TIMEOUT } = require("../functions");
+const { logInfo, INFO_TIMEOUT } = require("../../functions");
 
 module.exports = {
   name: GuildQueueEvent.disconnect,
-  type: "player.events",
   async execute(queue) {
     logInfo(`[${queue.guild.name}] Disconnected`);
     queue.metadata

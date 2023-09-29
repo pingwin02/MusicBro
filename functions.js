@@ -16,6 +16,7 @@ module.exports = {
   printTrackInfo,
   printInfo,
   msToTime,
+  loadEvents,
 };
 
 /**
@@ -42,13 +43,13 @@ function logInfo(info, error = null) {
     logMessage += `[INFO] ${info}`;
   }
 
+  console.log(logMessage);
+
   fs.appendFile("logs/log.log", `${logMessage}\n`, (err) => {
     if (err) {
       console.error("Error writing to log file:", err);
     }
   });
-
-  console.log(logMessage);
 }
 
 /**
@@ -58,7 +59,17 @@ function logInfo(info, error = null) {
  */
 
 function logDebug(info) {
-  fs.appendFile("logs/debug.log", `${info}\n`, (err) => {
+  var currentdate = new Date()
+    .toLocaleString("pl-PL", {
+      timeZone: "Europe/Warsaw",
+    })
+    .replace(",", "");
+
+  var logMessage = `[${currentdate}] - [DEBUG] ${info}`;
+
+  console.debug(logMessage);
+
+  fs.appendFile("logs/debug.log", `${logMessage}\n`, (err) => {
     if (err) {
       console.error("Error writing to debug file:", err);
     }
@@ -133,7 +144,7 @@ function printNowPlaying(interaction, queue, reply = false) {
   try {
     let bar = queue.node.createProgressBar({
       queue: false,
-      length: 19,
+      length: 10,
       timecodes: true,
     });
 
@@ -147,7 +158,10 @@ function printNowPlaying(interaction, queue, reply = false) {
           (queue.node.isPaused() ? "\n(:pause_button: wstrzymane)" : "")
       )
       .setDescription(
-        `[**${queue.currentTrack.title}**](${queue.currentTrack.url})\n Autor **${queue.currentTrack.author}**\n *dodane przez <@${queue.currentTrack.requestedBy.id}>* \n\n**Postęp:**\n${bar} `
+        `[**${queue.currentTrack.title}**](${queue.currentTrack.url})\n` +
+          `Autor **${queue.currentTrack.author}**\n` +
+          `*dodane przez <@${queue.currentTrack.requestedBy.id}>*\n\n` +
+          `**Postęp:**\n${bar} `
       )
       .setThumbnail(queue.currentTrack.thumbnail)
       .setFooter({ text: `Głośność: ${queue.node.volume}` })
@@ -266,7 +280,6 @@ function printInfo(interaction, title, description) {
  * @param {number} ms - Number of milliseconds to convert.
  * @returns {string} Human-readable time format.
  */
-
 function msToTime(ms) {
   let seconds = (ms / 1000).toFixed(1);
   let minutes = (ms / (1000 * 60)).toFixed(1);
@@ -276,4 +289,25 @@ function msToTime(ms) {
   else if (minutes < 60) return minutes + " minut";
   else if (hours < 24) return hours + " godzin";
   else return days + " dni";
+}
+
+/**
+ * Loads all events from a folder.
+ * @param {EventEmitter} receiver - Event receiver.
+ * @param {string} folderPath - Path to the folder.
+ * @returns {void}
+ */
+function loadEvents(receiver, folderPath) {
+  const events = fs
+    .readdirSync(folderPath)
+    .filter((file) => file.endsWith(".js"));
+
+  for (const file of events) {
+    const event = require(`${folderPath}/${file}`);
+    if (event.once) {
+      receiver.once(event.name, (...args) => event.execute(...args));
+    } else {
+      receiver.on(event.name, (...args) => event.execute(...args));
+    }
+  }
 }

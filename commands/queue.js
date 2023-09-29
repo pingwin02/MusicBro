@@ -81,15 +81,16 @@ function generatePage(queue, page = 0) {
 
   const embed = new EmbedBuilder()
     .setTitle(
-      `Kolejka` +
+      "Kolejka" +
         (queue.repeatMode == 1 ? " (:repeat_one: powtarzanie utworu)" : "") +
         (queue.repeatMode == 2 ? " (:repeat: powtarzanie całej kolejki)" : "") +
         (queue.node.isPaused() ? "\n(:pause_button: wstrzymane)" : "")
     )
     .setDescription(
-      `**Teraz gra:**\n` +
+      "**Teraz gra:**\n" +
         (currentSong
-          ? `[**${currentSong.title}**](${currentSong.url}) [${currentSong.duration}]\n Autor **${currentSong.author}** \n *dodane przez <@${currentSong.requestedBy.id}>*`
+          ? `[**${currentSong.title}**](${currentSong.url}) [${currentSong.duration}]\n` +
+            `Autor **${currentSong.author}** \n *dodane przez <@${currentSong.requestedBy.id}>*`
           : "Nic nie gra") +
         `\n\n**Kolejka:**\n${queueString.join("\n")}`
     )

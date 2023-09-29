@@ -1,10 +1,9 @@
 const { GuildQueueEvent } = require("discord-player");
 const { EmbedBuilder } = require("discord.js");
-const { logInfo, INFO_TIMEOUT } = require("../functions");
+const { logInfo, INFO_TIMEOUT } = require("../../functions");
 
 module.exports = {
   name: GuildQueueEvent.emptyChannel,
-  type: "player.events",
   async execute(queue) {
     logInfo(`[${queue.guild.name}] Empty channel #${queue.metadata.name}`);
     queue.metadata
