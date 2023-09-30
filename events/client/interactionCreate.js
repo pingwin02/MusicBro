@@ -45,18 +45,20 @@ module.exports = {
         err
       );
       if (channel) {
-        await channel.send({
-          embeds: [
-            {
-              title: ":x: Wystąpił nieoczekiwany błąd",
-              description: "Spróbuj ponownie później",
-              color: 0xff0000,
-              footer: {
-                text: `${err}`,
+        await channel
+          .send({
+            embeds: [
+              {
+                title: ":x: Wystąpił nieoczekiwany błąd",
+                description: "Spróbuj ponownie później",
+                color: 0xff0000,
+                footer: {
+                  text: `${err}`,
+                },
               },
-            },
-          ],
-        });
+            ],
+          })
+          .catch((err) => logInfo("Error while sending error message", err));
       }
     }
   },
