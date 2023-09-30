@@ -13,7 +13,7 @@ MusicBot is a music bot for Discord, built using discord.js and discord-player.
 - "discord.js"
 - "dotenv"
 - "ffmpeg-static"
-- "opusscript"
+- "mediaplex"
 - "youtube-ext"
 
 ## Commands
@@ -29,13 +29,13 @@ MusicBot provides the following slash commands:
 
 And also the following button commands:
 
-1. `delete` - Deletes the message associated with the button.
-2. `loopDisable` - Disables looping.
-3. `loopQueue` - Loops the queue.
-4. `loopTrack` - Loops the current song.
-5. `next` - Changes page to the next page of the queue.
-6. `pause` - Pauses the playback.
-7. `previous` - Changes page to the previous page of the queue.
+1. `loopDisable` - Disables looping.
+2. `loopQueue` - Loops the queue.
+3. `loopTrack` - Loops the current song.
+4. `next` - Changes page to the next page of the queue.
+5. `pause` - Pauses the playback.
+6. `previous` - Changes page to the previous page of the queue.
+7. `refresh` - Refreshes the status message.
 8. `resume` - Resumes the playback.
 9. `shuffle` - Shuffles the queue.
 10. `skip` - Skips the current song.

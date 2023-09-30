@@ -154,7 +154,7 @@ async function sendStatus(queue) {
 
     const bar = queue.node.createProgressBar({
       queue: false,
-      length: 10,
+      length: 8,
       timecodes: true,
     });
 
@@ -240,10 +240,10 @@ async function sendStatus(queue) {
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(page == totalPages - 1);
 
-    const deleteBtn = new ButtonBuilder()
-      .setCustomId("delete")
-      .setLabel("Usuń wiadomość")
-      .setStyle(ButtonStyle.Danger);
+    const refreshBtn = new ButtonBuilder()
+      .setCustomId("refresh")
+      .setLabel("Odśwież")
+      .setStyle(ButtonStyle.Primary);
 
     const row1 = new ActionRowBuilder().addComponents(
       resumeBtn,
@@ -260,7 +260,7 @@ async function sendStatus(queue) {
 
     const row3 = new ActionRowBuilder().addComponents(previousBtn, nextBtn);
 
-    const row4 = new ActionRowBuilder().addComponents(deleteBtn);
+    const row4 = new ActionRowBuilder().addComponents(refreshBtn);
 
     if (queue.getSize() > 0) {
       const queueString = queue.tracks
