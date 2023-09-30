@@ -7,15 +7,13 @@ const {
   ActionRowBuilder,
 } = require("discord.js");
 
-const ERROR_TIMEOUT = 15000;
-
 module.exports = {
-  ERROR_TIMEOUT,
   logInfo,
   logDebug,
   printError,
   sendStatus,
   msToTime,
+  timedDelete,
   loadEvents,
 };
 
@@ -36,9 +34,7 @@ function logInfo(info, error = null) {
   var logMessage = `[${currentdate}] - `;
 
   if (error) {
-    logMessage += `[ERROR] ${info}: ${inspect(error, {
-      depth: 0,
-    })}`;
+    logMessage += `[ERROR] ${info}: ${inspect(error)}`;
   } else {
     logMessage += `[INFO] ${info}`;
   }
@@ -78,52 +74,38 @@ function logDebug(info) {
 
 /**
  * Sends embed with error message to the interaction channel,
- * then deletes it after ERROR_TIMEOUT.
- * @param {CommandInteraction} interaction - Interaction to reply to.
- * @param {string} error - Error message.
- * @param {boolean} followUp - Whether to use followUp or editReply.
+ * then deletes it after 15s. If error is passed interaction must be a TextChannel.
+ * @param {CommandInteraction | TextChannel} interaction - Interaction to reply to.
+ * @param {string} description - Error message to send.
+ * @param {Error} error - Error to log (optional)
  * @returns {void}
  */
 
-function printError(interaction, error, followUp = false) {
-  if (followUp) {
-    return interaction
-      .followUp({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle(":x: Błąd!")
-            .setDescription(error)
-            .setColor("Red"),
-        ],
-      })
-      .then((msg) => {
-        setTimeout(
-          () =>
-            msg.delete().catch((err) => {
-              logInfo("printError", err);
-            }),
-          ERROR_TIMEOUT
-        );
-      });
-  } else {
-    return interaction
-      .editReply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle(":x: Błąd!")
-            .setDescription(error)
-            .setColor("Red"),
-        ],
-      })
-      .then((msg) => {
-        setTimeout(
-          () =>
-            msg.delete().catch((err) => {
-              logInfo("printError", err);
-            }),
-          ERROR_TIMEOUT
-        );
-      });
+async function printError(interaction, description, error = null) {
+  try {
+    const embed = new EmbedBuilder()
+      .setTitle(":x: Błąd")
+      .setDescription(description)
+      .setColor("Red");
+
+    if (error) {
+      embed.setFooter({ text: `${error}` });
+    }
+
+    let reply;
+
+    if (interaction.replied || interaction.deferred) {
+      reply = await interaction.followUp({ embeds: [embed] });
+    } else if (!error) {
+      reply = await interaction.reply({ embeds: [embed] });
+    } else {
+      const textChannel = interaction;
+      reply = await textChannel.send({ embeds: [embed] });
+    }
+
+    if (!error) timedDelete(reply, 15000);
+  } catch (err) {
+    logInfo("printError", err);
   }
 }
 
@@ -289,9 +271,11 @@ async function sendStatus(queue) {
       if (queue.metadata.statusMessage) {
         logInfo("Editing statusMessage", err);
       }
-      queue.metadata.statusMessage = await queue.metadata.textChannel.send(
-        embed
-      );
+      queue.metadata.statusMessage = await queue.metadata.textChannel
+        .send(embed)
+        .catch((err) => {
+          logInfo("Sending statusMessage", err);
+        });
     }
   } catch (err) {
     logInfo("sendStatus", err);
@@ -312,6 +296,23 @@ function msToTime(ms) {
   else if (minutes < 60) return minutes + " minut";
   else if (hours < 24) return hours + " godzin";
   else return days + " dni";
+}
+
+/**
+ * Deletes a message after a specified timeout.
+ * @param {Message} message - Message to delete.
+ * @param {number} timeout - Timeout in milliseconds. (default: 3000)
+ * @returns {void}
+ */
+
+function timedDelete(message, timeout = 3000) {
+  setTimeout(async () => {
+    try {
+      await message.delete();
+    } catch (err) {
+      logInfo("timedDelete", err);
+    }
+  }, timeout);
 }
 
 /**

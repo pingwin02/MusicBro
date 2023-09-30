@@ -68,6 +68,7 @@ module.exports = {
       }
       const songs = result.tracks;
       const song = songs[0];
+
       let nsfwSongs = [];
       songs.forEach((song) => {
         if (song.__metadata.nsfw) {
@@ -76,8 +77,8 @@ module.exports = {
           );
           printError(
             interaction,
-            `Żądany utwór [**${song.title}**](${song.url}) [${song.duration}]\n jest oznaczony jako NSFW i nie może zostać odtworzony! :underage:`,
-            true
+            `Żądany utwór [**${song.title}**](${song.url}) [${song.duration}]\n jest oznaczony jako NSFW` +
+              ` i nie może zostać odtworzony! :underage:`
           );
           nsfwSongs.push(song);
         }
@@ -108,7 +109,7 @@ module.exports = {
       logInfo("Connecting to voice channel", err);
       return printError(
         interaction,
-        "Wystąpił błąd podczas łączenia z kanałem głosowym!"
+        "Wystąpił błąd podczas łączenia z kanałem głosowym!\nSpróbuj ponownie później."
       );
     }
     try {

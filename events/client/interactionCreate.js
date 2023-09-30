@@ -1,12 +1,11 @@
 const { Events } = require("discord.js");
-const { logInfo } = require("../../functions");
+const { logInfo, printError } = require("../../functions");
 
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction) {
     const user = interaction.author || interaction.user;
     const client = interaction.client;
-    const channel = client.channels.cache.get(interaction.channelId) || null;
 
     try {
       if (!interaction.guild)
@@ -22,14 +21,10 @@ module.exports = {
 
       if (
         interaction.guild &&
-        (!channel.permissionsFor(client.user).has("SendMessages") ||
-          !channel.permissionsFor(client.user).has("ViewChannel"))
+        (!interaction.channel.permissionsFor(client.user).has("SendMessages") ||
+          !interaction.channel.permissionsFor(client.user).has("ViewChannel"))
       ) {
-        return interaction.reply({
-          content:
-            ":x: Nie mam uprawnień do wysyłania wiadomości lub nie widzę tego kanału",
-          ephemeral: true,
-        });
+        return printError(interaction, "Nie mam uprawnień do tego kanału!");
       }
 
       const collection = interaction.isCommand()
@@ -44,21 +39,12 @@ module.exports = {
         `/${interaction.commandName || interaction.customId} command`,
         err
       );
-      if (channel) {
-        await channel
-          .send({
-            embeds: [
-              {
-                title: ":x: Wystąpił nieoczekiwany błąd",
-                description: "Spróbuj ponownie później",
-                color: 0xff0000,
-                footer: {
-                  text: `${err}`,
-                },
-              },
-            ],
-          })
-          .catch((err) => logInfo("Error while sending error message", err));
+      if (interaction.channel) {
+        return printError(
+          interaction.channel,
+          "Wystąpił błąd podczas wykonywania komendy! Spróbuj ponownie później.",
+          err
+        );
       }
     }
   },
