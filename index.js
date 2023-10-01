@@ -17,10 +17,6 @@ require("dotenv").config();
 
 const LOAD_SLASH = process.argv.includes("load");
 
-if (!LOAD_SLASH) {
-  const keep_alive = require("./website/server.js");
-}
-
 const TOKEN = process.env.TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 const ADMIN_ID = process.env.ADMIN_ID;

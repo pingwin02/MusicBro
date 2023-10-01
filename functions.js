@@ -35,11 +35,11 @@ function logInfo(info, error = null) {
 
   if (error) {
     logMessage += `[ERROR] ${info}: ${inspect(error)}`;
+    console.error(logMessage);
   } else {
     logMessage += `[INFO] ${info}`;
+    console.log(logMessage);
   }
-
-  console.log(logMessage);
 
   fs.appendFile("logs/log.log", `${logMessage}\n`, (err) => {
     if (err) {

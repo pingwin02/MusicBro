@@ -5,7 +5,7 @@ const { printError, sendStatus } = require("../functions");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("remove")
-    .setDescription("Usuwa utwór z kolejki")
+    .setDescription("Usuwa wybrany utwór z kolejki")
     .addIntegerOption((option) =>
       option
         .setName("number")

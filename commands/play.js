@@ -14,7 +14,7 @@ module.exports = {
     .addBooleanOption((option) =>
       option
         .setName("force")
-        .setDescription("Jeśli włączone, dodaje utwór na początek kolejki")
+        .setDescription("Jeśli włączone, odtwarza utwór pomijając kolejkę")
         .setRequired(false)
     )
     .setDMPermission(false),
@@ -35,6 +35,7 @@ module.exports = {
     if (voiceChannel.full)
       return printError(interaction, "Kanał jest pełny! Spróbuj później.");
     let queue;
+    let force = interaction.options.getBoolean("force") || false;
     try {
       queue = await client.player.nodes.create(interaction.guild, {
         leaveOnEnd: true,
@@ -60,6 +61,9 @@ module.exports = {
       });
       if (!result || result.tracks.length === 0) {
         logInfo(`[${interaction.guild.name}] No results for ${query}`);
+        if (!queue.currentTrack) {
+          queue.delete();
+        }
         return printError(
           interaction,
           "Nie znaleziono! Spróbuj ponownie później.\nUpewnij się, że link lub fraza jest poprawna.\n\n" +
@@ -87,12 +91,13 @@ module.exports = {
         songs.splice(songs.indexOf(song), 1);
       });
       if (songs.length === 0) return;
-      const force = interaction.options.getBoolean("force") || false;
+
       if (!result.playlist) {
         if (force) await queue.insertTrack(song, 0);
         else await queue.addTrack(song);
       } else {
         await queue.addTrack(songs);
+        force = false;
       }
     } catch (err) {
       queue.delete();
@@ -113,8 +118,9 @@ module.exports = {
       );
     }
     try {
-      if (!queue.node.isPlaying() && !queue.currentTrack)
+      if (force || !queue.currentTrack) {
         await queue.node.play();
+      }
     } catch (err) {
       queue.delete();
       logInfo("Playing song", err);
