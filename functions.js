@@ -74,7 +74,7 @@ function logDebug(info) {
 
 /**
  * Sends embed with error message to the interaction channel,
- * then deletes it after 15s. If error is passed interaction must be a TextChannel.
+ * then deletes it after 15s. If error is passed, interaction must be a TextChannel.
  * @param {CommandInteraction | TextChannel} interaction - Interaction to reply to.
  * @param {string} description - Error message to send.
  * @param {Error} error - Error to log (optional)
@@ -118,14 +118,7 @@ async function printError(interaction, description, error = null) {
 
 async function sendStatus(queue) {
   try {
-    if (
-      !queue ||
-      !queue.metadata ||
-      !queue.metadata.textChannel ||
-      !queue.currentTrack
-    )
-      return;
-
+    if (!queue.currentTrack) return;
     const howManyonPage = 15;
     const totalPages = Math.ceil(queue.getSize() / howManyonPage) || 1;
     const page =
@@ -262,8 +255,14 @@ async function sendStatus(queue) {
 
     const embed = {
       embeds: [status],
-      components: [row1, row2, row3, row4],
+      components: [row1, row2],
     };
+
+    if (totalPages > 1) {
+      embed.components.push(row3);
+    }
+
+    embed.components.push(row4);
 
     try {
       await queue.metadata.statusMessage.edit(embed);
