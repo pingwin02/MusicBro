@@ -10,7 +10,7 @@ const { REST, Routes } = require("discord.js");
 const fs = require("node:fs");
 const { Player } = require("discord-player");
 const { YouTubeExtractor } = require("@discord-player/extractor");
-const { loadEvents } = require("./functions");
+const { loadEvents, logInfo } = require("./functions");
 
 // Load environment variables
 require("dotenv").config();
@@ -22,8 +22,11 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const ADMIN_ID = process.env.ADMIN_ID;
 
 if (!TOKEN || !CLIENT_ID || !ADMIN_ID) {
-  console.log(
-    "[ERROR] Missing TOKEN, CLIENT_ID or ADMIN_ID in .env file. Please add them and try again."
+  logInfo(
+    "Environment variables",
+    new Error(
+      "Missing TOKEN, CLIENT_ID or ADMIN_ID in .env file. Please add them and try again."
+    )
   );
   process.exit(1);
 }
@@ -76,8 +79,11 @@ for (const file of slashFiles) {
   if ("data" in slashcmd && "run" in slashcmd) {
     client.slashcommands.set(slashcmd.data.name, slashcmd);
   } else {
-    console.log(
-      `[WARNING] The command at ./commands/${file} is missing a required "data" or "run" property.`
+    logInfo(
+      "Loading slash commands",
+      new Error(
+        `The command at ./commands/${file} is missing a required "data" or "run" property.`
+      )
     );
   }
   if (LOAD_SLASH) commands.push(slashcmd.data.toJSON());
@@ -93,8 +99,11 @@ for (const file of buttonFiles) {
   if ("name" in buttoncmd && "run" in buttoncmd) {
     client.buttoncommands.set(buttoncmd.name, buttoncmd);
   } else {
-    console.log(
-      `[WARNING] The button at ./buttons/${file} is missing a required "name" or "run" property.`
+    logInfo(
+      "Loading button commands",
+      new Error(
+        `The command at ./buttons/${file} is missing a required "name" or "run" property.`
+      )
     );
   }
 }
@@ -105,18 +114,16 @@ if (LOAD_SLASH) {
 
   (async () => {
     try {
-      console.log(
+      logInfo(
         `Started refreshing ${commands.length} application (/) commands.`
       );
       const data = await rest.put(Routes.applicationCommands(CLIENT_ID), {
         body: commands,
       });
-      console.log(
-        `Successfully reloaded ${data.length} application (/) commands.`
-      );
+      logInfo(`Successfully reloaded ${data.length} application (/) commands.`);
       process.exit(0);
     } catch (error) {
-      console.error(error);
+      logInfo("Reloading slash commands", error);
       process.exit(1);
     }
   })();
@@ -128,5 +135,8 @@ if (LOAD_SLASH) {
   loadEvents(process, "./events/process");
 
   // Login to Discord
-  client.login(TOKEN);
+  client.login(TOKEN).catch((err) => {
+    logInfo("Logging in", err);
+    process.exit(1);
+  });
 }
