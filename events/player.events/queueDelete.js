@@ -8,7 +8,7 @@ module.exports = {
     try {
       await queue.metadata.statusMessage.delete();
     } catch (error) {
-      logInfo(`[${queue.guild.name}] Unable to delete status message`);
+      logInfo(`Unable to delete status message`, error);
     }
   },
 };
