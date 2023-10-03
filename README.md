@@ -96,9 +96,9 @@ The bot should now be online and ready to use in your Discord server.
 
 ## Known Issues
 
+- Spotify and SoundCloud are not supported for now.
 - When in queue is NSFW or premium video, bot will crash, because of
-  extractor error `ERR_NO_RESULT: Could not extract stream for this track`.
-- Spotify and SoundCloud links are not supported.
+  extractor error: `ERR_NO_RESULT: Could not extract stream for this track`.
 
 ## License
 

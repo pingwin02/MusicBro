@@ -73,24 +73,16 @@ module.exports = {
       const songs = result.tracks;
       const song = songs[0];
 
-      let nsfwSongs = [];
-      songs.forEach((song) => {
-        if (song.__metadata.nsfw) {
-          logInfo(
-            `[${interaction.guild.name}] NSFW song: ${song.title} (${song.url})`
-          );
-          printError(
-            interaction,
-            `Żądany utwór [**${song.title}**](${song.url}) [${song.duration}]\n jest oznaczony jako NSFW` +
-              ` i nie może zostać odtworzony! :underage:`
-          );
-          nsfwSongs.push(song);
-        }
-      });
-      nsfwSongs.forEach((song) => {
-        songs.splice(songs.indexOf(song), 1);
-      });
-      if (songs.length === 0) return;
+      if (song.__metadata.nsfw) {
+        logInfo(
+          `[${interaction.guild.name}] NSFW song: ${song.title} (${song.url})`
+        );
+        return printError(
+          interaction,
+          `Żądany utwór [**${song.title}**](${song.url}) [${song.duration}]\n jest oznaczony jako NSFW` +
+            ` i nie może zostać odtworzony! :underage:`
+        );
+      }
 
       if (!result.playlist) {
         if (force) await queue.insertTrack(song, 0);

@@ -10,5 +10,6 @@ module.exports = {
       "Wystąpił błąd podczas odtwarzania muzyki! Spróbuj ponownie później.",
       error
     );
+    queue.delete();
   },
 };
