@@ -35,7 +35,7 @@ module.exports = {
         .run({ client, interaction });
     } catch (err) {
       logInfo(
-        `${interaction.user} used /${
+        `${interaction.user.username} used /${
           interaction.commandName || interaction.customId
         } command`,
         err
