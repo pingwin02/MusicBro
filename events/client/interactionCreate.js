@@ -40,7 +40,7 @@ module.exports = {
         } command`,
         err
       );
-      if (interaction.channel) {
+      if (interaction.channel && err.status != 404) {
         return printError(
           interaction.channel,
           "Wystąpił błąd podczas wykonywania komendy! Spróbuj ponownie później.",
