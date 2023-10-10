@@ -1,7 +1,7 @@
 # MusicBot
 
 <p align="center">
-  <img src="website/bot_logo.png" width="150" height="150">
+  <img src="bot_logo.png" width="150" height="150">
 </p>
 
 MusicBot is a music bot for Discord, built using discord.js and discord-player.
@@ -64,7 +64,6 @@ npm install
 - `TOKEN`: Token of the bot.
 - `CLIENT_ID`: Client ID of the bot.
 - `ADMIN_ID`: ID of the admin.
-- `PORT`: Port on which the website will be hosted. (default: 8080)
 
 For example:
 
