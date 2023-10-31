@@ -9,11 +9,11 @@ MusicBro is a music bot for Discord, built using discord.js and discord-player.
 ## Requirements
 
 - "@discord-player/extractor"
+- "@discordjs/opus"
 - "discord-player"
 - "discord.js"
 - "dotenv"
 - "ffmpeg-static"
-- "mediaplex"
 - "youtube-ext"
 
 ## Commands
