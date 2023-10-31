@@ -7,6 +7,6 @@ module.exports = {
     logInfo(
       `[${queue.guild.name}] Added playlist ${track[0].playlist.description} (${track[0].playlist.url}) [${track.length} tracks]`
     );
-    await sendStatus(queue);
+    sendStatus(queue);
   },
 };

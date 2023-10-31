@@ -1,10 +1,10 @@
-# MusicBot
+# MusicBro
 
 <p align="center">
   <img src="bot_logo.png" width="150" height="150">
 </p>
 
-MusicBot is a music bot for Discord, built using discord.js and discord-player.
+MusicBro is a music bot for Discord, built using discord.js and discord-player.
 
 ## Requirements
 

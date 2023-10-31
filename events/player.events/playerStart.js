@@ -7,6 +7,6 @@ module.exports = {
     logInfo(
       `[${queue.guild.name}] Playing ${queue.currentTrack.title} (${queue.currentTrack.url})`
     );
-    await sendStatus(queue);
+    sendStatus(queue);
   },
 };
