@@ -15,7 +15,7 @@ MusicBro is a music bot for Discord, built using discord.js and discord-player.
 - "discord.js"
 - "dotenv"
 - "ffmpeg-static"
-- "youtube-ext"
+- "ytdl-core"
 
 ## Commands
 
@@ -102,8 +102,8 @@ The bot should now be online and ready to use in your Discord server.
 
 ## License
 
-MusicBot is released under the [MIT License](LICENSE.txt).
+MusicBro is released under the [MIT License](LICENSE.txt).
 
 ## Credits
 
-MusicBot was created by pingwin02.
+MusicBro was created by pingwin02.
