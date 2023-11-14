@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { printError, logInfo } = require("../functions");
+const { useMainPlayer } = require("discord-player");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -35,9 +36,10 @@ module.exports = {
     if (voiceChannel.full)
       return printError(interaction, "Kanał jest pełny! Spróbuj później.");
     let queue;
+    const player = useMainPlayer();
     let force = interaction.options.getBoolean("force") || false;
     try {
-      queue = await client.player.nodes.create(interaction.guild, {
+      queue = player.nodes.create(interaction.guild, {
         leaveOnEnd: true,
         leaveOnStop: true,
         leaveOnEmpty: true,
@@ -56,7 +58,7 @@ module.exports = {
     }
     const query = interaction.options.getString("query");
     try {
-      const result = await client.player.search(query, {
+      const result = await player.search(query, {
         requestedBy: interaction.user,
       });
       if (!result || result.tracks.length === 0) {
@@ -70,6 +72,10 @@ module.exports = {
             "Wspierane serwisy: <:YouTube:1156904255979016203> Youtube"
         );
       }
+      const entry = queue.tasksQueue.acquire();
+
+      await entry.getTask();
+
       const songs = result.tracks;
       const song = songs[0];
 
@@ -85,10 +91,10 @@ module.exports = {
       }
 
       if (!result.playlist) {
-        if (force) await queue.insertTrack(song, 0);
-        else await queue.addTrack(song);
+        if (force) queue.insertTrack(song, 0);
+        else queue.addTrack(song);
       } else {
-        await queue.addTrack(songs);
+        queue.addTrack(songs);
         force = false;
       }
     } catch (err) {
@@ -120,7 +126,9 @@ module.exports = {
         interaction,
         "Wystąpił błąd podczas odtwarzania utworu!\nSpróbuj ponownie później."
       );
+    } finally {
+      queue.tasksQueue.release();
+      await interaction.deleteReply();
     }
-    await interaction.deleteReply();
   },
 };

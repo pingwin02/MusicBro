@@ -9,13 +9,6 @@ MusicBro is a music bot for Discord, built using discord.js and discord-player.
 ## Requirements
 
 - Node.js v18.18.2
-- "@discord-player/extractor"
-- "@discordjs/opus"
-- "discord-player"
-- "discord.js"
-- "dotenv"
-- "ffmpeg-static"
-- "ytdl-core"
 
 ## Commands
 

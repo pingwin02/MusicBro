@@ -58,7 +58,7 @@ const client = new Client({
 });
 
 // Create Discord player
-client.player = new Player(client, {
+const player = new Player(client, {
   ytdlOptions: {
     quality: "highestaudio",
     highWaterMark: 1 << 25,
@@ -66,7 +66,7 @@ client.player = new Player(client, {
 });
 
 // Load extractors
-client.player.extractors.register(YouTubeExtractor, {});
+player.extractors.register(YouTubeExtractor, {});
 
 // Load slash commands from commands folder
 client.slashcommands = new Collection();
@@ -130,8 +130,8 @@ if (LOAD_SLASH) {
 } else {
   // Otherwise, load events and login
   loadEvents(client, "./events/client");
-  loadEvents(client.player, "./events/player");
-  loadEvents(client.player.events, "./events/player.events");
+  loadEvents(player, "./events/player");
+  loadEvents(player.events, "./events/player.events");
   loadEvents(process, "./events/process");
 
   // Login to Discord

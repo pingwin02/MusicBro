@@ -78,10 +78,16 @@ function logDebug(info) {
  * @param {CommandInteraction | TextChannel} interaction - Interaction to reply to.
  * @param {string} description - Error message to send.
  * @param {Error} error - Error to log (optional)
+ * @param {Boolean} ephemeral - If true, message will be ephemeral (default: false)
  * @returns {void}
  */
 
-async function printError(interaction, description, error = null) {
+async function printError(
+  interaction,
+  description,
+  error = null,
+  ephemeral = false
+) {
   try {
     const embed = new EmbedBuilder()
       .setTitle(":x: Błąd")
@@ -89,15 +95,21 @@ async function printError(interaction, description, error = null) {
       .setColor("Red");
 
     if (error) {
-      embed.setFooter({ text: `${error}` });
+      embed.setFooter({ text: `${error.name}` });
     }
 
     let reply;
 
     if (interaction.replied || interaction.deferred) {
-      reply = await interaction.followUp({ embeds: [embed] });
+      reply = await interaction.followUp({
+        embeds: [embed],
+        ephemeral: ephemeral,
+      });
     } else if (!error) {
-      reply = await interaction.reply({ embeds: [embed] });
+      reply = await interaction.reply({
+        embeds: [embed],
+        ephemeral: ephemeral,
+      });
     } else {
       const textChannel = interaction;
       reply = await textChannel.send({ embeds: [embed] });

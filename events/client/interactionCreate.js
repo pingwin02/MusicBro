@@ -26,6 +26,23 @@ module.exports = {
         return printError(interaction, "Nie mam uprawnień do tego kanału!");
       }
 
+      if (
+        interaction.isButton() &&
+        interaction.customId != "refresh" &&
+        interaction.member.voice.channel !==
+          interaction.guild.members.me.voice.channel
+      ) {
+        logInfo(
+          `${interaction.user.username} is not in the same voice channel as bot`
+        );
+        return printError(
+          interaction,
+          "Musisz być na kanale głosowym bota, by móc sterować muzyką!",
+          null,
+          true
+        );
+      }
+
       const collection = interaction.isCommand()
         ? client.slashcommands
         : client.buttoncommands;
