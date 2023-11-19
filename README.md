@@ -1,7 +1,7 @@
 # MusicBro
 
 <p align="center">
-  <img src="bot_logo.png" width="150" height="150">
+  <img src="img/bot_logo.png" width="150" height="150">
 </p>
 
 MusicBro is a music bot for Discord, built using discord.js and discord-player.
@@ -34,6 +34,15 @@ And also the following button commands:
 9. `shuffle` - Shuffles the queue.
 10. `skip` - Skips the current song.
 11. `stop` - Stops the playback and clears the queue.
+
+## Example status messages
+
+<p align="center">
+  <img src="img/status_message.png" width="500">
+</p>
+<p align="center">
+  <img src="img/status_message_2.png" width="500">
+</p>
 
 Additionally, MusicBot provides the ability to clear leftover messages from the bot in the channel using the `!!clear` command.
 
