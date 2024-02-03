@@ -95,7 +95,7 @@ async function printError(
       .setColor("Red");
 
     if (error) {
-      embed.setFooter({ text: `${error.name}` });
+      embed.setFooter({ text: `${error.name}: ${error.message}` });
     }
 
     let reply;
