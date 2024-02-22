@@ -2,6 +2,7 @@
 !buttons
 !commands
 !events
+!img/bot_logo_anim.gif
 !.env
 !functions.js
 !index.js

@@ -37,7 +37,7 @@ module.exports = {
         );
         return printError(
           interaction,
-          "Musisz być na kanale głosowym bota, by móc sterować muzyką!",
+          "Musisz być na kanale głosowym co bot, by móc sterować muzyką!",
           null,
           true
         );

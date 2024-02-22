@@ -17,6 +17,6 @@
     "@distube/ytdl-core": "4.13.3",
     "discord-player": "6.6.4",
     "discord.js": "14.14.1",
-    "dotenv": "16.4.1"
+    "dotenv": "16.4.5"
   }
 }
