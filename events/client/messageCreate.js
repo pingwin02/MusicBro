@@ -7,11 +7,15 @@ module.exports = {
   async execute(message) {
     try {
       if (message.content === "!!clear") {
-        fs.writeFile("logs/log.log", "", (err) => {
-          if (err) {
-            logInfo("!!clear command", err);
+        fs.writeFile(
+          process.argv.includes("dev") ? "logs/dev.log" : "logs/log.log",
+          "",
+          (err) => {
+            if (err) {
+              logInfo("!!clear command", err);
+            }
           }
-        });
+        );
         logInfo(`Log file cleared by @${message.author.username}`);
         const channel = message.client.channels.cache.get(
           message.channelId.toString()
@@ -38,6 +42,16 @@ module.exports = {
           timedDelete(msg2);
         }
         if (message.guild) timedDelete(message);
+      } else if (
+        message.content === "avatar_update" &&
+        message.author.id === process.env.ADMIN_ID
+      ) {
+        await message.react("⌚");
+        message.client.user.setAvatar("img/bot_logo_anim.gif");
+        message.client.user.setBanner("img/bot_banner_anim.gif");
+        await message.reactions.removeAll();
+        await message.react("✅");
+        timedDelete(message, 5000);
       }
     } catch (err) {
       logInfo(`${message.content} message`, err);

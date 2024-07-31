@@ -64,6 +64,11 @@ npm install
 - `CLIENT_ID`: Client ID of the bot.
 - `ADMIN_ID`: ID of the admin.
 
+  Optional:
+
+  - `TOKEN_DEV`: Token of the bot for development purposes.
+  - `CLIENT_ID_DEV`: Client ID of the bot for development purposes.
+
 For example:
 
 ```
@@ -91,6 +96,8 @@ nodemon
 ```
 
 The bot should now be online and ready to use in your Discord server.
+
+For development purposes, you can run the bot using the command `npm run dev`.
 
 ## Known Issues
 

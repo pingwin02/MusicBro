@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "debug": "node index.js debug",
-    "deploy": "node index.js load"
+    "deploy": "node index.js load",
+    "dev": "node index.js dev"
   },
   "keywords": [],
   "author": "",
@@ -14,9 +15,9 @@
   "dependencies": {
     "@discord-player/extractor": "4.4.6",
     "@discordjs/opus": "0.9.0",
-    "@distube/ytdl-core": "4.13.3",
+    "@distube/ytdl-core": "4.13.7",
     "discord-player": "6.6.4",
-    "discord.js": "14.14.1",
+    "discord.js": "14.15.3",
     "dotenv": "16.4.5"
   }
 }

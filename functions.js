@@ -28,6 +28,12 @@ function logInfo(info, error = null) {
   var currentdate = new Date()
     .toLocaleString("pl-PL", {
       timeZone: "Europe/Warsaw",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
     })
     .replace(",", "");
 
@@ -41,11 +47,15 @@ function logInfo(info, error = null) {
     console.log(logMessage);
   }
 
-  fs.appendFile("logs/log.log", `${logMessage}\n`, (err) => {
-    if (err) {
-      console.error("Error writing to log file:", err);
+  fs.appendFile(
+    process.argv.includes("dev") ? "logs/dev.log" : "logs/log.log",
+    `${logMessage}\n`,
+    (err) => {
+      if (err) {
+        console.error("Error writing to log file:", err);
+      }
     }
-  });
+  );
 }
 
 /**
@@ -96,6 +106,8 @@ async function printError(
 
     if (error) {
       embed.setFooter({ text: `${error.name}: ${error.message}` });
+    } else {
+      logInfo("printError", Error(description));
     }
 
     let reply;
