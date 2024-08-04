@@ -51,7 +51,6 @@ module.exports = {
         message.client.user.setBanner("img/bot_banner_anim.gif");
         await message.reactions.removeAll();
         await message.react("✅");
-        timedDelete(message, 5000);
       }
     } catch (err) {
       logInfo(`${message.content} message`, err);
