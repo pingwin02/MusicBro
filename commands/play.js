@@ -83,6 +83,7 @@ module.exports = {
         logInfo(
           `[${interaction.guild.name}] NSFW song: ${song.title} (${song.url})`
         );
+        queue.tasksQueue.release();
         return printError(
           interaction,
           `Żądany utwór [**${song.title}**](${song.url}) [${song.duration}]\n jest oznaczony jako NSFW` +
@@ -100,6 +101,7 @@ module.exports = {
     } catch (err) {
       queue.delete();
       logInfo("Searching song", err);
+      queue.tasksQueue.release();
       return printError(
         interaction,
         "Wystąpił błąd podczas wyszukiwania utworu!\nSpróbuj ponownie później."
@@ -110,6 +112,7 @@ module.exports = {
     } catch (err) {
       queue.delete();
       logInfo("Connecting to voice channel", err);
+      queue.tasksQueue.release();
       return printError(
         interaction,
         "Wystąpił błąd podczas łączenia z kanałem głosowym!\nSpróbuj ponownie później."
@@ -122,6 +125,7 @@ module.exports = {
     } catch (err) {
       queue.delete();
       logInfo("Playing song", err);
+      queue.tasksQueue.release();
       return printError(
         interaction,
         "Wystąpił błąd podczas odtwarzania utworu!\nSpróbuj ponownie później."
