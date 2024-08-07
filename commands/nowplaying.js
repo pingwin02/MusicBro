@@ -17,5 +17,5 @@ module.exports = {
       );
     sendStatus(queue);
     await interaction.deleteReply();
-  },
+  }
 };

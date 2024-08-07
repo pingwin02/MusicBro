@@ -10,5 +10,5 @@ module.exports = {
     } else {
       queue.delete();
     }
-  },
+  }
 };

@@ -4,7 +4,7 @@ const {
   Partials,
   Collection,
   ActivityType,
-  PresenceUpdateStatus,
+  PresenceUpdateStatus
 } = require("discord.js");
 const { REST, Routes } = require("discord.js");
 const fs = require("node:fs");
@@ -51,21 +51,21 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.DirectMessages,
-    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.MessageContent
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction],
   presence: {
     activities: [{ name: "/play", type: ActivityType.Listening }],
-    status: PresenceUpdateStatus.Online,
-  },
+    status: PresenceUpdateStatus.Online
+  }
 });
 
 // Create Discord player
 const player = new Player(client, {
   ytdlOptions: {
     quality: "highestaudio",
-    highWaterMark: 1 << 25,
-  },
+    highWaterMark: 1 << 25
+  }
 });
 
 // Load extractors
@@ -121,7 +121,7 @@ if (LOAD_SLASH) {
         `Started refreshing ${commands.length} application (/) commands.`
       );
       const data = await rest.put(Routes.applicationCommands(CLIENT_ID), {
-        body: commands,
+        body: commands
       });
       logInfo(`Successfully reloaded ${data.length} application (/) commands.`);
       setTimeout(() => {

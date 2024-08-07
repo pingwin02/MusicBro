@@ -28,7 +28,7 @@ module.exports = {
         });
         if (toDelete.length === 0) {
           const msg1 = await message.reply({
-            content: "Nie znaleziono żadnych wiadomości do usunięcia",
+            content: "Nie znaleziono żadnych wiadomości do usunięcia"
           });
           timedDelete(msg1);
         } else {
@@ -37,7 +37,7 @@ module.exports = {
           });
 
           const msg2 = await message.reply({
-            content: `Usunąłem **${toDelete.length}** moich wiadomości`,
+            content: `Usunąłem **${toDelete.length}** moich wiadomości`
           });
           timedDelete(msg2);
         }
@@ -55,5 +55,5 @@ module.exports = {
     } catch (err) {
       logInfo(`${message.content} message`, err);
     }
-  },
+  }
 };

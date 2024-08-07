@@ -5,5 +5,5 @@ module.exports = {
   name: GuildQueueEvent.disconnect,
   async execute(queue) {
     logInfo(`[${queue.guild.name}] Disconnected`);
-  },
+  }
 };

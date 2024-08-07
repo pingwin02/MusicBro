@@ -5,5 +5,5 @@ module.exports = {
   name: GuildQueueEvent.emptyQueue,
   async execute(queue) {
     logInfo(`[${queue.guild.name}] Empty queue`);
-  },
+  }
 };

@@ -7,5 +7,5 @@ module.exports = {
     logInfo(
       `[${queue.guild.name}] Empty channel #${queue.metadata.textChannel.name}`
     );
-  },
+  }
 };

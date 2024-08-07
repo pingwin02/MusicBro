@@ -7,7 +7,8 @@
     "start": "node index.js",
     "debug": "node index.js debug",
     "deploy": "node index.js load",
-    "dev": "node index.js dev"
+    "dev": "node index.js dev",
+    "prettier": "prettier --write ."
   },
   "keywords": [],
   "author": "",
@@ -19,5 +20,8 @@
     "discord-player": "6.7.1",
     "discord.js": "14.15.3",
     "dotenv": "16.4.5"
+  },
+  "devDependencies": {
+    "prettier": "3.3.3"
   }
 }

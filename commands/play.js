@@ -15,7 +15,7 @@ module.exports = {
     .addBooleanOption((option) =>
       option
         .setName("force")
-        .setDescription("Jeśli włączone, odtwarza utwór pomijając kolejkę")
+        .setDescription("Jeśli włączone, odtwarza natychmiastowo utwór pomijając kolejkę")
         .setRequired(false)
     )
     .setDMPermission(false),
@@ -46,8 +46,8 @@ module.exports = {
         metadata: {
           textChannel: interaction.channel,
           statusMessage: null,
-          page: 0,
-        },
+          page: 0
+        }
       });
     } catch (err) {
       logInfo("Creating node", err);
@@ -59,7 +59,7 @@ module.exports = {
     const query = interaction.options.getString("query");
     try {
       const result = await player.search(query, {
-        requestedBy: interaction.user,
+        requestedBy: interaction.user
       });
       if (!result || result.tracks.length === 0) {
         logInfo(`[${interaction.guild.name}] No results for ${query}`);
@@ -143,5 +143,5 @@ module.exports = {
       queue.tasksQueue.release();
       await interaction.deleteReply();
     }
-  },
+  }
 };

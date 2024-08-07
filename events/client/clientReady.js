@@ -6,5 +6,5 @@ module.exports = {
   once: true,
   async execute(client) {
     logInfo(`Logged in as ${client.user.tag}!`);
-  },
+  }
 };

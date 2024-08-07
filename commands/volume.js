@@ -26,5 +26,5 @@ module.exports = {
     queue.node.setVolume(interaction.options.getInteger("value"));
     sendStatus(queue);
     await interaction.deleteReply();
-  },
+  }
 };

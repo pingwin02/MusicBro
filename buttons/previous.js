@@ -12,5 +12,5 @@ module.exports = {
       queue.metadata.page--;
       sendStatus(queue);
     }
-  },
+  }
 };

@@ -8,5 +8,5 @@ module.exports = {
       `[${queue.guild.name}] Playing ${queue.currentTrack.title} (${queue.currentTrack.url})`
     );
     sendStatus(queue);
-  },
+  }
 };

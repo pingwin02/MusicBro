@@ -12,5 +12,5 @@ module.exports = {
       queue.tracks.shuffle();
       sendStatus(queue);
     }
-  },
+  }
 };

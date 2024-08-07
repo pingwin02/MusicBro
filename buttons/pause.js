@@ -12,5 +12,5 @@ module.exports = {
       queue.node.setPaused(true);
       sendStatus(queue);
     }
-  },
+  }
 };

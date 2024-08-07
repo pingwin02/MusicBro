@@ -33,5 +33,5 @@ module.exports = {
     if (queue.node.isPaused()) queue.node.resume();
     sendStatus(queue);
     await interaction.deleteReply();
-  },
+  }
 };

@@ -12,5 +12,5 @@ module.exports = {
     } catch (error) {
       logInfo(`Unable to delete status message`, error.message);
     }
-  },
+  }
 };

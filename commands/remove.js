@@ -31,5 +31,5 @@ module.exports = {
     queue.node.remove(songNumber - 1);
     sendStatus(queue);
     await interaction.deleteReply();
-  },
+  }
 };

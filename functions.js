@@ -4,7 +4,7 @@ const {
   EmbedBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ActionRowBuilder,
+  ActionRowBuilder
 } = require("discord.js");
 
 module.exports = {
@@ -14,7 +14,7 @@ module.exports = {
   sendStatus,
   msToTime,
   timedDelete,
-  loadEvents,
+  loadEvents
 };
 
 /**
@@ -33,7 +33,7 @@ function logInfo(info, error = null) {
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-      second: "2-digit",
+      second: "2-digit"
     })
     .replace(",", "");
 
@@ -67,7 +67,7 @@ function logInfo(info, error = null) {
 function logDebug(info) {
   var currentdate = new Date()
     .toLocaleString("pl-PL", {
-      timeZone: "Europe/Warsaw",
+      timeZone: "Europe/Warsaw"
     })
     .replace(",", "");
 
@@ -115,12 +115,12 @@ async function printError(
     if (interaction.replied || interaction.deferred) {
       reply = await interaction.followUp({
         embeds: [embed],
-        ephemeral: ephemeral,
+        ephemeral: ephemeral
       });
     } else if (!error) {
       reply = await interaction.reply({
         embeds: [embed],
-        ephemeral: ephemeral,
+        ephemeral: ephemeral
       });
     } else {
       const textChannel = interaction;
@@ -154,7 +154,7 @@ async function sendStatus(queue) {
     const bar = queue.node.createProgressBar({
       queue: false,
       length: 8,
-      timecodes: true,
+      timecodes: true
     });
 
     let description =
@@ -177,7 +177,7 @@ async function sendStatus(queue) {
       .setFooter({
         text:
           `Głośność: ${queue.node.volume} | ` +
-          `Strona: ${page + 1} z ${totalPages}`,
+          `Strona: ${page + 1} z ${totalPages}`
       })
       .setColor("Blue");
 
@@ -279,7 +279,7 @@ async function sendStatus(queue) {
 
     const embed = {
       embeds: [status],
-      components: [row1, row2],
+      components: [row1, row2]
     };
 
     if (totalPages > 1) {

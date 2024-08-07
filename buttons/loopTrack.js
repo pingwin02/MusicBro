@@ -12,5 +12,5 @@ module.exports = {
       queue.setRepeatMode(QueueRepeatMode.TRACK);
       sendStatus(queue);
     }
-  },
+  }
 };
