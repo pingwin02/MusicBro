@@ -6,6 +6,6 @@ RUN apt update && apt install -y ffmpeg
 
 COPY . .
 
-RUN npm install
+RUN npm install && npm run deploy
 
 ENTRYPOINT [ "npm", "start" ]

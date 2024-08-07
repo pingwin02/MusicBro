@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { printError, logInfo } = require("../functions");
-const { useMainPlayer } = require("discord-player");
+const { QueueRepeatMode, useMainPlayer } = require("discord-player");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -91,12 +91,21 @@ module.exports = {
         );
       }
 
-      if (!result.playlist) {
-        if (force) queue.insertTrack(song, 0);
-        else queue.addTrack(song);
+      if (force) {
+        if (result.playlist) {
+          queue.addTrack(songs);
+          force = false;
+          printError(
+            interaction,
+            `Opcja \`force\` jest wyłączona dla playlist! Dodano do kolejki **${songs.length}** utworów.`
+          );
+        } else {
+          queue.insertTrack(song);
+          queue.setRepeatMode(QueueRepeatMode.OFF);
+          queue.metadata.page = 0;
+        }
       } else {
-        queue.addTrack(songs);
-        force = false;
+        queue.addTrack(result.playlist ? songs : song);
       }
     } catch (err) {
       queue.delete();
