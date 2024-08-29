@@ -15,7 +15,9 @@ module.exports = {
     .addBooleanOption((option) =>
       option
         .setName("force")
-        .setDescription("Jeśli włączone, odtwarza natychmiastowo utwór pomijając kolejkę")
+        .setDescription(
+          "Jeśli włączone, odtwarza natychmiastowo utwór pomijając kolejkę"
+        )
         .setRequired(false)
     )
     .setDMPermission(false),
