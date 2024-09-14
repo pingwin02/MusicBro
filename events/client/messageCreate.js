@@ -43,7 +43,7 @@ module.exports = {
         }
         if (message.guild) timedDelete(message);
       } else if (
-        message.content === "avatar_update" &&
+        message.content === "!!avatar_update" &&
         message.author.id === process.env.ADMIN_ID
       ) {
         await message.react("⌚");

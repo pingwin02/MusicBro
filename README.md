@@ -8,7 +8,7 @@ MusicBro is a music bot for Discord, built using discord.js and discord-player.
 
 ## Commands
 
-MusicBot provides the following slash commands:
+MusicBro provides the following slash commands:
 
 1. `info` - Displays information about the bot's ping.
 2. `nowplaying` - Displays information about the currently playing song.
@@ -31,6 +31,13 @@ And also the following button commands:
 10. `skip` - Skips the current song.
 11. `stop` - Stops the playback and clears the queue.
 
+Additionally, MusicBro provides the following prefix commands:
+
+- `!!clear` - Deletes messages sent by the bot in the current channel.
+- `!!avatar_update` - Updates the bot's avatar and banner.\*
+
+\*These commands are only available to the bot's admin.
+
 ## Example status messages
 
 <p align="center">
@@ -40,11 +47,9 @@ And also the following button commands:
   <img src="img/status_message_2.png" width="500">
 </p>
 
-Additionally, MusicBot provides the ability to clear leftover messages from the bot in the channel using the `!!clear` command.
-
 ## Logging
 
-MusicBot logs events in 2 different files:
+MusicBro logs events in 2 different files:
 
 1. `log.log` - Logs all events.
 2. `debug.log` - Logs only debug events from the `discord-player` package. (run `npm run debug` to enable)
