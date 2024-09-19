@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { msToTime } = require("../functions.js");
+const { msToTime } = require("../functions");
 
 module.exports = {
   data: new SlashCommandBuilder()
