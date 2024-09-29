@@ -105,7 +105,8 @@ async function printError(
       .setColor("Red");
 
     if (error) {
-      embed.setFooter({ text: `${error.name}: ${error.message}` });
+      const footer = `${error.name || "Error"}: ${error.message || error.response?.statusText} ${error.status ? `(${error.status})` : ""}`;
+      embed.setFooter({ text: footer });
     } else {
       logInfo("printError", Error(description));
     }

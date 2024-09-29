@@ -1,4 +1,3 @@
-const fs = require("fs");
 const { Events } = require("discord.js");
 const { logInfo, timedDelete } = require("../../functions");
 
@@ -7,16 +6,7 @@ module.exports = {
   async execute(message) {
     try {
       if (message.content === "!!clear") {
-        fs.writeFile(
-          process.argv.includes("dev") ? "logs/dev.log" : "logs/log.log",
-          "",
-          (err) => {
-            if (err) {
-              logInfo("!!clear command", err);
-            }
-          }
-        );
-        logInfo(`Log file cleared by @${message.author.username}`);
+        logInfo(`Messages cleared by @${message.author.username}`);
         const channel = message.client.channels.cache.get(
           message.channelId.toString()
         );
