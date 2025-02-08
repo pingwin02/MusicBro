@@ -1,8 +1,8 @@
-FROM node:18
+FROM node:slim
 
 WORKDIR /app
 
-RUN apt update && apt install -y ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg make gcc g++
 
 COPY . .
 
