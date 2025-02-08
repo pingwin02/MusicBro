@@ -1,5 +1,5 @@
 const { useQueue } = require("discord-player");
-const { sendStatus } = require("../functions");
+const utils = require("../utils");
 
 module.exports = {
   name: "previous",
@@ -10,7 +10,7 @@ module.exports = {
       await interaction.deleteReply();
     } else {
       queue.metadata.page--;
-      sendStatus(queue);
+      utils.sendStatus(queue);
     }
   }
 };

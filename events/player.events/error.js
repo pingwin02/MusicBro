@@ -1,11 +1,11 @@
 const { GuildQueueEvent } = require("discord-player");
-const { logInfo, printError } = require("../../functions");
+const utils = require("../../utils");
 
 module.exports = {
   name: GuildQueueEvent.error,
   async execute(queue, error) {
-    logInfo(`[${queue.guild.name}] error event`, error);
-    printError(
+    utils.logInfo(`[${queue.guild.name}] error event`, error);
+    utils.printError(
       queue.metadata.textChannel,
       "Wystąpił błąd podczas odtwarzania muzyki! Spróbuj ponownie później.",
       error

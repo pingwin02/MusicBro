@@ -1,9 +1,9 @@
 const { GuildQueueEvent } = require("discord-player");
-const { logInfo } = require("../../functions");
+const utils = require("../../utils");
 
 module.exports = {
   name: GuildQueueEvent.emptyQueue,
   async execute(queue) {
-    logInfo(`[${queue.guild.name}] Empty queue`);
+    utils.logInfo(`[${queue.guild.name}] Empty queue`);
   }
 };

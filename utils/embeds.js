@@ -1,97 +1,24 @@
-const fs = require("fs");
-const { inspect } = require("util");
 const {
   EmbedBuilder,
   ButtonBuilder,
   ButtonStyle,
   ActionRowBuilder
 } = require("discord.js");
-
-module.exports = {
-  logInfo,
-  logDebug,
-  printError,
-  sendStatus,
-  msToTime,
-  timedDelete,
-  loadEvents
-};
-
-/**
- * Logs information to the console and appends it to a log file.
- * @param {string} info - Information to log.
- * @param {Error} error - Error to log (optional)
- *
- * @returns {void}
- */
-function logInfo(info, error = null) {
-  var currentdate = new Date()
-    .toLocaleString("pl-PL", {
-      timeZone: "Europe/Warsaw",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit"
-    })
-    .replace(",", "");
-
-  var logMessage = `[${currentdate}] - `;
-
-  if (error) {
-    logMessage += `[ERROR] ${info}: ${inspect(error)}`;
-    console.error(logMessage);
-  } else {
-    logMessage += `[INFO] ${info}`;
-    console.log(logMessage);
-  }
-
-  fs.appendFile(
-    process.argv.includes("dev") ? "logs/dev.log" : "logs/log.log",
-    `${logMessage}\n`,
-    (err) => {
-      if (err) {
-        console.error("Error writing to log file:", err);
-      }
-    }
-  );
-}
-
-/**
- * Logs debug information to the console and appends it to a debug file.
- * @param {string} info - Information to log.
- * @returns {void}
- */
-
-function logDebug(info) {
-  var currentdate = new Date()
-    .toLocaleString("pl-PL", {
-      timeZone: "Europe/Warsaw"
-    })
-    .replace(",", "");
-
-  var logMessage = `[${currentdate}] - [DEBUG] ${info}`;
-
-  console.debug(logMessage);
-
-  fs.appendFile("logs/debug.log", `${logMessage}\n`, (err) => {
-    if (err) {
-      console.error("Error writing to debug file:", err);
-    }
-  });
-}
+const { logInfo } = require("./logger");
+const { timedDelete } = require("./time");
 
 /**
  * Sends embed with error message to the interaction channel,
- * then deletes it after 15s. If error is passed, interaction must be a TextChannel.
- * @param {CommandInteraction | TextChannel} interaction - Interaction to reply to.
+ * then deletes it after 15s. If error is passed,
+ * interaction must be a TextChannel.
+ * @param {CommandInteraction | TextChannel} interaction
+ * - Interaction to reply to.
  * @param {string} description - Error message to send.
  * @param {Error} error - Error to log (optional)
- * @param {Boolean} ephemeral - If true, message will be ephemeral (default: false)
+ * @param {Boolean} ephemeral - If true, message
+ * will be ephemeral (default: false)
  * @returns {void}
  */
-
 async function printError(
   interaction,
   description,
@@ -105,14 +32,16 @@ async function printError(
       .setColor("Red");
 
     if (error) {
-      const footer = `${error.name || "Error"}: ${error.message || error.response?.statusText} ${error.status ? `(${error.status})` : ""}`;
+      const footer =
+        `${error.name || "Error"}: ` +
+        `${error.message || error.response?.statusText} ` +
+        `${error.status ? `(${error.status})` : ""}`;
       embed.setFooter({ text: footer });
     } else {
       logInfo("printError", Error(description));
     }
 
     let reply;
-
     if (interaction.replied || interaction.deferred) {
       reply = await interaction.followUp({
         embeds: [embed],
@@ -140,16 +69,18 @@ async function printError(
  * @returns {void}
  * @async
  */
-
 async function sendStatus(queue) {
   try {
     if (!queue.currentTrack) return;
     const howManyonPage = 15;
     const totalPages = Math.ceil(queue.getSize() / howManyonPage) || 1;
-    const page =
-      (queue.metadata.page || 0) > totalPages - 1
-        ? totalPages - 1
-        : queue.metadata.page || 0;
+
+    let page = Math.max(0, Math.min(queue.metadata.page || 0, totalPages - 1));
+
+    if (queue.getSize() < howManyonPage) {
+      page = 0;
+    }
+
     queue.metadata.page = page;
 
     const bar = queue.node.createProgressBar({
@@ -163,14 +94,16 @@ async function sendStatus(queue) {
       `Autor **${queue.currentTrack.author}**\n` +
       `*dodane przez <@${queue.currentTrack.requestedBy.id}>*\n\n` +
       `**Postęp:**\n${bar}` +
-      `\n\n**Kolejka:**\n`;
+      "\n\n**Kolejka:**\n";
 
     const status = new EmbedBuilder()
       .setTitle(
         "Teraz gra" +
           (queue.node.isPaused() ? " (:pause_button: wstrzymane)" : "") +
-          (queue.repeatMode == 1 ? "\n(:repeat_one: powtarzanie utworu)" : "") +
-          (queue.repeatMode == 2
+          (queue.repeatMode === 1
+            ? "\n(:repeat_one: powtarzanie utworu)"
+            : "") +
+          (queue.repeatMode === 2
             ? "\n(:repeat: powtarzanie całej kolejki)"
             : "")
       )
@@ -209,19 +142,19 @@ async function sendStatus(queue) {
       .setCustomId("loopTrack")
       .setEmoji("🔂")
       .setStyle(ButtonStyle.Primary)
-      .setDisabled(queue.repeatMode == 1);
+      .setDisabled(queue.repeatMode === 1);
 
     const loopQueueBtn = new ButtonBuilder()
       .setCustomId("loopQueue")
       .setEmoji("🔁")
       .setStyle(ButtonStyle.Primary)
-      .setDisabled(queue.repeatMode == 2);
+      .setDisabled(queue.repeatMode === 2);
 
     const disableLoopBtn = new ButtonBuilder()
       .setCustomId("loopDisable")
       .setEmoji("➡")
       .setStyle(ButtonStyle.Primary)
-      .setDisabled(queue.repeatMode == 0);
+      .setDisabled(queue.repeatMode === 0);
 
     const shuffleBtn = new ButtonBuilder()
       .setCustomId("shuffle")
@@ -232,13 +165,13 @@ async function sendStatus(queue) {
       .setCustomId("previous")
       .setLabel("Poprzednia strona")
       .setStyle(ButtonStyle.Secondary)
-      .setDisabled(page == 0);
+      .setDisabled(page === 0);
 
     const nextBtn = new ButtonBuilder()
       .setCustomId("next")
       .setLabel("Następna strona")
       .setStyle(ButtonStyle.Secondary)
-      .setDisabled(page == totalPages - 1);
+      .setDisabled(page === totalPages - 1);
 
     const refreshBtn = new ButtonBuilder()
       .setCustomId("refresh")
@@ -306,56 +239,7 @@ async function sendStatus(queue) {
   }
 }
 
-/**
- * Converts a number of milliseconds to a human-readable time format.
- * @param {number} ms - Number of milliseconds to convert.
- * @returns {string} Human-readable time format.
- */
-function msToTime(ms) {
-  let seconds = (ms / 1000).toFixed(1);
-  let minutes = (ms / (1000 * 60)).toFixed(1);
-  let hours = (ms / (1000 * 60 * 60)).toFixed(1);
-  let days = (ms / (1000 * 60 * 60 * 24)).toFixed(1);
-  if (seconds < 60) return seconds + " sekund";
-  else if (minutes < 60) return minutes + " minut";
-  else if (hours < 24) return hours + " godzin";
-  else return days + " dni";
-}
-
-/**
- * Deletes a message after a specified timeout.
- * @param {Message} message - Message to delete.
- * @param {number} timeout - Timeout in milliseconds. (default: 3000)
- * @returns {void}
- */
-
-function timedDelete(message, timeout = 3000) {
-  setTimeout(async () => {
-    try {
-      await message.delete();
-    } catch (err) {
-      logInfo("timedDelete", err);
-    }
-  }, timeout);
-}
-
-/**
- * Loads all events from a folder.
- * @param {EventEmitter} receiver - Event receiver.
- * @param {string} folderPath - Path to the folder.
- * @returns {void}
- */
-function loadEvents(receiver, folderPath) {
-  const events = fs
-    .readdirSync(folderPath)
-    .filter((file) => file.endsWith(".js"));
-
-  for (const file of events) {
-    const event = require(`${folderPath}/${file}`);
-    if (event.once) {
-      receiver.once(event.name, (...args) => event.execute(...args));
-    } else {
-      receiver.on(event.name, (...args) => event.execute(...args));
-    }
-  }
-}
+module.exports = {
+  printError,
+  sendStatus
+};

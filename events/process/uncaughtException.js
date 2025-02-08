@@ -1,9 +1,9 @@
-const { logInfo } = require("../../functions");
+const utils = require("../../utils");
 
 module.exports = {
   name: "uncaughtException",
   async execute(error) {
-    logInfo("uncaughtException", error);
+    utils.logInfo("uncaughtException", error);
     setTimeout(() => {
       process.exit(1);
     }, 1000);

@@ -1,9 +1,9 @@
 const { GuildQueueEvent } = require("discord-player");
-const { logInfo } = require("../../functions");
+const utils = require("../../utils");
 
 module.exports = {
   name: GuildQueueEvent.connectionDestroyed,
   async execute(queue) {
-    logInfo(`[${queue.guild.name}] Connection destroyed`);
+    utils.logInfo(`[${queue.guild.name}] Connection destroyed`);
   }
 };

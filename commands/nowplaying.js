@@ -1,21 +1,21 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, InteractionContextType } = require("discord.js");
 const { useQueue } = require("discord-player");
-const { sendStatus, printError } = require("../functions");
+const utils = require("../utils");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("nowplaying")
     .setDescription("Wyświetla informacje o aktualnie granym utworze")
-    .setDMPermission(false),
+    .setContexts(InteractionContextType.Guild),
   run: async ({ interaction }) => {
     await interaction.deferReply();
     const queue = useQueue(interaction.guild.id);
     if (!queue)
-      return printError(
+      return utils.printError(
         interaction,
         "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
       );
-    sendStatus(queue);
+    utils.sendStatus(queue);
     await interaction.deleteReply();
   }
 };

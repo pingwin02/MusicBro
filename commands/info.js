@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { msToTime } = require("../functions");
+const utils = require("../utils");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -8,7 +8,7 @@ module.exports = {
   run: async ({ client, interaction }) => {
     const ping = Math.max(Date.now() - interaction.createdTimestamp, 0);
     const apiPing = Math.max(client.ws.ping, 0);
-    const uptime = msToTime(client.uptime);
+    const uptime = utils.msToTime(client.uptime);
     const msg =
       `:ping_pong: Ping wynosi **${ping}ms**\n` +
       `:robot: Ping API wynosi **${apiPing}ms**\n` +

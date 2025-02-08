@@ -1,12 +1,8 @@
-FROM node:slim
-
-WORKDIR /app
-
-RUN apt-get update && apt-get install -y ffmpeg make gcc g++
+FROM pingwin02/node-ffmpeg-build
 
 COPY . .
 
-ENV NODE_ENV=production
+ENV NODE_ENV=production YTDL_NO_UPDATE=1 NODE_NO_WARNINGS=1
 
 RUN npm install && npm run deploy
 

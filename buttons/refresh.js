@@ -1,5 +1,5 @@
 const { useQueue } = require("discord-player");
-const { sendStatus } = require("../functions");
+const utils = require("../utils");
 
 module.exports = {
   name: "refresh",
@@ -10,11 +10,11 @@ module.exports = {
       !queue ||
       !queue.metadata ||
       !queue.metadata.statusMessage ||
-      queue.metadata.statusMessage != interaction.message.id
+      queue.metadata.statusMessage.id !== interaction.message.id
     ) {
       await interaction.deleteReply();
     } else {
-      sendStatus(queue);
+      utils.sendStatus(queue);
     }
   }
 };

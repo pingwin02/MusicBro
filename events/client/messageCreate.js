@@ -1,12 +1,12 @@
 const { Events } = require("discord.js");
-const { logInfo, timedDelete } = require("../../functions");
+const utils = require("../../utils");
 
 module.exports = {
   name: Events.MessageCreate,
   async execute(message) {
     try {
       if (message.content === "!!clear") {
-        logInfo(`Messages cleared by @${message.author.username}`);
+        utils.logInfo(`Messages cleared by @${message.author.username}`);
         const channel = message.client.channels.cache.get(
           message.channelId.toString()
         );
@@ -20,18 +20,18 @@ module.exports = {
           const msg1 = await message.reply({
             content: "Nie znaleziono żadnych wiadomości do usunięcia"
           });
-          timedDelete(msg1);
+          utils.timedDelete(msg1);
         } else {
           toDelete.forEach((msg) => {
-            timedDelete(channel.messages.cache.get(msg), 0);
+            utils.timedDelete(channel.messages.cache.get(msg), 0);
           });
 
           const msg2 = await message.reply({
             content: `Usunąłem **${toDelete.length}** moich wiadomości`
           });
-          timedDelete(msg2);
+          utils.timedDelete(msg2);
         }
-        if (message.guild) timedDelete(message);
+        if (message.guild) utils.timedDelete(message);
       } else if (
         message.content === "!!avatar_update" &&
         message.author.id === process.env.ADMIN_ID
@@ -43,7 +43,7 @@ module.exports = {
         await message.react("✅");
       }
     } catch (err) {
-      logInfo(`${message.content} message`, err);
+      utils.logInfo(`${message.content} message`, err);
     }
   }
 };

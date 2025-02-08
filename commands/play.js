@@ -1,6 +1,6 @@
-const { SlashCommandBuilder } = require("discord.js");
-const { printError, logInfo } = require("../functions");
+const { SlashCommandBuilder, InteractionContextType } = require("discord.js");
 const { QueueRepeatMode, useMainPlayer } = require("discord-player");
+const utils = require("../utils");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -20,26 +20,29 @@ module.exports = {
         )
         .setRequired(false)
     )
-    .setDMPermission(false),
+    .setContexts(InteractionContextType.Guild),
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
     const voiceChannel = interaction.member.voice.channel;
     if (!voiceChannel)
-      return printError(interaction, "Musisz być na kanale głosowym!");
+      return utils.printError(interaction, "Musisz być na kanale głosowym!");
     if (
       !voiceChannel.permissionsFor(client.user).has("ViewChannel") ||
       !voiceChannel.permissionsFor(client.user).has("Connect") ||
       !voiceChannel.permissionsFor(client.user).has("Speak")
     )
-      return printError(
+      return utils.printError(
         interaction,
         "Nie mam uprawnień do połączenia się z kanałem głosowym!"
       );
     if (voiceChannel.full)
-      return printError(interaction, "Kanał jest pełny! Spróbuj później.");
+      return utils.printError(
+        interaction,
+        "Kanał jest pełny! Spróbuj później."
+      );
     let queue;
     const player = useMainPlayer();
-    let force = interaction.options.getBoolean("force") || false;
+    const force = interaction.options.getBoolean("force") || false;
     try {
       queue = player.nodes.create(interaction.guild, {
         leaveOnEnd: true,
@@ -52,8 +55,8 @@ module.exports = {
         }
       });
     } catch (err) {
-      logInfo("Creating node", err);
-      return printError(
+      utils.logInfo("Creating node", err);
+      return utils.printError(
         interaction,
         "Wystąpił błąd podczas tworzenia węzła! Spróbuj ponownie później."
       );
@@ -64,13 +67,14 @@ module.exports = {
         requestedBy: interaction.user
       });
       if (!result || result.tracks.length === 0) {
-        logInfo(`[${interaction.guild.name}] No results for ${query}`);
+        utils.logInfo(`[${interaction.guild.name}] No results for ${query}`);
         if (!queue.currentTrack) {
           queue.delete();
         }
-        return printError(
+        return utils.printError(
           interaction,
-          "Nie znaleziono! Spróbuj ponownie później.\nUpewnij się, że link lub fraza jest poprawna.\n\n" +
+          "Nie znaleziono! Spróbuj ponownie później.\n" +
+            "Upewnij się, że link lub fraza jest poprawna.\n\n" +
             "Wspierane serwisy: <:YouTube:1156904255979016203> Youtube"
         );
       }
@@ -82,38 +86,37 @@ module.exports = {
       const song = songs[0];
 
       if (song.__metadata.nsfw) {
-        logInfo(
+        utils.logInfo(
           `[${interaction.guild.name}] NSFW song: ${song.title} (${song.url})`
         );
         queue.tasksQueue.release();
-        return printError(
+        return utils.printError(
           interaction,
-          `Żądany utwór [**${song.title}**](${song.url}) [${song.duration}]\n jest oznaczony jako NSFW` +
-            ` i nie może zostać odtworzony! :underage:`
+          `Żądany utwór [**${song.title}**](${song.url}) ` +
+            `[${song.duration}]\n jest oznaczony jako NSFW ` +
+            "i nie może zostać odtworzony! :underage:"
         );
       }
 
       if (force) {
         if (result.playlist) {
-          queue.addTrack(songs);
-          force = false;
-          printError(
+          queue.tasksQueue.release();
+          return utils.printError(
             interaction,
-            `Opcja \`force\` jest wyłączona dla playlist! Dodano do kolejki **${songs.length}** utworów.`
+            "Opcja `force` jest wyłączona dla playlist!"
           );
-        } else {
-          queue.insertTrack(song);
-          queue.setRepeatMode(QueueRepeatMode.OFF);
-          queue.metadata.page = 0;
         }
+        queue.insertTrack(song);
+        queue.setRepeatMode(QueueRepeatMode.OFF);
+        queue.metadata.page = 0;
       } else {
         queue.addTrack(result.playlist ? songs : song);
       }
     } catch (err) {
       queue.delete();
-      logInfo("Searching song", err);
+      utils.logInfo("Searching song", err);
       queue.tasksQueue.release();
-      return printError(
+      return utils.printError(
         interaction,
         "Wystąpił błąd podczas wyszukiwania utworu!\nSpróbuj ponownie później."
       );
@@ -122,11 +125,12 @@ module.exports = {
       if (!queue.connection) await queue.connect(voiceChannel);
     } catch (err) {
       queue.delete();
-      logInfo("Connecting to voice channel", err);
+      utils.logInfo("Connecting to voice channel", err);
       queue.tasksQueue.release();
-      return printError(
+      return utils.printError(
         interaction,
-        "Wystąpił błąd podczas łączenia z kanałem głosowym!\nSpróbuj ponownie później."
+        "Wystąpił błąd podczas łączenia z kanałem głosowym!\n" +
+          "Spróbuj ponownie później."
       );
     }
     try {
@@ -135,9 +139,9 @@ module.exports = {
       }
     } catch (err) {
       queue.delete();
-      logInfo("Playing song", err);
+      utils.logInfo("Playing song", err);
       queue.tasksQueue.release();
-      return printError(
+      return utils.printError(
         interaction,
         "Wystąpił błąd podczas odtwarzania utworu!\nSpróbuj ponownie później."
       );

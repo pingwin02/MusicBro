@@ -1,16 +1,16 @@
 const { GuildQueueEvent } = require("discord-player");
-const { logInfo } = require("../../functions");
+const utils = require("../../utils");
 
 module.exports = {
   name: GuildQueueEvent.queueDelete,
   async execute(queue) {
-    logInfo(`[${queue.guild.name}] Queue deleted`);
+    utils.logInfo(`[${queue.guild.name}] Queue deleted`);
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       if (queue.metadata.statusMessage)
         await queue.metadata.statusMessage.delete();
     } catch (error) {
-      logInfo(`Unable to delete status message`, error.message);
+      utils.logInfo("Unable to delete status message", error.message);
     }
   }
 };

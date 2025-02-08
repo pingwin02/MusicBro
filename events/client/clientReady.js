@@ -1,10 +1,10 @@
 const { Events } = require("discord.js");
-const { logInfo } = require("../../functions");
+const utils = require("../../utils");
 
 module.exports = {
   name: Events.ClientReady,
   once: true,
   async execute(client) {
-    logInfo(`Logged in as ${client.user.tag}!`);
+    utils.logInfo(`Logged in as ${client.user.tag}!`);
   }
 };

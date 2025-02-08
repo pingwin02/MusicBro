@@ -1,5 +1,5 @@
 const { useQueue, QueueRepeatMode } = require("discord-player");
-const { sendStatus } = require("../functions");
+const utils = require("../utils");
 
 module.exports = {
   name: "loopTrack",
@@ -10,7 +10,7 @@ module.exports = {
       await interaction.deleteReply();
     } else {
       queue.setRepeatMode(QueueRepeatMode.TRACK);
-      sendStatus(queue);
+      utils.sendStatus(queue);
     }
   }
 };

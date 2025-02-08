@@ -1,11 +1,11 @@
 const { GuildQueueEvent } = require("discord-player");
-const { logInfo, sendStatus } = require("../../functions");
+const utils = require("../../utils");
 
 module.exports = {
   name: GuildQueueEvent.audioTrackAdd,
   async execute(queue, track) {
-    logInfo(`[${queue.guild.name}] Added ${track.title} (${track.url})`);
-    queue.metadata.page = Number.MAX_SAFE_INTEGER;
-    sendStatus(queue);
+    utils.logInfo(`[${queue.guild.name}] Added ${track.title} (${track.url})`);
+    queue.metadata.page = queue.metadata.page || 0;
+    utils.sendStatus(queue);
   }
 };
