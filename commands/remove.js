@@ -16,7 +16,7 @@ module.exports = {
     .setContexts(InteractionContextType.Guild),
   run: async ({ interaction }) => {
     await interaction.deferReply();
-    const queue = useQueue(interaction.guild.id);
+    const queue = useQueue(interaction.guildId);
     if (!queue)
       return utils.printError(
         interaction,
