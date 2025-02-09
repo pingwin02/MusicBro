@@ -112,7 +112,7 @@ For development purposes, you can run the bot using the command `npm run dev`.
 
 ## License
 
-MusicBro is released under the [MIT License](LICENSE.txt).
+MusicBro is released under the [MIT License](LICENSE).
 
 ## Credits
 
