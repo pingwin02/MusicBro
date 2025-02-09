@@ -27,7 +27,7 @@ function timedDelete(message, timeout = 3000) {
     try {
       await message.delete();
     } catch (err) {
-      logInfo("timedDelete", err);
+      logInfo("timedDelete", err.status === 404 ? err.message : err);
     }
   }, timeout);
 }
