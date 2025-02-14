@@ -12,7 +12,6 @@ const { Player } = require("discord-player");
 const { YouTubeExtractor } = require("@discord-player/extractor");
 const utils = require("./utils");
 
-// Load environment variables
 require("dotenv").config();
 
 const LOAD_SLASH = process.argv.includes("load");
@@ -35,17 +34,14 @@ if (!TOKEN || !CLIENT_ID || !ADMIN_ID) {
   }, 1000);
 }
 
-// Create logs folder if it doesn't exist
 if (!fs.existsSync("logs")) {
   fs.mkdirSync("logs");
 }
 
-// Delete old debug logs
 if (fs.existsSync("logs/debug.log")) {
   fs.unlinkSync("logs/debug.log");
 }
 
-// Create Discord client with required intents
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -61,7 +57,6 @@ const client = new Client({
   }
 });
 
-// Create Discord player
 const player = new Player(client, {
   ytdlOptions: {
     quality: "highestaudio",
@@ -69,10 +64,8 @@ const player = new Player(client, {
   }
 });
 
-// Load extractors
 player.extractors.register(YouTubeExtractor, {});
 
-// Load slash commands from commands folder
 client.slashcommands = new Collection();
 const commands = [];
 const slashFiles = fs
@@ -94,7 +87,6 @@ for (const file of slashFiles) {
   if (LOAD_SLASH) commands.push(slashcmd.data.toJSON());
 }
 
-// Load button commands from buttons folder
 client.buttoncommands = new Collection();
 const buttonFiles = fs
   .readdirSync("./buttons")
@@ -114,7 +106,6 @@ for (const file of buttonFiles) {
   }
 }
 
-// If load is passed, load slash commands and exit
 if (LOAD_SLASH) {
   const rest = new REST({ version: "10" }).setToken(TOKEN);
 
@@ -140,13 +131,11 @@ if (LOAD_SLASH) {
     }
   })();
 } else {
-  // Otherwise, load events and login
   utils.loadEvents(client, "./events/client");
   utils.loadEvents(player, "./events/player");
   utils.loadEvents(player.events, "./events/player.events");
   utils.loadEvents(process, "./events/process");
 
-  // Login to Discord
   client.login(TOKEN).catch((err) => {
     utils.logInfo("Logging in", err);
     setTimeout(() => {
