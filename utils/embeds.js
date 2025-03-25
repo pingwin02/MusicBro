@@ -57,7 +57,7 @@ async function printError(
       reply = await textChannel.send({ embeds: [embed] });
     }
 
-    if (!error) timedDelete(reply, 15000);
+    if (!error) timedDelete(reply, 10000);
   } catch (err) {
     logInfo("printError", err);
   }

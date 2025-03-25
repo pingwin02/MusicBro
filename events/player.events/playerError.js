@@ -2,7 +2,7 @@ const { GuildQueueEvent } = require("discord-player");
 const utils = require("../../utils");
 
 module.exports = {
-  name: GuildQueueEvent.playerError,
+  name: GuildQueueEvent.PlayerError,
   async execute(queue, error) {
     utils.logInfo(`[${queue.guild.name}] playerError event`, error);
     utils.printError(

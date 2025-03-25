@@ -11,6 +11,8 @@ function loadEvents(receiver, folderPath) {
     .readdirSync(folderPath)
     .filter((file) => file.endsWith(".js"));
 
+  receiver.setMaxListeners(events.length + 1);
+
   for (const file of events) {
     const event = require(`../${folderPath}/${file}`);
     if (event.once) {

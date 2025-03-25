@@ -2,7 +2,7 @@ const { GuildQueueEvent } = require("discord-player");
 const utils = require("../../utils");
 
 module.exports = {
-  name: GuildQueueEvent.audioTracksAdd,
+  name: GuildQueueEvent.AudioTracksAdd,
   async execute(queue, track) {
     utils.logInfo(
       `[${queue.guild.name}] Added playlist ${track[0].playlist.description} ` +

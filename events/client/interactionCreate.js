@@ -32,18 +32,20 @@ module.exports = {
         );
       }
 
+      const botVoiceChannel = interaction.guild?.members?.me?.voice?.channel;
+
       if (
-        interaction.isButton() &&
+        botVoiceChannel &&
         interaction.customId !== "refresh" &&
-        interaction.member.voice.channel !==
-          interaction.guild.members.me.voice.channel
+        interaction.commandName !== "info" &&
+        interaction.member?.voice?.channel !== botVoiceChannel
       ) {
         utils.logInfo(
           `${interaction.user.username} is not in the same voice channel as bot`
         );
         return utils.printError(
           interaction,
-          "Musisz być na kanale głosowym co bot, by móc sterować muzyką!",
+          "Musisz być na tym samym kanale głosowym co bot!",
           null,
           true
         );

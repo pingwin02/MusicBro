@@ -2,7 +2,7 @@ const { GuildQueueEvent } = require("discord-player");
 const utils = require("../../utils");
 
 module.exports = {
-  name: GuildQueueEvent.queueDelete,
+  name: GuildQueueEvent.QueueDelete,
   async execute(queue) {
     utils.logInfo(`[${queue.guild.name}] Queue deleted`);
     try {
