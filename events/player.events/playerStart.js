@@ -6,7 +6,7 @@ module.exports = {
   async execute(queue) {
     utils.logInfo(
       `[${queue.guild.name}] Playing ${queue.currentTrack.title} ` +
-        `(${queue.currentTrack.url})`
+        `(${queue.currentTrack.url}) [${queue.currentTrack.duration}]`
     );
     utils.sendStatus(queue);
   }
