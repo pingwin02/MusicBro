@@ -64,7 +64,12 @@ const player = new Player(client, {
   }
 });
 
-player.extractors.register(YoutubeiExtractor, {});
+player.extractors.register(YoutubeiExtractor, {
+  generateWithPoToken: true,
+  streamOptions: {
+    useClient: "WEB"
+  }
+});
 
 client.slashcommands = new Collection();
 const commands = [];

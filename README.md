@@ -14,8 +14,9 @@ MusicBro provides the following slash commands:
 2. `nowplaying` - Displays information about the currently playing song.
 3. `play` - Searches for a song or songs based on a link or search query and starts playing.
 4. `remove` - Removes a song from the queue.
-5. `skipto` - Skips to a specified song in the queue.
-6. `volume` - Adjusts the volume of the playback.
+5. `seek` - Seeks to a specified time in the current song.
+6. `skipto` - Skips to a specified song in the queue.
+7. `volume` - Adjusts the volume of the playback.
 
 And also the following button commands:
 
