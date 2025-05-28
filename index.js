@@ -57,17 +57,13 @@ const client = new Client({
   }
 });
 
-const player = new Player(client, {
-  ytdlOptions: {
-    quality: "highestaudio",
-    highWaterMark: 1 << 25
-  }
-});
+const player = new Player(client);
 
 player.extractors.register(YoutubeiExtractor, {
   generateWithPoToken: true,
   streamOptions: {
-    useClient: "WEB"
+    useClient: "WEB",
+    highWaterMark: 10 * 1024 * 1024
   }
 });
 

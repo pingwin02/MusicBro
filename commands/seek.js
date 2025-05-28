@@ -5,9 +5,7 @@ const utils = require("../utils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("seek")
-    .setDescription(
-      "Przewija aktualnie odtwarzany utwór do podanego czasu (mm:ss lub mm)"
-    )
+    .setDescription("Przewija aktualnie odtwarzany utwór do podanego czasu")
     .addStringOption((option) =>
       option
         .setName("time")
