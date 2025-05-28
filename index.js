@@ -62,7 +62,7 @@ const player = new Player(client);
 player.extractors.register(YoutubeiExtractor, {
   generateWithPoToken: true,
   streamOptions: {
-    useClient: "WEB",
+    useClient: "WEB_EMBEDDED",
     highWaterMark: 10 * 1024 * 1024
   }
 });
