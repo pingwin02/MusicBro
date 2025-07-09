@@ -71,7 +71,6 @@ npm install
 - `ADMIN_ID`: ID of the admin.
 
   Optional:
-
   - `TOKEN_DEV`: Token of the bot for development purposes.
   - `CLIENT_ID_DEV`: Client ID of the bot for development purposes.
 
