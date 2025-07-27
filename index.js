@@ -12,7 +12,7 @@ const { Player } = require("discord-player");
 const { YoutubeiExtractor } = require("discord-player-youtubei");
 const utils = require("./utils");
 
-require("dotenv").config();
+require("dotenv").config({ quiet: true });
 
 const LOAD_SLASH = process.argv.includes("load");
 const DEV = process.argv.includes("dev");

@@ -13,7 +13,7 @@ module.exports = {
     if (!queue)
       return utils.printError(
         interaction,
-        "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
+        "Kolejka jest pusta! Użyj `/play`, aby dodać utwory."
       );
     utils.sendStatus(queue);
     await interaction.deleteReply();

@@ -20,7 +20,7 @@ module.exports = {
     if (!queue)
       return utils.printError(
         interaction,
-        "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
+        "Kolejka jest pusta! Użyj `/play`, aby dodać utwory."
       );
     const songNumber = interaction.options.getInteger("number");
     if (songNumber > queue.getSize())

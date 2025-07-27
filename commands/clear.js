@@ -4,32 +4,18 @@ const utils = require("../utils");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("remove")
-    .setDescription("Usuwa wybrany utwór z kolejki")
-    .addIntegerOption((option) =>
-      option
-        .setName("number")
-        .setDescription("Numer utworu w kolejce")
-        .setMinValue(1)
-        .setRequired(true)
-    )
+    .setName("clear")
+    .setDescription("Czyści kolejkę utworów")
     .setContexts(InteractionContextType.Guild),
   run: async ({ interaction }) => {
     await interaction.deferReply();
     const queue = useQueue(interaction.guildId);
-    if (!queue)
+    if (!queue || queue.getSize() === 0)
       return utils.printError(
         interaction,
         "Kolejka jest pusta! Użyj `/play`, aby dodać utwory."
       );
-    const songNumber = interaction.options.getInteger("number");
-    if (songNumber > queue.getSize())
-      return utils.printError(
-        interaction,
-        "Nie ma takiego utworu w kolejce! " +
-          "Upewnij się, że podałeś poprawny numer."
-      );
-    queue.node.remove(songNumber - 1);
+    queue.clear();
     utils.sendStatus(queue);
     await interaction.deleteReply();
   }

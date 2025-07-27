@@ -19,7 +19,7 @@ module.exports = {
     if (!queue)
       return utils.printError(
         interaction,
-        "Kolejka pusta! Użyj `/play` aby coś odtworzyć."
+        "Kolejka jest pusta! Użyj `/play`, aby dodać utwory."
       );
 
     const input = interaction.options.getString("time").trim();
