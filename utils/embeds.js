@@ -232,19 +232,20 @@ async function sendStatus(queue) {
 
     (async () => {
       try {
-        const title = queue.currentTrack.title;
-        const author = queue.currentTrack.author;
-        const track = title.includes(author) ? title : `${author} ${title}`;
+        let title = queue.currentTrack.title;
+        let author = queue.currentTrack.author;
+        if (title.includes(" - ")) {
+          const parts = title.split(" - ");
+          author = parts[0].trim();
+          title = parts[1].trim();
+        }
+        const track = `${author} ${title}`;
         const results = await player.lyrics.search({
           trackName: track,
           artistName: author
         });
         const first = results[0];
         if (first && first.syncedLyrics) {
-          logInfo(
-            `Found synced lyrics for ${author} - ${track}: ` +
-              `${first.plainLyrics.replace(/\n/g, " ").slice(0, 50)}...`
-          );
           const syncedLyrics = queue.syncedLyrics(first);
           syncedLyrics.onChange(async (lyrics, timestamp) => {
             queue.metadata.lastLyricsLine = lyrics;
@@ -266,8 +267,6 @@ async function sendStatus(queue) {
           });
           syncedLyrics.subscribe();
           lastLyricsLine = queue.metadata.lastLyricsLine;
-        } else {
-          logInfo(`Lyrics not found for ${author} - ${track}`);
         }
       } catch (err) {
         logInfo("Lyrics fetch error", err);
