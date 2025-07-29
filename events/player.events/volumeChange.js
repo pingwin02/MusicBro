@@ -7,6 +7,5 @@ module.exports = {
     utils.logInfo(
       `[${queue.guild.name}] Volume changed: ${oldVolume} -> ${newVolume}`
     );
-    utils.sendStatus(queue);
   }
 };

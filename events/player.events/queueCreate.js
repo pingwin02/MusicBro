@@ -5,6 +5,5 @@ module.exports = {
   name: GuildQueueEvent.QueueCreate,
   async execute(queue) {
     utils.logInfo(`[${queue.guild.name}] Queue created`);
-    utils.sendStatus(queue);
   }
 };

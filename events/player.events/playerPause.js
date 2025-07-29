@@ -5,6 +5,5 @@ module.exports = {
   name: GuildQueueEvent.PlayerPause,
   async execute(queue) {
     utils.logInfo(`[${queue.guild.name}] Player paused`);
-    utils.sendStatus(queue);
   }
 };

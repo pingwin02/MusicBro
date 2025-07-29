@@ -7,6 +7,5 @@ module.exports = {
     utils.logInfo(
       `[${queue.guild.name}] Removed ${tracks.length} tracks from queue`
     );
-    utils.sendStatus(queue);
   }
 };

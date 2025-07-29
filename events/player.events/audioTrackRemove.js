@@ -8,6 +8,5 @@ module.exports = {
       `[${queue.guild.name}] Removed ${track.title} ` +
         `(${track.url}) [${track.duration}]`
     );
-    utils.sendStatus(queue);
   }
 };
