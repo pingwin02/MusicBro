@@ -65,16 +65,89 @@ async function printError(
 }
 
 /**
+ * Handles fetching and processing lyrics for the current track.
+ * @param {Queue|undefined} queue
+ * @param {Function} [onChange] - Callback for synced lyrics
+ * (lyricsLine, timestamp)
+ * @param {string} [searchString] - Optional search string for lyrics
+ * @returns {Promise<string|undefined>} - Returns lyrics text
+ * if no callback is provided, otherwise undefined
+ */
+async function handleLyrics({ queue, onChange, searchString }) {
+  const player = useMainPlayer();
+  let title, author;
+  if (searchString) {
+    const results = await player.lyrics.search({ q: searchString });
+    const first = results[0];
+    if (!first) {
+      logInfo(`Lyrics not found for "${searchString}" (searchString)`);
+      return false;
+    }
+    logInfo(
+      `Found plain lyrics for "${searchString} (searchString)": ` +
+        `${first.plainLyrics.replace(/\n/g, " ").slice(0, 50)}...`
+    );
+    return {
+      lyrics: first.plainLyrics,
+      title: first.trackName,
+      author: first.artistName
+    };
+  } else if (queue) {
+    title = queue.currentTrack.title;
+    author = queue.currentTrack.author;
+    title = title
+      .replace(/\s*[([].*?[)\]]\s*/g, "")
+      .replace(/\*/g, "")
+      .trim();
+    if (title.includes(" - ")) {
+      const parts = title.split(" - ");
+      author = parts[0].trim();
+      title = parts[1].trim();
+    }
+    const results = await player.lyrics.search({
+      trackName: title,
+      artistName: author
+    });
+    const first = results[0];
+    if (!first) {
+      logInfo(`Lyrics not found for ${author} - ${title} (queue)`);
+      return false;
+    }
+    if (onChange && first.syncedLyrics) {
+      logInfo(
+        `Found synced lyrics for ${author} - ${title} (queue): ` +
+          `${first.plainLyrics.replace(/\n/g, " ").slice(0, 50)}...`
+      );
+      const syncedLyrics = queue.syncedLyrics(first);
+      syncedLyrics.onChange(onChange);
+      syncedLyrics.subscribe();
+      return true;
+    }
+    logInfo(
+      `Found plain lyrics for ${author} - ${title} (queue): ` +
+        `${first.plainLyrics.replace(/\n/g, " ").slice(0, 50)}...`
+    );
+    return {
+      lyrics: first.plainLyrics,
+      title: first.trackName,
+      author: first.artistName
+    };
+  }
+  return;
+}
+
+/**
  * Sends embed with status message to the interaction channel.
  * @param {Queue} queue - Queue to get info from.
+ * @param {boolean} fetchLyrics - If true,
+ * fetch and sync lyrics (default: false)
  * @returns {void}
  * @async
  */
-async function sendStatus(queue) {
+async function sendStatus(queue, fetchLyrics = false) {
   try {
     if (!queue.currentTrack) return;
-    const player = useMainPlayer();
-    let lastLyricsLine = queue.metadata.lastLyricsLine || null;
+    const lastLyricsLine = queue.metadata.lastLyricsLine || null;
 
     const howManyonPage = 15;
     const totalPages = Math.ceil(queue.getSize() / howManyonPage) || 1;
@@ -230,48 +303,45 @@ async function sendStatus(queue) {
 
     embed.components.push(row4);
 
-    (async () => {
-      try {
-        let title = queue.currentTrack.title;
-        let author = queue.currentTrack.author;
-        if (title.includes(" - ")) {
-          const parts = title.split(" - ");
-          author = parts[0].trim();
-          title = parts[1].trim();
+    if (fetchLyrics) {
+      const lyricsResult = await handleLyrics({
+        queue,
+        onChange: async (lyrics, timestamp) => {
+          queue.metadata.lastLyricsLine = lyrics;
+          const updatedDescription = buildDescription(
+            queue,
+            lyrics,
+            page,
+            howManyonPage
+          );
+          status.setDescription(updatedDescription);
+          try {
+            await queue.metadata.statusMessage.edit({
+              embeds: [status],
+              components: embed.components
+            });
+          } catch (err) {
+            logInfo("Live lyrics statusMessage edit", err);
+          }
         }
-        const track = `${author} ${title}`;
-        const results = await player.lyrics.search({
-          trackName: track,
-          artistName: author
-        });
-        const first = results[0];
-        if (first && first.syncedLyrics) {
-          const syncedLyrics = queue.syncedLyrics(first);
-          syncedLyrics.onChange(async (lyrics, timestamp) => {
-            queue.metadata.lastLyricsLine = lyrics;
-            const updatedDescription = buildDescription(
-              queue,
-              lyrics,
-              page,
-              howManyonPage
-            );
-            status.setDescription(updatedDescription);
-            try {
-              await queue.metadata.statusMessage.edit({
-                embeds: [status],
-                components: embed.components
-              });
-            } catch (err) {
-              logInfo("Live lyrics statusMessage edit", err);
-            }
-          });
-          syncedLyrics.subscribe();
-          lastLyricsLine = queue.metadata.lastLyricsLine;
+      });
+      if (lyricsResult) {
+        if (lyricsResult.lyrics) {
+          queue.metadata.lastLyricsLine =
+            "_Brak napisów na żywo. Użyj `/lyrics`, aby zobaczyć tekst._";
+        } else {
+          queue.metadata.lastLyricsLine = "_Tekst utworu zaraz się pojawi..._";
         }
-      } catch (err) {
-        logInfo("Lyrics fetch error", err);
+
+        const updatedDescription = buildDescription(
+          queue,
+          queue.metadata.lastLyricsLine,
+          page,
+          howManyonPage
+        );
+        status.setDescription(updatedDescription);
       }
-    })();
+    }
 
     try {
       await queue.metadata.statusMessage.edit(embed);
@@ -292,5 +362,6 @@ async function sendStatus(queue) {
 
 module.exports = {
   printError,
-  sendStatus
+  sendStatus,
+  handleLyrics
 };

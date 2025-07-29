@@ -9,6 +9,6 @@ module.exports = {
         `(${queue.currentTrack.url}) [${queue.currentTrack.duration}]`
     );
     queue.metadata.lastLyricsLine = null;
-    utils.sendStatus(queue);
+    utils.sendStatus(queue, true);
   }
 };

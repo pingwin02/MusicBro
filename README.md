@@ -13,25 +13,27 @@ MusicBro provides the following slash commands:
 1. `clear` - Clears the entire queue.
 2. `info` - Displays information about the bot's ping.
 3. `nowplaying` - Displays information about the currently playing song with lyrics.
-4. `play` - Searches for a song or songs based on a link or search query and starts playing.
-5. `remove` - Removes a song from the queue.
-6. `seek` - Seeks to a specified time in the current song.
-7. `skipto` - Skips to a specified song in the queue.
-8. `volume` - Adjusts the volume of the playback.
+4. `lyrics` - Fetches and displays the lyrics of the currently playing song or a specified song.
+5. `play` - Searches for a song or songs based on a link or search query and starts playing.
+6. `remove` - Removes a song from the queue.
+7. `seek` - Seeks to a specified time in the current song.
+8. `skipto` - Skips to a specified song in the queue.
+9. `volume` - Adjusts the volume of the playback.
 
 And also the following button commands:
 
 1. `loopDisable` - Disables looping.
 2. `loopQueue` - Loops the queue.
 3. `loopTrack` - Loops the current song.
-4. `next` - Changes page to the next page of the queue.
-5. `pause` - Pauses the playback.
-6. `previous` - Changes page to the previous page of the queue.
-7. `refresh` - Refreshes the status message.
-8. `resume` - Resumes the playback.
-9. `shuffle` - Shuffles the queue.
-10. `skip` - Skips the current song.
-11. `stop` - Stops the playback and clears the queue.
+4. `lyricsClose` - Closes the lyrics display.
+5. `next` - Changes page to the next page of the queue.
+6. `pause` - Pauses the playback.
+7. `previous` - Changes page to the previous page of the queue.
+8. `refresh` - Refreshes the status message.
+9. `resume` - Resumes the playback.
+10. `shuffle` - Shuffles the queue.
+11. `skip` - Skips the current song.
+12. `stop` - Stops the playback and clears the queue.
 
 Additionally, MusicBro provides the following prefix commands:
 
