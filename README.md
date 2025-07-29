@@ -12,7 +12,7 @@ MusicBro provides the following slash commands:
 
 1. `clear` - Clears the entire queue.
 2. `info` - Displays information about the bot's ping.
-3. `nowplaying` - Displays information about the currently playing song.
+3. `nowplaying` - Displays information about the currently playing song with lyrics.
 4. `play` - Searches for a song or songs based on a link or search query and starts playing.
 5. `remove` - Removes a song from the queue.
 6. `seek` - Seeks to a specified time in the current song.

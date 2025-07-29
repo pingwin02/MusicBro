@@ -11,7 +11,6 @@ module.exports = {
         .setName("value")
         .setDescription("Wartość głośności")
         .setMinValue(1)
-        .setMaxValue(1000)
         .setRequired(true)
     )
     .setContexts(InteractionContextType.Guild),

@@ -6,6 +6,7 @@ const {
 } = require("discord.js");
 const { logInfo } = require("./logger");
 const { timedDelete } = require("./time");
+const { useMainPlayer } = require("discord-player");
 
 /**
  * Sends embed with error message to the interaction channel,
@@ -72,29 +73,53 @@ async function printError(
 async function sendStatus(queue) {
   try {
     if (!queue.currentTrack) return;
+    const player = useMainPlayer();
+    let lastLyricsLine = queue.metadata.lastLyricsLine || null;
+
     const howManyonPage = 15;
     const totalPages = Math.ceil(queue.getSize() / howManyonPage) || 1;
-
     let page = Math.max(0, Math.min(queue.metadata.page || 0, totalPages - 1));
-
-    if (queue.getSize() < howManyonPage) {
-      page = 0;
-    }
-
+    if (queue.getSize() < howManyonPage) page = 0;
     queue.metadata.page = page;
 
-    const bar = queue.node.createProgressBar({
-      queue: false,
-      length: 8,
-      timecodes: true
-    });
+    function buildDescription(queue, lyricsLine, page, howManyonPage) {
+      const bar = queue.node.createProgressBar({
+        queue: false,
+        length: 8,
+        timecodes: true
+      });
 
-    let description =
-      `[**${queue.currentTrack.title}**](${queue.currentTrack.url})\n` +
-      `Autor **${queue.currentTrack.author}**\n` +
-      `*dodane przez <@${queue.currentTrack.requestedBy.id}>*\n\n` +
-      `**Postęp:**\n${bar}` +
-      "\n\n**Kolejka:**\n";
+      let description =
+        `[**${queue.currentTrack.title}**](${queue.currentTrack.url})\n` +
+        `Autor **${queue.currentTrack.author}**\n` +
+        `*dodane przez <@${queue.currentTrack.requestedBy.id}>*\n\n` +
+        `**Tekst:**\n${lyricsLine || "_Brak dostępnych napisów_"}\n\n` +
+        `**Postęp:**\n${bar}\n\n**Kolejka:**\n`;
+
+      if (queue.getSize() > 0) {
+        const queueString = queue.tracks
+          .toArray()
+          .slice(page * howManyonPage, (page + 1) * howManyonPage)
+          .map((song, i) => {
+            return (
+              `*${page * howManyonPage + i + 1}*. ` +
+              `**${song.title}** [${song.duration}]`
+            );
+          });
+        description += queueString.join("\n");
+      } else {
+        description += "*Pusta*";
+      }
+
+      return description;
+    }
+
+    const description = buildDescription(
+      queue,
+      lastLyricsLine,
+      page,
+      howManyonPage
+    );
 
     const status = new EmbedBuilder()
       .setTitle(
@@ -110,10 +135,11 @@ async function sendStatus(queue) {
       .setThumbnail(queue.currentTrack.thumbnail)
       .setFooter({
         text:
-          `Głośność: ${queue.node.volume} | ` +
-          `Strona: ${page + 1} z ${totalPages}`
+          `Głośność: ${queue.node.volume} ` +
+          `| Strona: ${page + 1} z ${totalPages}`
       })
-      .setColor("Blue");
+      .setColor("Blue")
+      .setDescription(description);
 
     const resumeBtn = new ButtonBuilder()
       .setCustomId("resume")
@@ -190,26 +216,8 @@ async function sendStatus(queue) {
       disableLoopBtn,
       shuffleBtn
     );
-
     const row3 = new ActionRowBuilder().addComponents(previousBtn, nextBtn);
-
     const row4 = new ActionRowBuilder().addComponents(refreshBtn);
-
-    if (queue.getSize() > 0) {
-      const queueString = queue.tracks
-        .toArray()
-        .slice(page * howManyonPage, (page + 1) * howManyonPage)
-        .map((song, i) => {
-          return `*${page * howManyonPage + i + 1}*. **${song.title}** [${
-            song.duration
-          }]`;
-        });
-      description += `${queueString.join("\n")}`;
-    } else {
-      description += "*Pusta*";
-    }
-
-    status.setDescription(description);
 
     const embed = {
       embeds: [status],
@@ -221,6 +229,50 @@ async function sendStatus(queue) {
     }
 
     embed.components.push(row4);
+
+    (async () => {
+      try {
+        const title = queue.currentTrack.title;
+        const author = queue.currentTrack.author;
+        const track = title.includes(author) ? title : `${author} ${title}`;
+        const results = await player.lyrics.search({
+          trackName: track,
+          artistName: author
+        });
+        const first = results[0];
+        if (first && first.syncedLyrics) {
+          logInfo(
+            `Found synced lyrics for ${author} - ${track}: ` +
+              `${first.plainLyrics.replace(/\n/g, " ").slice(0, 50)}...`
+          );
+          const syncedLyrics = queue.syncedLyrics(first);
+          syncedLyrics.onChange(async (lyrics, timestamp) => {
+            queue.metadata.lastLyricsLine = lyrics;
+            const updatedDescription = buildDescription(
+              queue,
+              lyrics,
+              page,
+              howManyonPage
+            );
+            status.setDescription(updatedDescription);
+            try {
+              await queue.metadata.statusMessage.edit({
+                embeds: [status],
+                components: embed.components
+              });
+            } catch (err) {
+              logInfo("Live lyrics statusMessage edit", err);
+            }
+          });
+          syncedLyrics.subscribe();
+          lastLyricsLine = queue.metadata.lastLyricsLine;
+        } else {
+          logInfo(`Lyrics not found for ${author} - ${track}`);
+        }
+      } catch (err) {
+        logInfo("Lyrics fetch error", err);
+      }
+    })();
 
     try {
       await queue.metadata.statusMessage.edit(embed);
