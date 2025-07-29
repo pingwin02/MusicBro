@@ -53,11 +53,13 @@ function buildDescription(queue, lyricsLine, page, perPage) {
     timecodes: true
   });
   const current = queue.currentTrack;
+  let lyrics = lyricsLine || "Brak dostępnych napisów";
+  lyrics = lyrics.padEnd(49, " ");
   const desc =
     `[**${current.title}**](${current.url})\n` +
     `Autor **${current.author}**\n` +
     `*dodane przez <@${current.requestedBy.id}>*\n\n` +
-    `**Tekst:**\n${lyricsLine || "_Brak dostępnych napisów_"}\n\n` +
+    `**Tekst:**\n\`\`\`${lyrics}\`\`\`\n` +
     `**Postęp:**\n${bar}\n\n**Kolejka:**\n`;
 
   const tracks = queue.tracks
@@ -171,6 +173,11 @@ async function handleLyrics({ queue, onChange, searchString }) {
     const syncedLyrics = queue.syncedLyrics(result);
     syncedLyrics.onChange(onChange);
     syncedLyrics.subscribe();
+    queue.metadata.unsubscribeLyrics = () => {
+      logInfo(`Unsubscribing from lyrics updates: ${author} - ${title}`);
+      syncedLyrics.unsubscribe();
+      queue.metadata.lastLyricsLine = null;
+    };
     return true;
   }
 
@@ -211,8 +218,8 @@ async function sendStatus(queue, fetchLyrics = false) {
 
     if (result)
       queue.metadata.lastLyricsLine = result.lyrics
-        ? "_Brak napisów na żywo. Użyj `/lyrics`, aby zobaczyć tekst._"
-        : "_Tekst utworu zaraz się pojawi..._";
+        ? "Brak napisów na żywo. Użyj /lyrics, aby zobaczyć tekst."
+        : "Tekst utworu zaraz się pojawi...";
 
     embed.setDescription(
       buildDescription(queue, queue.metadata.lastLyricsLine, page, perPage)

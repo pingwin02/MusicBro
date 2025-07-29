@@ -8,7 +8,7 @@ module.exports = {
       `[${queue.guild.name}] Playing ${queue.currentTrack.title} ` +
         `(${queue.currentTrack.url}) [${queue.currentTrack.duration}]`
     );
-    queue.metadata.lastLyricsLine = null;
+    queue.metadata?.unsubscribeLyrics?.();
     utils.sendStatus(queue, true);
   }
 };
