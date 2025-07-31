@@ -9,6 +9,7 @@ module.exports = {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       if (queue.metadata.statusMessage)
         await queue.metadata.statusMessage.delete();
+      queue.metadata?.unsubscribeLyrics?.();
     } catch (error) {
       utils.logInfo("Unable to delete status message", error.message);
     }

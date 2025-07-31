@@ -195,7 +195,7 @@ async function handleLyricsOnChange(queue, lyrics) {
   const components = buildActionRows(queue, page, totalPages);
 
   try {
-    await queue.metadata.statusMessage.edit({ embeds: [embed], components });
+    await queue.metadata.statusMessage?.edit({ embeds: [embed], components });
   } catch (err) {
     logInfo("Live lyrics statusMessage edit", err);
   }
