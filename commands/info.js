@@ -1,4 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  MessageFlags
+} = require("discord.js");
 const utils = require("../utils");
 
 module.exports = {
@@ -23,7 +27,7 @@ module.exports = {
           .setColor("Random")
           .setTimestamp()
       ],
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 };

@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, MessageFlags } = require("discord.js");
 const { logInfo } = require("./logger");
 const { timedDelete } = require("./time");
 
@@ -33,19 +33,19 @@ async function printError(
         `${error.status ? `(${error.status})` : ""}`;
       embed.setFooter({ text: footer });
     } else {
-      logInfo("printError", Error(description));
+      logInfo("printError", description);
     }
 
     let reply;
     if (interaction.replied || interaction.deferred) {
       reply = await interaction.followUp({
         embeds: [embed],
-        ephemeral: ephemeral
+        flags: ephemeral ? MessageFlags.Ephemeral : 0
       });
     } else if (!error) {
       reply = await interaction.reply({
         embeds: [embed],
-        ephemeral: ephemeral
+        flags: ephemeral ? MessageFlags.Ephemeral : 0
       });
     } else {
       const textChannel = interaction;
