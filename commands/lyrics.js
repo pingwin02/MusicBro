@@ -11,7 +11,7 @@ const utils = require("../utils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("lyrics")
-    .setDescription("Wyświetl tekst wskazanego utworu lub aktualnie granego.")
+    .setDescription("Wyświetl tekst wskazanego utworu lub aktualnie granego")
     .addStringOption((option) =>
       option
         .setName("query")

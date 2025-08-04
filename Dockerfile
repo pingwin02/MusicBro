@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package.json ./
 
-ENV NODE_ENV=production YTDL_NO_UPDATE=1 NODE_NO_WARNINGS=1
+ENV NODE_ENV=production NODE_NO_WARNINGS=1
 
 RUN npm install
 
