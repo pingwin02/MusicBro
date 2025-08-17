@@ -53,13 +53,12 @@ function buildDescription(queue, lyricsLine, page, perPage) {
     timecodes: true
   });
   const current = queue.currentTrack;
-  let lyrics = lyricsLine || "Brak dostępnych napisów";
-  lyrics = lyrics.padEnd(49, " ");
+  lyricsLine = lyricsLine.padEnd(49, " ");
   const desc =
     `[**${current.title}**](${current.url})\n` +
     `Autor **${current.author}**\n` +
     `*dodane przez <@${current.requestedBy.id}>*\n\n` +
-    `**Tekst:**\n\`\`\`${lyrics}\`\`\`\n` +
+    `**Tekst:**\n\`\`\`${lyricsLine}\`\`\`\n` +
     `**Postęp:**\n${bar}\n\n**Kolejka:**\n`;
 
   const tracks = queue.tracks
@@ -90,7 +89,7 @@ function buildStatusEmbed(queue, lyricsLine, page, perPage, totalPages) {
 
   return new EmbedBuilder()
     .setTitle(titleParts)
-    .setThumbnail(queue.currentTrack.thumbnail)
+    .setThumbnail(queue.currentTrack?.thumbnail)
     .setColor("Blue")
     .setFooter({
       text:
@@ -168,15 +167,20 @@ async function handleLyrics({ queue, onChange, searchString }) {
   )[0];
   if (!result)
     return (logInfo(`Lyrics not found for ${author} - ${title}`), false);
-
+  logInfo(
+    `[LYRICS] Found ${result.syncedLyrics ? "live " : ""}` +
+      `lyrics for ${author} - ${title}`
+  );
   if (onChange && result.syncedLyrics) {
     const syncedLyrics = queue.syncedLyrics(result);
     syncedLyrics.onChange(onChange);
     syncedLyrics.subscribe();
     queue.metadata.unsubscribeLyrics = () => {
-      logInfo(`Unsubscribing from lyrics updates: ${author} - ${title}`);
+      logInfo(
+        `[LYRICS] Unsubscribing from live lyrics updates: ${author} - ${title}`
+      );
       syncedLyrics.unsubscribe();
-      queue.metadata.lastLyricsLine = null;
+      queue.metadata.unsubscribeLyrics = null;
     };
     return true;
   }
@@ -206,25 +210,11 @@ async function sendStatus(queue, fetchLyrics = false) {
 
   const { perPage, totalPages, page } = getPaginationInfo(queue);
   queue.metadata.page = page;
-  const lyricsLine = queue.metadata.lastLyricsLine || null;
+  const lyricsLine = queue.metadata.lastLyricsLine || "Ładowanie tekstu...";
+  queue.metadata.lastLyricsLine = lyricsLine;
+
   const embed = buildStatusEmbed(queue, lyricsLine, page, perPage, totalPages);
   const components = buildActionRows(queue, page, totalPages);
-
-  if (fetchLyrics) {
-    const result = await handleLyrics({
-      queue,
-      onChange: async (lyrics) => await handleLyricsOnChange(queue, lyrics)
-    });
-
-    if (result)
-      queue.metadata.lastLyricsLine = result.lyrics
-        ? "Brak napisów na żywo. Użyj /lyrics, aby zobaczyć tekst."
-        : "Tekst utworu zaraz się pojawi...";
-
-    embed.setDescription(
-      buildDescription(queue, queue.metadata.lastLyricsLine, page, perPage)
-    );
-  }
 
   try {
     await queue.metadata.statusMessage.edit({ embeds: [embed], components });
@@ -234,6 +224,32 @@ async function sendStatus(queue, fetchLyrics = false) {
       components
     });
   }
+
+  if (fetchLyrics) {
+    const result = await handleLyrics({
+      queue,
+      onChange: async (lyrics) => await handleLyricsOnChange(queue, lyrics)
+    });
+    if (result) {
+      queue.metadata.lastLyricsLine = result.lyrics
+        ? "Brak tekstu na żywo. Użyj /lyrics, aby zobaczyć tekst."
+        : "Tekst utworu zaraz się pojawi...";
+    } else {
+      queue.metadata.lastLyricsLine = "Nie znaleziono tekstu.";
+    }
+  }
+  if (!queue.metadata.statusMessage) return;
+  const updatedEmbed = buildStatusEmbed(
+    queue,
+    queue.metadata.lastLyricsLine,
+    page,
+    perPage,
+    totalPages
+  );
+  await queue.metadata.statusMessage.edit({
+    embeds: [updatedEmbed],
+    components
+  });
 }
 
 module.exports = {

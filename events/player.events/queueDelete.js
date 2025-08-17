@@ -10,6 +10,8 @@ module.exports = {
       if (queue.metadata.statusMessage)
         await queue.metadata.statusMessage.delete();
       queue.metadata?.unsubscribeLyrics?.();
+      queue.metadata.statusMessage = null;
+      queue.metadata.lastLyricsLine = null;
     } catch (error) {
       utils.logInfo("Unable to delete status message", error.message);
     }

@@ -9,6 +9,7 @@ module.exports = {
         `(${queue.currentTrack.url}) [${queue.currentTrack.duration}]`
     );
     queue.metadata?.unsubscribeLyrics?.();
+    queue.metadata.lastLyricsLine = null;
     utils.sendStatus(queue, true);
   }
 };
