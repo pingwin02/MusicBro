@@ -142,7 +142,10 @@ async function handleLyrics({ queue, onChange, searchString }) {
   if (searchString) {
     const result = (await player.lyrics.search({ q: searchString }))[0];
     if (!result)
-      return (logInfo(`Lyrics not found for "${searchString}"`), false);
+      return (
+        logInfo(`[LYRICS] Lyrics not found for "${searchString}"`),
+        false
+      );
     return {
       lyrics: result.plainLyrics,
       title: result.trackName,
@@ -166,7 +169,10 @@ async function handleLyrics({ queue, onChange, searchString }) {
     await player.lyrics.search({ trackName: title, artistName: author })
   )[0];
   if (!result)
-    return (logInfo(`Lyrics not found for ${author} - ${title}`), false);
+    return (
+      logInfo(`[LYRICS] Lyrics not found for ${author} - ${title}`),
+      false
+    );
   logInfo(
     `[LYRICS] Found ${result.syncedLyrics ? "live " : ""}` +
       `lyrics for ${author} - ${title}`
