@@ -12,4 +12,6 @@ COPY . .
 
 RUN npm run deploy
 
+RUN npm --version
+
 ENTRYPOINT [ "npm", "start" ]

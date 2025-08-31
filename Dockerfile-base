@@ -1,3 +1,7 @@
 FROM node:slim
 
-RUN apt-get update && apt-get install -y ffmpeg make gcc g++
+RUN apt-get update \
+    && apt-get install -y ffmpeg make gcc g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN npm --version

@@ -3,10 +3,10 @@ DOCKERFILE=Dockerfile-base
 
 .PHONY: all build push clean
 
-all: build push clean
+all: build push
 
 build:
-	docker build --no-cache --file $(DOCKERFILE) --tag $(IMAGE_NAME) .
+	docker build -f $(DOCKERFILE) -t $(IMAGE_NAME) .
 
 push:
 	docker push $(IMAGE_NAME)
