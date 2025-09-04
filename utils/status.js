@@ -7,6 +7,7 @@ const {
 const { logInfo } = require("./logger");
 const { useMainPlayer } = require("discord-player");
 
+// Define all buttons used in the player UI
 const BUTTONS = {
   resume: { emoji: "▶", disabled: (q) => q.node.isPlaying() },
   pause: { emoji: "⏸", disabled: (q) => q.node.isPaused() },
@@ -29,6 +30,14 @@ const BUTTONS = {
   refresh: { label: "Odśwież" }
 };
 
+/**
+ * Create a button for the music controller
+ * @param {string} id - Button ID
+ * @param {Queue} queue - Current queue
+ * @param {number} page - Current page (for pagination buttons)
+ * @param {number} total - Total pages
+ * @returns {ButtonBuilder}
+ */
 function createButton(id, queue, page = 0, total = 1) {
   const data = BUTTONS[id];
   const btn = new ButtonBuilder()
@@ -46,6 +55,10 @@ function createButton(id, queue, page = 0, total = 1) {
   return btn.setDisabled(isDisabled);
 }
 
+/**
+ * Build description text for the embed
+ * Includes current track, lyrics line, progress bar and queue preview
+ */
 function buildDescription(queue, lyricsLine, page, perPage) {
   const bar = queue.node.createProgressBar({
     queue: false,
@@ -53,6 +66,7 @@ function buildDescription(queue, lyricsLine, page, perPage) {
     timecodes: true
   });
   const current = queue.currentTrack;
+  if (!current) return;
   lyricsLine = lyricsLine.padEnd(49, " ");
   const desc =
     `[**${current.title}**](${current.url})\n` +
@@ -77,6 +91,10 @@ function buildDescription(queue, lyricsLine, page, perPage) {
   );
 }
 
+/**
+ * Build an embed showing the current music status
+ * @returns {EmbedBuilder}
+ */
 function buildStatusEmbed(queue, lyricsLine, page, perPage, totalPages) {
   const titleParts = [
     "Teraz gra",
@@ -87,6 +105,9 @@ function buildStatusEmbed(queue, lyricsLine, page, perPage, totalPages) {
     .filter(Boolean)
     .join(" ");
 
+  const description = buildDescription(queue, lyricsLine, page, perPage);
+  if (!description) return;
+
   return new EmbedBuilder()
     .setTitle(titleParts)
     .setThumbnail(queue.currentTrack?.thumbnail)
@@ -96,9 +117,12 @@ function buildStatusEmbed(queue, lyricsLine, page, perPage, totalPages) {
         `Głośność: ${queue.node.volume} ` +
         `| Strona: ${page + 1} z ${totalPages}`
     })
-    .setDescription(buildDescription(queue, lyricsLine, page, perPage));
+    .setDescription(description);
 }
 
+/**
+ * Build action rows with music control buttons
+ */
 function buildActionRows(queue, page, totalPages) {
   const row1 = new ActionRowBuilder().addComponents(
     ...["resume", "pause", "stop", "skip"].map((id) => createButton(id, queue))
@@ -128,6 +152,10 @@ function buildActionRows(queue, page, totalPages) {
   return rows;
 }
 
+/**
+ * Get pagination info for the queue
+ * Returns perPage, totalPages, and current page index
+ */
 function getPaginationInfo(queue) {
   const perPage = 15;
   const totalPages = Math.ceil(queue.getSize() / perPage) || 1;
@@ -135,6 +163,10 @@ function getPaginationInfo(queue) {
   return { perPage, totalPages, page };
 }
 
+/**
+ * Handle lyrics fetching (both static and synced/live lyrics)
+ * If synced lyrics are found, sets up live updates with onChange
+ */
 async function handleLyrics({ queue, onChange, searchString }) {
   const player = useMainPlayer();
   let title, author;
@@ -180,12 +212,12 @@ async function handleLyrics({ queue, onChange, searchString }) {
   if (onChange && result.syncedLyrics) {
     const syncedLyrics = queue.syncedLyrics(result);
     syncedLyrics.onChange(onChange);
-    syncedLyrics.subscribe();
+    const unsubscribe = syncedLyrics.subscribe();
     queue.metadata.unsubscribeLyrics = () => {
       logInfo(
         `[LYRICS] Unsubscribing from live lyrics updates: ${author} - ${title}`
       );
-      syncedLyrics.unsubscribe();
+      unsubscribe();
       queue.metadata.unsubscribeLyrics = null;
     };
     return true;
@@ -198,6 +230,9 @@ async function handleLyrics({ queue, onChange, searchString }) {
   };
 }
 
+/**
+ * Update embed when synced/live lyrics change
+ */
 async function handleLyricsOnChange(queue, lyrics) {
   queue.metadata.lastLyricsLine = lyrics;
   const { perPage, totalPages, page } = getPaginationInfo(queue);
@@ -211,6 +246,10 @@ async function handleLyricsOnChange(queue, lyrics) {
   }
 }
 
+/**
+ * Send or update the status embed and controls
+ * Optionally fetch lyrics (static or live)
+ */
 async function sendStatus(queue, fetchLyrics = false) {
   if (!queue?.currentTrack) return;
 
