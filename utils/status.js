@@ -7,12 +7,9 @@ const {
 const { logInfo } = require("./logger");
 const { useMainPlayer } = require("discord-player");
 
-// minimum interval (ms) between embed edits for live lyrics
-const EDIT_THROTTLE_MS = 700;
-// how long to cache the progress bar (ms)
-const BAR_CACHE_MS = 1000;
+const QUEUE_PAGE_SIZE = 10;
+const LYRICS_BUFFER_SIZE = 5;
 
-// Define all buttons used in the player UI
 const BUTTONS = {
   resume: { emoji: "▶", disabled: (q) => q.node.isPlaying() },
   pause: { emoji: "⏸", disabled: (q) => q.node.isPaused() },
@@ -35,9 +32,6 @@ const BUTTONS = {
   refresh: { label: "Odśwież" }
 };
 
-/**
- * Create a button for the music controller
- */
 function createButton(id, queue, page = 0, total = 1) {
   const data = BUTTONS[id];
   const btn = new ButtonBuilder()
@@ -51,132 +45,46 @@ function createButton(id, queue, page = 0, total = 1) {
     typeof data.disabled === "function"
       ? data.disabled(queue, page, total)
       : false;
-
   return btn.setDisabled(isDisabled);
 }
 
-/**
- * Cache helpers
- */
-function getCachedProgressBar(queue) {
-  const now = Date.now();
-  const cache = queue.metadata._barCache;
-  if (cache && now - cache.ts < BAR_CACHE_MS && cache.value) {
-    return cache.value;
-  }
-  const value = queue.node.createProgressBar({
+function buildDescription(queue, lyricsLines, page, perPage) {
+  const bar = queue.node.createProgressBar({
     queue: false,
     length: 8,
     timecodes: true
   });
-  queue.metadata._barCache = { ts: now, value };
-  return value;
-}
-
-function buildQueuePreview(queue, page, perPage) {
-  const tracks = queue.tracks
-    .toArray()
-    .slice(page * perPage, (page + 1) * perPage);
-  return tracks.length
-    ? tracks
-      .map(
-        (s, i) =>
-          `*${page * perPage + i + 1}*. **${s.title}** [${s.duration}]`
-      )
-      .join("\n")
-    : "*Pusta*";
-}
-
-function getCachedQueuePreview(queue, page, perPage) {
-  const cache = queue.metadata._queuePreviewCache;
-  if (
-    cache &&
-    cache.page === page &&
-    cache.perPage === perPage &&
-    typeof cache.text === "string"
-  ) {
-    return cache.text;
-  }
-  const text = buildQueuePreview(queue, page, perPage);
-  queue.metadata._queuePreviewCache = { page, perPage, text };
-  return text;
-}
-
-function scheduleLyricsEdit(queue) {
-  if (!queue?.metadata?.statusMessage) return;
-
-  if (!queue.metadata._lyricsThrottle) {
-    queue.metadata._lyricsThrottle = { last: 0, timer: null };
-  }
-  const state = queue.metadata._lyricsThrottle;
-
-  const run = async () => {
-    state.last = Date.now();
-    state.timer = null;
-    const { perPage, totalPages, page } = getPaginationInfo(queue);
-    const embed = buildStatusEmbed(
-      queue,
-      queue.metadata.lastLyricsLine,
-      page,
-      perPage,
-      totalPages,
-      { useCache: true }
-    );
-    try {
-      await queue.metadata.statusMessage.edit({ embeds: [embed] });
-    } catch (err) {
-      logInfo("Live lyrics throttled edit", err);
-    }
-  };
-
-  const now = Date.now();
-  const remaining = EDIT_THROTTLE_MS - (now - state.last);
-  if (remaining <= 0) {
-    run();
-  } else if (!state.timer) {
-    state.timer = setTimeout(run, remaining);
-  }
-}
-
-/**
- * Build description text for the embed
- */
-function buildDescription(queue, lyricsLine, page, perPage, opts = {}) {
-  const useCache = !!opts.useCache;
-  const bar = useCache
-    ? getCachedProgressBar(queue)
-    : queue.node.createProgressBar({
-      queue: false,
-      length: 8,
-      timecodes: true
-    });
   const current = queue.currentTrack;
   if (!current) return;
-  lyricsLine = lyricsLine.padEnd(49, " ");
-  const header =
+
+  const lyricsBlock = lyricsLines
+    .map((l) => l.replace(/\n/g, "").padEnd(49, " "))
+    .join("\n\n");
+
+  const desc =
     `[**${current.title}**](${current.url})\n` +
     `Autor **${current.author}**\n` +
     `*dodane przez <@${current.requestedBy.id}>*\n\n` +
-    `**Tekst:**\n\`\`\`${lyricsLine}\`\`\`\n` +
+    `**Tekst:**\n\`\`\`${lyricsBlock}\`\`\`\n` +
     `**Postęp:**\n${bar}\n\n**Kolejka:**\n`;
-  const queueText = useCache
-    ? getCachedQueuePreview(queue, page, perPage)
-    : buildQueuePreview(queue, page, perPage);
-  return header + queueText;
+
+  const tracks = queue.tracks
+    .toArray()
+    .slice(page * perPage, (page + 1) * perPage);
+  return (
+    desc +
+    (tracks.length
+      ? tracks
+        .map(
+          (s, i) =>
+            `*${page * perPage + i + 1}*. **${s.title}** [${s.duration}]`
+        )
+        .join("\n")
+      : "*Pusta*")
+  );
 }
 
-/**
- * Build an embed showing the current music status
- * @returns {EmbedBuilder}
- */
-function buildStatusEmbed(
-  queue,
-  lyricsLine,
-  page,
-  perPage,
-  totalPages,
-  opts = {}
-) {
+function buildStatusEmbed(queue, lyricsLines, page, perPage, totalPages) {
   const titleParts = [
     "Teraz gra",
     queue.node.isPaused() && "(:pause_button: wstrzymane)",
@@ -185,8 +93,7 @@ function buildStatusEmbed(
   ]
     .filter(Boolean)
     .join(" ");
-
-  const description = buildDescription(queue, lyricsLine, page, perPage, opts);
+  const description = buildDescription(queue, lyricsLines, page, perPage);
   if (!description) return;
 
   return new EmbedBuilder()
@@ -201,9 +108,6 @@ function buildStatusEmbed(
     .setDescription(description);
 }
 
-/**
- * Build action rows with music control buttons
- */
 function buildActionRows(queue, page, totalPages) {
   const row1 = new ActionRowBuilder().addComponents(
     ...["resume", "pause", "stop", "skip"].map((id) => createButton(id, queue))
@@ -233,21 +137,13 @@ function buildActionRows(queue, page, totalPages) {
   return rows;
 }
 
-/**
- * Get pagination info for the queue
- * Returns perPage, totalPages, and current page index
- */
 function getPaginationInfo(queue) {
-  const perPage = 15;
+  const perPage = QUEUE_PAGE_SIZE;
   const totalPages = Math.ceil(queue.getSize() / perPage) || 1;
   const page = Math.max(0, Math.min(queue.metadata.page || 0, totalPages - 1));
   return { perPage, totalPages, page };
 }
 
-/**
- * Handle lyrics fetching (both static and synced/live lyrics)
- * If synced lyrics are found, sets up live updates with onChange
- */
 async function handleLyrics({ queue, onChange, searchString }) {
   const player = useMainPlayer();
   let title, author;
@@ -290,19 +186,44 @@ async function handleLyrics({ queue, onChange, searchString }) {
     `[LYRICS] Found ${result.syncedLyrics ? "live " : ""}` +
       `lyrics for ${author} - ${title}`
   );
+
   if (onChange && result.syncedLyrics) {
     const syncedLyrics = queue.syncedLyrics(result);
-    syncedLyrics.onChange(onChange);
+
+    let lastBufferEndTime = -1;
+    const entries = Array.from(syncedLyrics.lyrics.entries()).filter(
+      ([, text]) => text.trim() !== ""
+    );
+
+    const updateBuffer = (timestamp) => {
+      const index = entries.findIndex(([time]) => time === timestamp);
+      if (index === -1) return;
+
+      const bufferEndTime =
+        entries[
+          Math.min(index + LYRICS_BUFFER_SIZE - 1, entries.length - 1)
+        ][0];
+
+      if (timestamp > lastBufferEndTime || queue.metadata.seeked) {
+        queue.metadata.seeked = false;
+        lastBufferEndTime = bufferEndTime;
+        const nextLines = entries
+          .slice(index, index + LYRICS_BUFFER_SIZE)
+          .map(([, text]) => text);
+        onChange(nextLines);
+      }
+    };
+
+    syncedLyrics.onChange((line, timestamp) => {
+      if (timestamp) updateBuffer(timestamp);
+    });
+
     const unsubscribe = syncedLyrics.subscribe();
     queue.metadata.unsubscribeLyrics = () => {
       logInfo(
         `[LYRICS] Unsubscribing from live lyrics updates: ${author} - ${title}`
       );
       unsubscribe();
-      if (queue.metadata._lyricsThrottle?.timer) {
-        clearTimeout(queue.metadata._lyricsThrottle.timer);
-      }
-      queue.metadata._lyricsThrottle = null;
       queue.metadata.unsubscribeLyrics = null;
     };
     return true;
@@ -315,32 +236,28 @@ async function handleLyrics({ queue, onChange, searchString }) {
   };
 }
 
-/**
- * Update embed when synced/live lyrics change
- */
-async function handleLyricsOnChange(queue, lyrics) {
-  queue.metadata.lastLyricsLine = lyrics;
-  scheduleLyricsEdit(queue);
+async function handleLyricsOnChange(queue, lyricsLines) {
+  queue.metadata.lastLyricsLines = lyricsLines;
+  const { perPage, totalPages, page } = getPaginationInfo(queue);
+  const embed = buildStatusEmbed(queue, lyricsLines, page, perPage, totalPages);
+  const components = buildActionRows(queue, page, totalPages);
+
+  try {
+    await queue.metadata.statusMessage?.edit({ embeds: [embed], components });
+  } catch (err) {
+    logInfo("Live lyrics statusMessage edit", err);
+  }
 }
 
-/**
- * Send or update the status embed and controls
- * Optionally fetch lyrics (static or live)
- */
 async function sendStatus(queue, fetchLyrics = false) {
   if (!queue?.currentTrack) return;
 
   const { perPage, totalPages, page } = getPaginationInfo(queue);
   queue.metadata.page = page;
-  queue.metadata._queuePreviewCache = {
-    page,
-    perPage,
-    text: buildQueuePreview(queue, page, perPage)
-  };
-  const lyricsLine = queue.metadata.lastLyricsLine || "Ładowanie tekstu...";
-  queue.metadata.lastLyricsLine = lyricsLine;
+  const lyricsLines = queue.metadata.lastLyricsLines || ["Ładowanie tekstu..."];
+  queue.metadata.lastLyricsLines = lyricsLines;
 
-  const embed = buildStatusEmbed(queue, lyricsLine, page, perPage, totalPages);
+  const embed = buildStatusEmbed(queue, lyricsLines, page, perPage, totalPages);
   const components = buildActionRows(queue, page, totalPages);
 
   try {
@@ -355,28 +272,29 @@ async function sendStatus(queue, fetchLyrics = false) {
   if (fetchLyrics) {
     const result = await handleLyrics({
       queue,
-      onChange: async (lyrics) => await handleLyricsOnChange(queue, lyrics)
+      onChange: async (lyricsBuffer) =>
+        await handleLyricsOnChange(queue, lyricsBuffer)
     });
     if (result) {
-      queue.metadata.lastLyricsLine = result.lyrics
-        ? "Brak tekstu na żywo. Użyj /lyrics, aby zobaczyć tekst."
-        : "Tekst utworu zaraz się pojawi...";
+      queue.metadata.lastLyricsLines = result.lyrics
+        ? ["Brak tekstu na żywo. Użyj /lyrics, aby zobaczyć tekst."]
+        : ["Tekst utworu zaraz się pojawi..."];
     } else {
-      queue.metadata.lastLyricsLine = "Nie znaleziono tekstu.";
+      queue.metadata.lastLyricsLines = ["Nie znaleziono tekstu."];
     }
+    if (!queue.metadata.statusMessage) return;
+    const updatedEmbed = buildStatusEmbed(
+      queue,
+      queue.metadata.lastLyricsLines,
+      page,
+      perPage,
+      totalPages
+    );
+    await queue.metadata.statusMessage.edit({
+      embeds: [updatedEmbed],
+      components
+    });
   }
-  if (!queue.metadata.statusMessage) return;
-  const updatedEmbed = buildStatusEmbed(
-    queue,
-    queue.metadata.lastLyricsLine,
-    page,
-    perPage,
-    totalPages
-  );
-  await queue.metadata.statusMessage.edit({
-    embeds: [updatedEmbed],
-    components
-  });
 }
 
 module.exports = {

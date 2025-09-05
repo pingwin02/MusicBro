@@ -59,6 +59,7 @@ module.exports = {
     }
 
     await queue.node.seek(targetMs);
+    queue.metadata.seeked = true;
     utils.sendStatus(queue);
     await interaction.deleteReply();
   }
