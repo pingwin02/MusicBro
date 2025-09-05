@@ -7,6 +7,11 @@ const {
 const { logInfo } = require("./logger");
 const { useMainPlayer } = require("discord-player");
 
+// minimum interval (ms) between embed edits for live lyrics
+const EDIT_THROTTLE_MS = 700;
+// how long to cache the progress bar (ms)
+const BAR_CACHE_MS = 1000;
+
 // Define all buttons used in the player UI
 const BUTTONS = {
   resume: { emoji: "▶", disabled: (q) => q.node.isPlaying() },
@@ -32,11 +37,6 @@ const BUTTONS = {
 
 /**
  * Create a button for the music controller
- * @param {string} id - Button ID
- * @param {Queue} queue - Current queue
- * @param {number} page - Current page (for pagination buttons)
- * @param {number} total - Total pages
- * @returns {ButtonBuilder}
  */
 function createButton(id, queue, page = 0, total = 1) {
   const data = BUTTONS[id];
@@ -56,46 +56,127 @@ function createButton(id, queue, page = 0, total = 1) {
 }
 
 /**
- * Build description text for the embed
- * Includes current track, lyrics line, progress bar and queue preview
+ * Cache helpers
  */
-function buildDescription(queue, lyricsLine, page, perPage) {
-  const bar = queue.node.createProgressBar({
+function getCachedProgressBar(queue) {
+  const now = Date.now();
+  const cache = queue.metadata._barCache;
+  if (cache && now - cache.ts < BAR_CACHE_MS && cache.value) {
+    return cache.value;
+  }
+  const value = queue.node.createProgressBar({
     queue: false,
     length: 8,
     timecodes: true
   });
+  queue.metadata._barCache = { ts: now, value };
+  return value;
+}
+
+function buildQueuePreview(queue, page, perPage) {
+  const tracks = queue.tracks
+    .toArray()
+    .slice(page * perPage, (page + 1) * perPage);
+  return tracks.length
+    ? tracks
+      .map(
+        (s, i) =>
+          `*${page * perPage + i + 1}*. **${s.title}** [${s.duration}]`
+      )
+      .join("\n")
+    : "*Pusta*";
+}
+
+function getCachedQueuePreview(queue, page, perPage) {
+  const cache = queue.metadata._queuePreviewCache;
+  if (
+    cache &&
+    cache.page === page &&
+    cache.perPage === perPage &&
+    typeof cache.text === "string"
+  ) {
+    return cache.text;
+  }
+  const text = buildQueuePreview(queue, page, perPage);
+  queue.metadata._queuePreviewCache = { page, perPage, text };
+  return text;
+}
+
+function scheduleLyricsEdit(queue) {
+  if (!queue?.metadata?.statusMessage) return;
+
+  if (!queue.metadata._lyricsThrottle) {
+    queue.metadata._lyricsThrottle = { last: 0, timer: null };
+  }
+  const state = queue.metadata._lyricsThrottle;
+
+  const run = async () => {
+    state.last = Date.now();
+    state.timer = null;
+    const { perPage, totalPages, page } = getPaginationInfo(queue);
+    const embed = buildStatusEmbed(
+      queue,
+      queue.metadata.lastLyricsLine,
+      page,
+      perPage,
+      totalPages,
+      { useCache: true }
+    );
+    try {
+      await queue.metadata.statusMessage.edit({ embeds: [embed] });
+    } catch (err) {
+      logInfo("Live lyrics throttled edit", err);
+    }
+  };
+
+  const now = Date.now();
+  const remaining = EDIT_THROTTLE_MS - (now - state.last);
+  if (remaining <= 0) {
+    run();
+  } else if (!state.timer) {
+    state.timer = setTimeout(run, remaining);
+  }
+}
+
+/**
+ * Build description text for the embed
+ */
+function buildDescription(queue, lyricsLine, page, perPage, opts = {}) {
+  const useCache = !!opts.useCache;
+  const bar = useCache
+    ? getCachedProgressBar(queue)
+    : queue.node.createProgressBar({
+      queue: false,
+      length: 8,
+      timecodes: true
+    });
   const current = queue.currentTrack;
   if (!current) return;
   lyricsLine = lyricsLine.padEnd(49, " ");
-  const desc =
+  const header =
     `[**${current.title}**](${current.url})\n` +
     `Autor **${current.author}**\n` +
     `*dodane przez <@${current.requestedBy.id}>*\n\n` +
     `**Tekst:**\n\`\`\`${lyricsLine}\`\`\`\n` +
     `**Postęp:**\n${bar}\n\n**Kolejka:**\n`;
-
-  const tracks = queue.tracks
-    .toArray()
-    .slice(page * perPage, (page + 1) * perPage);
-  return (
-    desc +
-    (tracks.length
-      ? tracks
-        .map(
-          (s, i) =>
-            `*${page * perPage + i + 1}*. **${s.title}** [${s.duration}]`
-        )
-        .join("\n")
-      : "*Pusta*")
-  );
+  const queueText = useCache
+    ? getCachedQueuePreview(queue, page, perPage)
+    : buildQueuePreview(queue, page, perPage);
+  return header + queueText;
 }
 
 /**
  * Build an embed showing the current music status
  * @returns {EmbedBuilder}
  */
-function buildStatusEmbed(queue, lyricsLine, page, perPage, totalPages) {
+function buildStatusEmbed(
+  queue,
+  lyricsLine,
+  page,
+  perPage,
+  totalPages,
+  opts = {}
+) {
   const titleParts = [
     "Teraz gra",
     queue.node.isPaused() && "(:pause_button: wstrzymane)",
@@ -105,7 +186,7 @@ function buildStatusEmbed(queue, lyricsLine, page, perPage, totalPages) {
     .filter(Boolean)
     .join(" ");
 
-  const description = buildDescription(queue, lyricsLine, page, perPage);
+  const description = buildDescription(queue, lyricsLine, page, perPage, opts);
   if (!description) return;
 
   return new EmbedBuilder()
@@ -218,6 +299,10 @@ async function handleLyrics({ queue, onChange, searchString }) {
         `[LYRICS] Unsubscribing from live lyrics updates: ${author} - ${title}`
       );
       unsubscribe();
+      if (queue.metadata._lyricsThrottle?.timer) {
+        clearTimeout(queue.metadata._lyricsThrottle.timer);
+      }
+      queue.metadata._lyricsThrottle = null;
       queue.metadata.unsubscribeLyrics = null;
     };
     return true;
@@ -235,15 +320,7 @@ async function handleLyrics({ queue, onChange, searchString }) {
  */
 async function handleLyricsOnChange(queue, lyrics) {
   queue.metadata.lastLyricsLine = lyrics;
-  const { perPage, totalPages, page } = getPaginationInfo(queue);
-  const embed = buildStatusEmbed(queue, lyrics, page, perPage, totalPages);
-  const components = buildActionRows(queue, page, totalPages);
-
-  try {
-    await queue.metadata.statusMessage?.edit({ embeds: [embed], components });
-  } catch (err) {
-    logInfo("Live lyrics statusMessage edit", err);
-  }
+  scheduleLyricsEdit(queue);
 }
 
 /**
@@ -255,6 +332,11 @@ async function sendStatus(queue, fetchLyrics = false) {
 
   const { perPage, totalPages, page } = getPaginationInfo(queue);
   queue.metadata.page = page;
+  queue.metadata._queuePreviewCache = {
+    page,
+    perPage,
+    text: buildQueuePreview(queue, page, perPage)
+  };
   const lyricsLine = queue.metadata.lastLyricsLine || "Ładowanie tekstu...";
   queue.metadata.lastLyricsLine = lyricsLine;
 
