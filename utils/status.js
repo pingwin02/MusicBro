@@ -174,9 +174,19 @@ async function handleLyrics({ queue, onChange, searchString }) {
     [author, title] = title.split(" - ").map((s) => s.trim());
   }
 
-  const result = (
-    await player.lyrics.search({ trackName: title, artistName: author })
-  )[0];
+  let result;
+
+  try {
+    result = (
+      await player.lyrics.search({ trackName: title, artistName: author })
+    )[0];
+  } catch (err) {
+    return (
+      logInfo(`[LYRICS] Error fetching lyrics for ${author} - ${title}`, err),
+      false
+    );
+  }
+
   if (!result)
     return (
       logInfo(`[LYRICS] Lyrics not found for ${author} - ${title}`),
