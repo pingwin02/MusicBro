@@ -64,6 +64,9 @@ player.extractors.register(YoutubeiExtractor, {
   streamOptions: {
     useClient: "WEB_EMBEDDED",
     highWaterMark: 10 * 1024 * 1024
+  },
+  innertubeConfigRaw: {
+    player_id: "0004de42" //eslint-disable-line camelcase
   }
 });
 
