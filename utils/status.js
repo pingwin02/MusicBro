@@ -166,7 +166,7 @@ async function handleLyrics({ queue, onChange, searchString }) {
 
   title = queue.currentTrack.title
     .replace(/\s*[([].*?[)\]]\s*/g, "")
-    .replace(/\*/g, "")
+    .replace(/\\/g, "")
     .trim();
   author = queue.currentTrack.author;
 
