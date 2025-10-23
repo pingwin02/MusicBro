@@ -2,6 +2,9 @@ const { SlashCommandBuilder, InteractionContextType } = require("discord.js");
 const { QueueRepeatMode, useMainPlayer } = require("discord-player");
 const utils = require("../utils");
 
+// 10 minutes 30 seconds
+const MAX_TRACK_LENGTH_MS = 10 * 60 * 1000 + 30 * 1000;
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("play")
@@ -98,19 +101,85 @@ module.exports = {
         );
       }
 
-      if (force) {
-        if (result.playlist) {
+      if (result.playlist) {
+        if (force) {
           queue.tasksQueue.release();
           return utils.printError(
             interaction,
             "Opcja `force` jest wyłączona dla playlist!"
           );
         }
-        queue.insertTrack(song);
-        queue.setRepeatMode(QueueRepeatMode.OFF);
-        queue.metadata.page = 0;
+
+        const removed = [];
+        const allowed = [];
+        for (const t of songs) {
+          if (utils.isTrackLongerThan(t, MAX_TRACK_LENGTH_MS)) removed.push(t);
+          else allowed.push(t);
+        }
+
+        if (allowed.length === 0) {
+          utils.logInfo(
+            `Playlist contains only too long track(s): ${removed
+              .map((t) => t.title)
+              .slice(0, 3)
+              .join(", ")}${removed.length > 3 ? ", ..." : ""}`
+          );
+          queue.tasksQueue.release();
+          if (!queue.currentTrack) queue.delete();
+          return utils.printError(
+            interaction,
+            "Wszystkie utwory na playliście są dłuższe niż limit " +
+              `**${utils.msToTime(MAX_TRACK_LENGTH_MS)}** ` +
+              "i nie można dodać żadnych pozycji."
+          );
+        }
+
+        if (removed.length > 0) {
+          const removedStr =
+            removed
+              .map((t) => t.title)
+              .slice(0, 3)
+              .join(", ") + (removed.length > 3 ? ", and more..." : "");
+
+          utils.logInfo(
+            `Removed ${removed.length} too long track(s) ` +
+              `from playlist: ${removedStr}`
+          );
+
+          setTimeout(() => {
+            utils.printError(
+              interaction.channel,
+              "Pominięto utwory dłuższe niż limit " +
+                `**${utils.msToTime(MAX_TRACK_LENGTH_MS)}**.`,
+              new Error(`Removed tracks from playlist: ${removedStr}`)
+            );
+          }, 5000);
+        }
+
+        queue.addTrack(allowed);
       } else {
-        queue.addTrack(result.playlist ? songs : song);
+        if (utils.isTrackLongerThan(song, MAX_TRACK_LENGTH_MS)) {
+          utils.logInfo(
+            `Track too long: ${song.title} (${song.url}) [${song.duration}]`
+          );
+          queue.tasksQueue.release();
+          if (!queue.currentTrack) queue.delete();
+          return utils.printError(
+            interaction,
+            "Żądany utwór " +
+              `[**${song.title}**](${song.url}) [${song.duration}] ` +
+              "jest dłuższy niż dozwolony limit " +
+              `**${utils.msToTime(MAX_TRACK_LENGTH_MS)}** ` +
+              "i nie może zostać odtworzony.\n\n"
+          );
+        }
+        if (force) {
+          queue.insertTrack(song);
+          queue.setRepeatMode(QueueRepeatMode.OFF);
+          queue.metadata.page = 0;
+        } else {
+          queue.addTrack(song);
+        }
       }
     } catch (err) {
       queue.delete();

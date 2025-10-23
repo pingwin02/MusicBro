@@ -1,7 +1,7 @@
 {
   "name": "musicbro",
   "version": "1.0.0",
-  "description": "",
+  "description": "MusicBro - Discord music bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -11,19 +11,24 @@
     "lint": "eslint . --fix",
     "prelint": "prettier . --write"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "discord",
+    "bot",
+    "music",
+    "musicbot"
+  ],
+  "author": "pingwin02",
+  "license": "MIT",
   "dependencies": {
     "@discordjs/opus": "0.10.0",
     "discord-player": "7.1.0",
-    "discord-player-youtubei": "1.4.6",
+    "discord-player-youtubei": "github:kome1208/discord-player-youtubei",
     "discord.js": "14.23.2",
     "dotenv": "17.2.3"
   },
   "devDependencies": {
-    "@eslint/js": "9.37.0",
-    "eslint": "9.37.0",
+    "@eslint/js": "9.38.0",
+    "eslint": "9.38.0",
     "globals": "16.4.0",
     "prettier": "3.6.2"
   }
