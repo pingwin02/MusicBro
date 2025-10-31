@@ -52,7 +52,7 @@ const client = new Client({
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction],
   presence: {
-    activities: [{ name: "/play", type: ActivityType.Listening }],
+    activities: [{ name: "słucha /play", type: ActivityType.Custom }],
     status: PresenceUpdateStatus.Online
   }
 });

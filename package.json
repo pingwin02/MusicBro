@@ -23,7 +23,7 @@
     "@discordjs/opus": "0.10.0",
     "discord-player": "7.1.0",
     "discord-player-youtubei": "github:kome1208/discord-player-youtubei",
-    "discord.js": "14.23.2",
+    "discord.js": "14.24.2",
     "dotenv": "17.2.3"
   },
   "devDependencies": {
