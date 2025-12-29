@@ -260,7 +260,7 @@ async function handleLyricsOnChange(queue, lyricsLines) {
 }
 
 async function sendStatus(queue, fetchLyrics = false) {
-  if (!queue?.currentTrack) return;
+  if (!queue?.currentTrack || queue.metadata.isEasterEgg) return;
 
   const { perPage, totalPages, page } = getPaginationInfo(queue);
   queue.metadata.page = page;

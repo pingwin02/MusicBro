@@ -1,4 +1,4 @@
-const { Events } = require("discord.js");
+const { Events, MessageFlags } = require("discord.js");
 const utils = require("../../utils");
 
 module.exports = {
@@ -54,6 +54,22 @@ module.exports = {
       const collection = interaction.isCommand()
         ? client.slashcommands
         : client.buttoncommands;
+
+      if (interaction.client.activeEasterEgg) {
+        if (interaction.isRepliable()) {
+          await interaction
+            .reply({
+              content: interaction.client.activeEasterEgg.blockingMessage,
+              flags: MessageFlags.Ephemeral
+            })
+            .catch(() => {});
+          utils.logInfo(
+            `${interaction.user.username} tried to use a command ` +
+              "while an Easter Egg is active"
+          );
+        }
+        return;
+      }
 
       await collection
         .get(interaction.commandName || interaction.customId)

@@ -3,5 +3,6 @@ module.exports = {
   ...require("./events"),
   ...require("./logger"),
   ...require("./status"),
-  ...require("./time")
+  ...require("./time"),
+  ...require("./easterEgg")
 };

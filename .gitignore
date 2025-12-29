@@ -5,3 +5,4 @@ replit.nix
 package-lock.json
 logs
 .vscode
+easter_eggs.json

@@ -21,6 +21,7 @@ async function printError(
   ephemeral = false
 ) {
   try {
+    if (!interaction) return;
     const embed = new EmbedBuilder()
       .setTitle(":x: Błąd")
       .setDescription(description)
