@@ -300,10 +300,14 @@ async function sendStatus(queue, fetchLyrics = false) {
       perPage,
       totalPages
     );
-    await queue.metadata.statusMessage.edit({
-      embeds: [updatedEmbed],
-      components
-    });
+    try {
+      await queue.metadata.statusMessage.edit({
+        embeds: [updatedEmbed],
+        components
+      });
+    } catch (err) {
+      logInfo("Error updating status message with updated embed", err);
+    }
   }
 }
 
