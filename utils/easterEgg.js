@@ -168,54 +168,94 @@ async function playTrackInChannel(
   trackUrl,
   instanceId
 ) {
-  let queue;
-  try {
-    if (!isInstanceActive(client, instanceId)) return;
+  const MAX_RETRIES = 3;
+  let attempts = 0;
+  let success = false;
 
-    logInfo(`[EasterEgg] [Instance: ${instanceId}] Joining #${channel.name}`);
+  while (attempts < MAX_RETRIES && !success) {
+    attempts++;
+    let queue;
 
-    const existingQueue = useQueue(guild.id);
-    safeCleanupQueue(existingQueue, client, instanceId);
+    try {
+      if (!isInstanceActive(client, instanceId)) return;
 
-    queue = player.nodes.create(guild, {
-      leaveOnEnd: false,
-      leaveOnStop: false,
-      leaveOnEmpty: false,
-      pauseOnEmpty: false,
-      selfDeaf: false,
-      metadata: {
-        channel: channel,
-        isEasterEgg: true,
-        statusMessage: null
+      logInfo(
+        `[EasterEgg] [Instance: ${instanceId}] Joining #${channel.name} ` +
+          `(Attempt ${attempts}/${MAX_RETRIES})`
+      );
+
+      const existingQueue = useQueue(guild.id);
+      safeCleanupQueue(existingQueue, client, instanceId);
+
+      queue = player.nodes.create(guild, {
+        leaveOnEnd: false,
+        leaveOnStop: false,
+        leaveOnEmpty: false,
+        pauseOnEmpty: false,
+        metadata: {
+          channel: channel,
+          isEasterEgg: true,
+          statusMessage: null
+        }
+      });
+
+      const searchResult = await player.search(trackUrl, {
+        requestedBy: client.user
+      });
+
+      if (!searchResult || !searchResult.tracks.length) {
+        logInfo(`[EasterEgg] Track not found: ${trackUrl}`);
+        safeCleanupQueue(queue, client, instanceId);
+        await sleep(1000);
+        return;
       }
-    });
 
-    const searchResult = await player.search(trackUrl, {
-      requestedBy: client.user
-    });
+      const track = searchResult.tracks[0];
+      const durationMs = track.durationMS || 10000;
 
-    if (!searchResult || !searchResult.tracks.length) {
-      logInfo(`[EasterEgg] Track not found: ${trackUrl}`);
+      if (!queue.connection) await queue.connect(channel);
+      queue.addTrack(track);
+
+      await queue.node.play();
+
+      let isPlaying = false;
+      for (let i = 0; i < 5; i++) {
+        if (queue.node.isPlaying()) {
+          isPlaying = true;
+          break;
+        }
+        await sleep(500);
+      }
+
+      if (!isPlaying) {
+        throw new Error("Track failed to start playing within timeout.");
+      }
+
+      logInfo(
+        `[EasterEgg] Track started! Waiting ${durationMs}ms for finish...`
+      );
+      success = true;
+
+      await sleep(durationMs + 2000);
       safeCleanupQueue(queue, client, instanceId);
-      sleep(1000);
-      return;
+    } catch (error) {
+      logInfo(
+        `[EasterEgg] Error processing channel #${channel.name} ` +
+          `(Attempt ${attempts})`,
+        error.message
+      );
+      safeCleanupQueue(queue, client, instanceId);
+
+      if (attempts >= MAX_RETRIES) {
+        logInfo(
+          `[EasterEgg] Giving up on #${channel.name} after ` +
+            `${MAX_RETRIES} attempts.`
+        );
+        await sleep(1000);
+      } else {
+        await sleep(2000);
+      }
     }
-
-    const track = searchResult.tracks[0];
-    const durationMs = track.durationMS || 10000;
-
-    if (!queue.connection) await queue.connect(channel);
-    queue.addTrack(track);
-    await queue.node.play();
-
-    logInfo(`[EasterEgg] Waiting ${durationMs}ms for track to finish...`);
-    await sleep(durationMs + 2000);
-
-    safeCleanupQueue(queue, client, instanceId);
-  } catch (error) {
-    logInfo(`[EasterEgg] Error processing channel #${channel.name}`, error);
-    safeCleanupQueue(queue, client, instanceId);
-    await sleep(1000);
   }
 }
 
