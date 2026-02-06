@@ -311,7 +311,23 @@ async function sendStatus(queue, fetchLyrics = false) {
   }
 }
 
+function canPlayTrack(track) {
+  const status = track.raw?.playability_status?.status;
+  const reason = track.raw?.playability_status?.reason || "Brak powodu";
+
+  if (!status || status === "OK") {
+    return { success: true };
+  }
+
+  return {
+    success: false,
+    status: status,
+    reason: reason
+  };
+}
+
 module.exports = {
   sendStatus,
-  handleLyrics
+  handleLyrics,
+  canPlayTrack
 };

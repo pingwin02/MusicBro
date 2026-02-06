@@ -22,14 +22,15 @@
   "dependencies": {
     "@discordjs/opus": "0.10.0",
     "discord-player": "7.1.0",
-    "discord-player-youtubei": "github:kome1208/discord-player-youtubei",
+    "discord-player-googlevideo": "0.2.2",
     "discord.js": "14.25.1",
-    "dotenv": "17.2.3"
+    "dotenv": "17.2.4",
+    "undici": "7.20.0"
   },
   "devDependencies": {
     "@eslint/js": "9.39.2",
     "eslint": "9.39.2",
-    "globals": "17.0.0",
-    "prettier": "3.8.0"
+    "globals": "17.3.0",
+    "prettier": "3.8.1"
   }
 }

@@ -2,8 +2,7 @@ const { SlashCommandBuilder, InteractionContextType } = require("discord.js");
 const { QueueRepeatMode, useMainPlayer } = require("discord-player");
 const utils = require("../utils");
 
-// 10 minutes 30 seconds
-const MAX_TRACK_LENGTH_MS = 10 * 60 * 1000 + 30 * 1000;
+const MAX_TRACK_LENGTH_MS = Number.MAX_SAFE_INTEGER;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,11 +23,14 @@ module.exports = {
         .setRequired(false)
     )
     .setContexts(InteractionContextType.Guild),
+
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
     const voiceChannel = interaction.member.voice.channel;
+
     if (!voiceChannel)
       return utils.printError(interaction, "Musisz być na kanale głosowym!");
+
     if (
       !voiceChannel.permissionsFor(client.user).has("ViewChannel") ||
       !voiceChannel.permissionsFor(client.user).has("Connect") ||
@@ -38,14 +40,17 @@ module.exports = {
         interaction,
         "Nie mam uprawnień do połączenia się z kanałem głosowym!"
       );
+
     if (voiceChannel.full)
       return utils.printError(
         interaction,
         "Kanał jest pełny! Spróbuj później."
       );
+
     let queue;
     const player = useMainPlayer();
     const force = interaction.options.getBoolean("force") || false;
+
     try {
       queue = player.nodes.create(interaction.guild, {
         leaveOnEnd: true,
@@ -64,42 +69,34 @@ module.exports = {
         "Wystąpił błąd podczas tworzenia węzła! Spróbuj ponownie później."
       );
     }
-    const query = interaction.options.getString("query");
+
+    let query = interaction.options.getString("query");
+
+    if (!query.match(/^https?:\/\//)) {
+      query = "youtube: " + query;
+    } else if (query.includes("/shorts/")) {
+      query = query.replace("/shorts/", "/watch?v=");
+    }
+
     try {
       const result = await player.search(query, {
         requestedBy: interaction.user
       });
+
       if (!result || result.tracks.length === 0) {
         utils.logInfo(`[${interaction.guild.name}] No results for ${query}`);
-        if (!queue.currentTrack) {
-          queue.delete();
-        }
+        if (!queue.currentTrack) queue.delete();
         return utils.printError(
           interaction,
-          "Nie znaleziono! Spróbuj ponownie później.\n" +
-            "Upewnij się, że link lub fraza jest poprawna.\n\n" +
+          "Nie znaleziono! Upewnij się, że link lub fraza jest poprawna.\n\n" +
             "Wspierane serwisy: <:YouTube:1156904255979016203> Youtube"
         );
       }
-      const entry = queue.tasksQueue.acquire();
 
+      const entry = queue.tasksQueue.acquire();
       await entry.getTask();
 
       const songs = result.tracks;
-      const song = songs[0];
-
-      if (song.__metadata.nsfw) {
-        utils.logInfo(
-          `[${interaction.guild.name}] NSFW song: ${song.title} (${song.url})`
-        );
-        queue.tasksQueue.release();
-        return utils.printError(
-          interaction,
-          `Żądany utwór [**${song.title}**](${song.url}) ` +
-            `[${song.duration}]\n jest oznaczony jako NSFW ` +
-            "i nie może zostać odtworzony! :underage:"
-        );
-      }
 
       if (result.playlist) {
         if (force) {
@@ -112,67 +109,82 @@ module.exports = {
 
         const removed = [];
         const allowed = [];
+
         for (const t of songs) {
-          if (utils.isTrackLongerThan(t, MAX_TRACK_LENGTH_MS)) removed.push(t);
-          else allowed.push(t);
+          const playability = utils.canPlayTrack(t);
+          const tooLong = utils.isTrackLongerThan(t, MAX_TRACK_LENGTH_MS);
+
+          if (!playability.success || tooLong) {
+            removed.push({
+              track: t,
+              reason: tooLong ? "Zbyt długi" : playability.reason
+            });
+          } else {
+            allowed.push(t);
+          }
         }
 
         if (allowed.length === 0) {
           utils.logInfo(
-            `Playlist contains only too long track(s): ${removed
-              .map((t) => t.title)
-              .slice(0, 3)
-              .join(", ")}${removed.length > 3 ? ", ..." : ""}`
+            `[${interaction.guild.name}] Playlist empty after filtering`
           );
           queue.tasksQueue.release();
           if (!queue.currentTrack) queue.delete();
           return utils.printError(
             interaction,
-            "Wszystkie utwory na playliście są dłuższe niż limit " +
-              `**${utils.msToTime(MAX_TRACK_LENGTH_MS)}** ` +
-              "i nie można dodać żadnych pozycji."
+            "Żaden utwór z playlisty nie może zostać odtworzony."
           );
         }
 
         if (removed.length > 0) {
           const removedStr =
             removed
-              .map((t) => t.title)
               .slice(0, 3)
-              .join(", ") + (removed.length > 3 ? ", and more..." : "");
-
-          utils.logInfo(
-            `Removed ${removed.length} too long track(s) ` +
-              `from playlist: ${removedStr}`
-          );
+              .map((r) => `${r.track.title} (${r.reason})`)
+              .join(", ") + (removed.length > 3 ? "..." : "");
 
           setTimeout(() => {
             utils.printError(
               interaction.channel,
-              "Pominięto utwory dłuższe niż limit " +
-                `**${utils.msToTime(MAX_TRACK_LENGTH_MS)}**.`,
-              new Error(`Removed tracks from playlist: ${removedStr}`)
+              `Pominięto **${removed.length}** utworów ` +
+                `(zablokowane lub > ${utils.msToTime(MAX_TRACK_LENGTH_MS)}).`,
+              new Error(`Removed: ${removedStr}`)
             );
-          }, 5000);
+          }, 2000);
         }
 
         queue.addTrack(allowed);
       } else {
-        if (utils.isTrackLongerThan(song, MAX_TRACK_LENGTH_MS)) {
+        const song = songs[0];
+        const playability = utils.canPlayTrack(song);
+
+        if (!playability.success) {
           utils.logInfo(
-            `Track too long: ${song.title} (${song.url}) [${song.duration}]`
+            `[${interaction.guild.name}] ` +
+              `Unplayable: ${song.title} (${playability.status})`
           );
           queue.tasksQueue.release();
           if (!queue.currentTrack) queue.delete();
           return utils.printError(
             interaction,
-            "Żądany utwór " +
-              `[**${song.title}**](${song.url}) [${song.duration}] ` +
-              "jest dłuższy niż dozwolony limit " +
-              `**${utils.msToTime(MAX_TRACK_LENGTH_MS)}** ` +
-              "i nie może zostać odtworzony.\n\n"
+            `Nie można odtworzyć [**${song.title}**](${song.url})\n` +
+              `**Powód:** ${playability.reason} (\`${playability.status}\`)`
           );
         }
+
+        if (utils.isTrackLongerThan(song, MAX_TRACK_LENGTH_MS)) {
+          utils.logInfo(
+            `[${interaction.guild.name}] Track too long: ${song.title}`
+          );
+          queue.tasksQueue.release();
+          if (!queue.currentTrack) queue.delete();
+          return utils.printError(
+            interaction,
+            `Utwór [**${song.title}**](${song.url}) ` +
+              `przekracza limit **${utils.msToTime(MAX_TRACK_LENGTH_MS)}**.`
+          );
+        }
+
         if (force) {
           queue.insertTrack(song);
           queue.setRepeatMode(QueueRepeatMode.OFF);
@@ -181,42 +193,24 @@ module.exports = {
           queue.addTrack(song);
         }
       }
-    } catch (err) {
-      queue.delete();
-      utils.logInfo("Searching song", err);
-      queue.tasksQueue.release();
-      return utils.printError(
-        interaction,
-        "Wystąpił błąd podczas wyszukiwania utworu!\nSpróbuj ponownie później."
-      );
-    }
-    try {
+
       if (!queue.connection) await queue.connect(voiceChannel);
-    } catch (err) {
-      queue.delete();
-      utils.logInfo("Connecting to voice channel", err);
-      queue.tasksQueue.release();
-      return utils.printError(
-        interaction,
-        "Wystąpił błąd podczas łączenia z kanałem głosowym!\n" +
-          "Spróbuj ponownie później."
-      );
-    }
-    try {
       if (force || !queue.currentTrack) {
         await queue.node.play();
       }
     } catch (err) {
-      queue.delete();
-      utils.logInfo("Playing song", err);
-      queue.tasksQueue.release();
+      if (queue) queue.delete();
+      utils.logInfo("Searching/Playing error", err);
+      if (queue?.tasksQueue) queue.tasksQueue.release();
       return utils.printError(
         interaction,
-        "Wystąpił błąd podczas odtwarzania utworu!\nSpróbuj ponownie później."
+        "Wystąpił błąd podczas przetwarzania utworu."
       );
     } finally {
-      queue.tasksQueue.release();
-      await interaction.deleteReply();
+      if (queue?.tasksQueue) queue.tasksQueue.release();
+      if (interaction.deferred || interaction.replied) {
+        await interaction.deleteReply().catch(() => {});
+      }
     }
   }
 };

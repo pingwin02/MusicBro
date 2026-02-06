@@ -9,7 +9,7 @@ const {
 const { REST, Routes } = require("discord.js");
 const fs = require("node:fs");
 const { Player } = require("discord-player");
-const { YoutubeiExtractor } = require("discord-player-youtubei");
+const { YoutubeSabrExtractor } = require("discord-player-googlevideo");
 const utils = require("./utils");
 
 require("dotenv").config({ quiet: true });
@@ -59,12 +59,7 @@ const client = new Client({
 
 const player = new Player(client);
 
-player.extractors.register(YoutubeiExtractor, {
-  generateWithPoToken: true,
-  streamOptions: {
-    useClient: "TV"
-  }
-});
+player.extractors.register(YoutubeSabrExtractor, {});
 
 client.slashcommands = new Collection();
 const commands = [];
