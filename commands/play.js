@@ -3,6 +3,9 @@ const { QueueRepeatMode, useMainPlayer } = require("discord-player");
 const utils = require("../utils");
 
 const MAX_TRACK_LENGTH_MS = Number.MAX_SAFE_INTEGER;
+const NO_RESULTS_MESSAGE =
+  "Nie znaleziono! Upewnij się, że link lub fraza jest poprawna.\n\n" +
+  "Wspierane serwisy: <:YouTube:1156904255979016203> Youtube";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -71,26 +74,54 @@ module.exports = {
     }
 
     let query = interaction.options.getString("query");
+    const isManualQuery = !query.match(/^https?:\/\//);
 
-    if (!query.match(/^https?:\/\//)) {
-      query = "youtube: " + query;
-    } else if (query.includes("/shorts/")) {
+    if (!isManualQuery && query.includes("/shorts/")) {
       query = query.replace("/shorts/", "/watch?v=");
     }
 
     try {
-      const result = await player.search(query, {
-        requestedBy: interaction.user
-      });
+      let result;
+
+      if (isManualQuery) {
+        const initialResult = await player.search("youtube: " + query, {
+          requestedBy: interaction.user,
+          ignoreCache: true
+        });
+
+        if (!initialResult || initialResult.tracks.length === 0) {
+          utils.logInfo(`[${interaction.guild.name}] No results for ${query}`);
+          if (!queue.currentTrack) queue.delete();
+          return utils.printError(interaction, NO_RESULTS_MESSAGE);
+        }
+
+        const resolvedUrl = initialResult.tracks[0]?.url;
+
+        if (!resolvedUrl) {
+          utils.logInfo(
+            `[${interaction.guild.name}] Could not resolve URL for ${query}`
+          );
+          if (!queue.currentTrack) queue.delete();
+          return utils.printError(
+            interaction,
+            "Nie udało się rozpoznać adresu URL dla wyszukanego utworu."
+          );
+        }
+
+        result = await player.search(resolvedUrl, {
+          requestedBy: interaction.user,
+          ignoreCache: true
+        });
+      } else {
+        result = await player.search(query, {
+          requestedBy: interaction.user
+        });
+      }
 
       if (!result || result.tracks.length === 0) {
         utils.logInfo(`[${interaction.guild.name}] No results for ${query}`);
         if (!queue.currentTrack) queue.delete();
-        return utils.printError(
-          interaction,
-          "Nie znaleziono! Upewnij się, że link lub fraza jest poprawna.\n\n" +
-            "Wspierane serwisy: <:YouTube:1156904255979016203> Youtube"
-        );
+        return utils.printError(interaction, NO_RESULTS_MESSAGE);
       }
 
       const entry = queue.tasksQueue.acquire();
