@@ -174,14 +174,13 @@ module.exports = {
               .map((r) => `${r.track.title} (${r.reason})`)
               .join(", ") + (removed.length > 3 ? "..." : "");
 
-          setTimeout(() => {
-            utils.printError(
-              interaction.channel,
-              `Pominięto **${removed.length}** utworów ` +
-                `(zablokowane lub > ${utils.msToTime(MAX_TRACK_LENGTH_MS)}).`,
-              new Error(`Removed: ${removedStr}`)
-            );
-          }, 2000);
+          await utils.sleep(2000);
+          utils.printError(
+            interaction.channel,
+            `Pominięto **${removed.length}** utworów ` +
+              `(zablokowane lub > ${utils.msToTime(MAX_TRACK_LENGTH_MS)}).`,
+            new Error(`Removed: ${removedStr}`)
+          );
         }
 
         queue.addTrack(allowed);
@@ -229,6 +228,8 @@ module.exports = {
       if (force || !queue.currentTrack) {
         await queue.node.play();
       }
+
+      await utils.waitForPlaying(queue);
     } catch (err) {
       if (queue) queue.delete();
       utils.logInfo("Searching/Playing error", err);

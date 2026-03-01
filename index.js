@@ -29,9 +29,7 @@ if (!TOKEN || !CLIENT_ID || !ADMIN_ID) {
         "Please add them and try again."
     )
   );
-  setTimeout(() => {
-    process.exit(1);
-  }, 1000);
+  utils.exitWithDelay(1);
 }
 
 if (!fs.existsSync("logs")) {
@@ -115,14 +113,10 @@ if (LOAD_SLASH) {
       utils.logInfo(
         `Successfully reloaded ${data.length} application (/) commands.`
       );
-      setTimeout(() => {
-        process.exit(0);
-      }, 1000);
+      await utils.exitWithDelay(0);
     } catch (error) {
       utils.logInfo("Reloading slash commands", error);
-      setTimeout(() => {
-        process.exit(1);
-      }, 1000);
+      await utils.exitWithDelay(1);
     }
   })();
 } else {
@@ -131,10 +125,8 @@ if (LOAD_SLASH) {
   utils.loadEvents(player.events, "./events/player.events");
   utils.loadEvents(process, "./events/process");
 
-  client.login(TOKEN).catch((err) => {
+  client.login(TOKEN).catch(async (err) => {
     utils.logInfo("Logging in", err);
-    setTimeout(() => {
-      process.exit(1);
-    }, 1000);
+    await utils.exitWithDelay(1);
   });
 }

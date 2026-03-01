@@ -1,11 +1,10 @@
 const { ChannelType } = require("discord.js");
 const { useQueue, useMainPlayer } = require("discord-player");
 const { logInfo } = require("./logger");
+const { sleep, waitForPlaying } = require("./time");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const DATE_GETTERS = {
   year: (d) => d.getFullYear(),
@@ -218,22 +217,22 @@ async function playTrackInChannel(
 
       await queue.node.play();
 
-      let isPlaying = false;
-      for (let i = 0; i < 15; i++) {
-        if (queue.node.isPlaying()) {
-          isPlaying = true;
-          break;
-        }
-        await sleep(1000);
-      }
+      const isPlaying = await waitForPlaying(queue);
 
       if (!isPlaying) {
-        throw new Error("Track failed to start playing within 15 seconds");
+        throw new Error("Track failed to start playing within expected time.");
       }
 
-      logInfo(
-        `[EasterEgg] Track started! Waiting ${durationMs}ms for finish...`
+      const finishAt = new Date(Date.now() + durationMs).toLocaleTimeString(
+        "pl-PL",
+        {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        }
       );
+
+      logInfo(`[EasterEgg] Track started! Estimated finish time: ${finishAt}.`);
       success = true;
 
       await sleep(durationMs + 1000);

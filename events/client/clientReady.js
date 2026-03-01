@@ -15,12 +15,11 @@ module.exports = {
     const msToNextMinute =
       60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
 
-    setTimeout(() => {
-      utils.checkEasterEggs(client);
+    await utils.sleep(msToNextMinute);
+    utils.checkEasterEggs(client);
 
-      setInterval(() => {
-        utils.checkEasterEggs(client);
-      }, 60 * 1000);
-    }, msToNextMinute);
+    setInterval(() => {
+      utils.checkEasterEggs(client);
+    }, 60 * 1000);
   }
 };

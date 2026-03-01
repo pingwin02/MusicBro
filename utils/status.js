@@ -259,56 +259,73 @@ async function handleLyricsOnChange(queue, lyricsLines) {
   }
 }
 
+function runStatusSynchronized(queue, task) {
+  const previous = queue.metadata.statusSync || Promise.resolve();
+  const current = previous.catch(() => {}).then(task);
+  queue.metadata.statusSync = current.catch(() => {});
+  return current;
+}
+
 async function sendStatus(queue, fetchLyrics = false) {
-  if (!queue?.currentTrack || queue.metadata.isEasterEgg) return;
+  return runStatusSynchronized(queue, async () => {
+    if (!queue?.currentTrack || queue.metadata.isEasterEgg) return;
 
-  const { perPage, totalPages, page } = getPaginationInfo(queue);
-  queue.metadata.page = page;
-  const lyricsLines = queue.metadata.lastLyricsLines || ["Ładowanie tekstu..."];
-  queue.metadata.lastLyricsLines = lyricsLines;
+    const { perPage, totalPages, page } = getPaginationInfo(queue);
+    queue.metadata.page = page;
+    const lyricsLines = queue.metadata.lastLyricsLines || [
+      "Ładowanie tekstu..."
+    ];
+    queue.metadata.lastLyricsLines = lyricsLines;
 
-  const embed = buildStatusEmbed(queue, lyricsLines, page, perPage, totalPages);
-  const components = buildActionRows(queue, page, totalPages);
-
-  try {
-    await queue.metadata.statusMessage.edit({ embeds: [embed], components });
-  } catch {
-    queue.metadata.statusMessage = await queue.metadata.textChannel.send({
-      embeds: [embed],
-      components
-    });
-  }
-
-  if (fetchLyrics) {
-    const result = await handleLyrics({
+    const embed = buildStatusEmbed(
       queue,
-      onChange: async (lyricsBuffer) =>
-        await handleLyricsOnChange(queue, lyricsBuffer)
-    });
-    if (result) {
-      queue.metadata.lastLyricsLines = result.lyrics
-        ? ["Brak tekstu na żywo. Użyj /lyrics, aby zobaczyć tekst."]
-        : ["Tekst utworu zaraz się pojawi..."];
-    } else {
-      queue.metadata.lastLyricsLines = ["Nie znaleziono tekstu."];
-    }
-    if (!queue.metadata.statusMessage) return;
-    const updatedEmbed = buildStatusEmbed(
-      queue,
-      queue.metadata.lastLyricsLines,
+      lyricsLines,
       page,
       perPage,
       totalPages
     );
+    const components = buildActionRows(queue, page, totalPages);
+
     try {
-      await queue.metadata.statusMessage.edit({
-        embeds: [updatedEmbed],
+      await queue.metadata.statusMessage.edit({ embeds: [embed], components });
+    } catch {
+      queue.metadata.statusMessage = await queue.metadata.textChannel.send({
+        embeds: [embed],
         components
       });
-    } catch (err) {
-      logInfo("Error updating status message with updated embed", err);
     }
-  }
+
+    if (fetchLyrics) {
+      const result = await handleLyrics({
+        queue,
+        onChange: async (lyricsBuffer) =>
+          await handleLyricsOnChange(queue, lyricsBuffer)
+      });
+      if (result) {
+        queue.metadata.lastLyricsLines = result.lyrics
+          ? ["Brak tekstu na żywo. Użyj /lyrics, aby zobaczyć tekst."]
+          : ["Tekst utworu zaraz się pojawi..."];
+      } else {
+        queue.metadata.lastLyricsLines = ["Nie znaleziono tekstu."];
+      }
+      if (!queue.metadata.statusMessage) return;
+      const updatedEmbed = buildStatusEmbed(
+        queue,
+        queue.metadata.lastLyricsLines,
+        page,
+        perPage,
+        totalPages
+      );
+      try {
+        await queue.metadata.statusMessage.edit({
+          embeds: [updatedEmbed],
+          components
+        });
+      } catch (err) {
+        logInfo("Error updating status message with updated embed", err);
+      }
+    }
+  });
 }
 
 function canPlayTrack(track) {

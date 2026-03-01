@@ -1,6 +1,47 @@
 const { logInfo } = require("./logger");
 
 /**
+ * Pauses execution for the given number of milliseconds.
+ * @param {number} ms - Delay in milliseconds.
+ * @returns {Promise<void>} Promise resolved after the delay.
+ */
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Exits the process after a delay.
+ * @param {number} code - Process exit code.
+ * @param {number} delay - Delay in milliseconds. (default: 1000)
+ * @returns {Promise<void>} Promise resolved when process exits.
+ */
+async function exitWithDelay(code, delay = 1000) {
+  await sleep(delay);
+  process.exit(code);
+}
+
+/**
+ * Waits until queue starts playing or timeout is reached.
+ * @param {Object} queue - Guild queue instance.
+ * @param {number} timeout - Maximum wait time in milliseconds.
+ * (default: 15000)
+ * @returns {Promise<boolean>} True when playback starts, otherwise false.
+ */
+async function waitForPlaying(queue, timeout = 15000) {
+  const interval = 500;
+  const deadline = Date.now() + timeout;
+
+  while (Date.now() <= deadline) {
+    if (queue?.node?.isPlaying() || queue?.node?.isPaused()) {
+      return true;
+    }
+    await sleep(interval);
+  }
+
+  return false;
+}
+
+/**
  * Converts a number of milliseconds to a human-readable time format.
  * @param {number} ms - Number of milliseconds to convert.
  * @returns {string} Human-readable time format.
@@ -22,14 +63,13 @@ function msToTime(ms) {
  * @param {number} timeout - Timeout in milliseconds. (default: 3000)
  * @returns {void}
  */
-function timedDelete(message, timeout = 3000) {
-  setTimeout(async () => {
-    try {
-      await message.delete();
-    } catch (err) {
-      logInfo("timedDelete", err.status === 404 ? err.message : err);
-    }
-  }, timeout);
+async function timedDelete(message, timeout = 3000) {
+  await sleep(timeout);
+  try {
+    await message.delete();
+  } catch (err) {
+    logInfo("timedDelete", err.status === 404 ? err.message : err);
+  }
 }
 
 /**
@@ -70,6 +110,9 @@ function isTrackLongerThan(track, maxMs) {
 }
 
 module.exports = {
+  sleep,
+  exitWithDelay,
+  waitForPlaying,
   msToTime,
   timedDelete,
   isTrackLongerThan
