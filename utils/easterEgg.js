@@ -219,16 +219,16 @@ async function playTrackInChannel(
       await queue.node.play();
 
       let isPlaying = false;
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 15; i++) {
         if (queue.node.isPlaying()) {
           isPlaying = true;
           break;
         }
-        await sleep(500);
+        await sleep(1000);
       }
 
       if (!isPlaying) {
-        throw new Error("Track failed to start playing within timeout.");
+        throw new Error("Track failed to start playing within 15 seconds");
       }
 
       logInfo(
@@ -236,7 +236,7 @@ async function playTrackInChannel(
       );
       success = true;
 
-      await sleep(durationMs + 2000);
+      await sleep(durationMs + 1000);
       safeCleanupQueue(queue, client, instanceId);
     } catch (error) {
       logInfo(
@@ -261,7 +261,6 @@ async function playTrackInChannel(
 
 async function runAudioLoop(client, targetGuildId, videoList, instanceId) {
   const player = useMainPlayer();
-  let videoIndex = 0;
 
   while (isInstanceActive(client, instanceId)) {
     const guild = client.guilds.cache.get(targetGuildId);
@@ -289,11 +288,22 @@ async function runAudioLoop(client, targetGuildId, videoList, instanceId) {
       continue;
     }
 
+    const shuffledTracks = [...videoList];
+    for (let i = shuffledTracks.length - 1; i > 0; i--) {
+      const randomIndex = Math.floor(Math.random() * (i + 1));
+      [shuffledTracks[i], shuffledTracks[randomIndex]] = [
+        shuffledTracks[randomIndex],
+        shuffledTracks[i]
+      ];
+    }
+    let trackIndex = 0;
+
     for (const [, channel] of voiceChannels) {
       if (!isInstanceActive(client, instanceId)) break;
 
-      const currentTrackUrl = videoList[videoIndex];
-      videoIndex = (videoIndex + 1) % videoList.length;
+      const currentTrackUrl =
+        shuffledTracks[trackIndex % shuffledTracks.length];
+      trackIndex++;
 
       await playTrackInChannel(
         client,
@@ -303,9 +313,8 @@ async function runAudioLoop(client, targetGuildId, videoList, instanceId) {
         currentTrackUrl,
         instanceId
       );
+      await sleep(1000);
     }
-
-    await sleep(1000);
   }
 
   logInfo(`[EasterEgg] Loop terminated for instance: ${instanceId}`);

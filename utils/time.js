@@ -56,7 +56,8 @@ function isTrackLongerThan(track, maxMs) {
   const parts = dur.split(":").map((p) => Number(p));
   if (parts.some((n) => Number.isNaN(n))) return false;
 
-  let totalSeconds = 0;
+  let totalSeconds;
+
   if (parts.length === 3) {
     totalSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
   } else if (parts.length === 2) {

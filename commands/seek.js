@@ -27,8 +27,7 @@ module.exports = {
     const formatError =
       "Nieprawidłowy format czasu! Użyj `mm:ss` lub `mm`, np. `2:15` albo `3`.";
 
-    let minutes = 0,
-      seconds = 0;
+    let minutes, seconds;
 
     if (parts.length === 1 || parts.length === 2) {
       const [minPart, secPart = "0"] = parts;
