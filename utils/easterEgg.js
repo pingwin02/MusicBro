@@ -136,6 +136,20 @@ function isInstanceActive(client, instanceId) {
   return client.activeEasterEgg?.instanceId === instanceId;
 }
 
+function getShuffledTracks(videoList) {
+  const shuffledTracks = [...videoList];
+
+  for (let i = shuffledTracks.length - 1; i > 0; i--) {
+    const randomIndex = Math.floor(Math.random() * (i + 1));
+    [shuffledTracks[i], shuffledTracks[randomIndex]] = [
+      shuffledTracks[randomIndex],
+      shuffledTracks[i]
+    ];
+  }
+
+  return shuffledTracks;
+}
+
 function safeCleanupQueue(queue, client, instanceId) {
   if (!queue) return;
   try {
@@ -226,6 +240,7 @@ async function playTrackInChannel(
       const finishAt = new Date(Date.now() + durationMs).toLocaleTimeString(
         "pl-PL",
         {
+          timeZone: "Europe/Warsaw",
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit"
@@ -260,6 +275,8 @@ async function playTrackInChannel(
 
 async function runAudioLoop(client, targetGuildId, videoList, instanceId) {
   const player = useMainPlayer();
+  let shuffledTracks = getShuffledTracks(videoList);
+  let trackIndex = 0;
 
   while (isInstanceActive(client, instanceId)) {
     const guild = client.guilds.cache.get(targetGuildId);
@@ -287,22 +304,16 @@ async function runAudioLoop(client, targetGuildId, videoList, instanceId) {
       continue;
     }
 
-    const shuffledTracks = [...videoList];
-    for (let i = shuffledTracks.length - 1; i > 0; i--) {
-      const randomIndex = Math.floor(Math.random() * (i + 1));
-      [shuffledTracks[i], shuffledTracks[randomIndex]] = [
-        shuffledTracks[randomIndex],
-        shuffledTracks[i]
-      ];
-    }
-    let trackIndex = 0;
-
     for (const [, channel] of voiceChannels) {
       if (!isInstanceActive(client, instanceId)) break;
 
-      const currentTrackUrl =
-        shuffledTracks[trackIndex % shuffledTracks.length];
+      const currentTrackUrl = shuffledTracks[trackIndex];
       trackIndex++;
+
+      if (trackIndex >= shuffledTracks.length) {
+        shuffledTracks = getShuffledTracks(videoList);
+        trackIndex = 0;
+      }
 
       await playTrackInChannel(
         client,
