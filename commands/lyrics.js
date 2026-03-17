@@ -1,10 +1,4 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle
-} = require("discord.js");
+const { SlashCommandBuilder, ButtonStyle } = require("discord.js");
 const { useQueue } = require("discord-player");
 const utils = require("../utils");
 
@@ -53,20 +47,13 @@ module.exports = {
     }
 
     const trimmedLyrics = result.lyrics.substring(0, 4093);
-    const embed = new EmbedBuilder()
-      .setTitle(`Tekst: ${result.author} - ${result.title}`)
-      .setDescription(
-        trimmedLyrics.length === 4093 ? `${trimmedLyrics}...` : trimmedLyrics
-      )
-      .setColor("Yellow");
-
-    const closeBtn = new ButtonBuilder()
-      .setCustomId("lyricsClose")
-      .setLabel("Zamknij")
-      .setStyle(ButtonStyle.Danger);
-
-    const row = new ActionRowBuilder().addComponents(closeBtn);
-
+    const { embed, row } = utils.buildEmbedWithButton({
+      title: `Tekst: ${result.author} - ${result.title}`,
+      description:
+        trimmedLyrics.length === 4093 ? `${trimmedLyrics}...` : trimmedLyrics,
+      color: "Yellow",
+      buttonStyle: ButtonStyle.Danger
+    });
     return interaction.editReply({ embeds: [embed], components: [row] });
   }
 };

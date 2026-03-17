@@ -6,7 +6,6 @@ module.exports = {
   async execute(queue) {
     utils.logInfo(`[${queue.guild.name}] Queue deleted`);
     try {
-      await utils.sleep(1000);
       if (queue.metadata.statusMessage)
         await queue.metadata.statusMessage.delete();
       queue.metadata?.unsubscribeLyrics?.();

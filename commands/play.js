@@ -227,9 +227,8 @@ module.exports = {
       if (!queue.connection) await queue.connect(voiceChannel);
       if (force || !queue.currentTrack) {
         await queue.node.play();
+        utils.sendLoadingStatus(queue);
       }
-
-      await utils.waitForPlaying(queue);
     } catch (err) {
       if (queue) queue.delete();
       utils.logInfo("Searching/Playing error", err);

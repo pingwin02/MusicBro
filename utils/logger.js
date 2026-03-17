@@ -43,7 +43,7 @@ function logInfo(info, error = null) {
 }
 
 /**
- * Logs debug information to the console and appends it to a debug file.
+ * Logs debug information to the console and appends it to a dev file.
  * @param {string} info - Information to log.
  * @returns {void}
  */
@@ -58,9 +58,9 @@ function logDebug(info) {
 
   console.debug(logMessage); // eslint-disable-line no-console
 
-  fs.appendFile("logs/debug.log", `${logMessage}\n`, (err) => {
+  fs.appendFile("logs/dev.log", `${logMessage}\n`, (err) => {
     if (err) {
-      console.error("Error writing to debug file:", err);
+      console.error("Error writing to dev file:", err);
     }
   });
 }

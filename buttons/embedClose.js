@@ -1,5 +1,5 @@
 module.exports = {
-  name: "lyricsClose",
+  name: "embedClose",
   run: async ({ interaction }) => {
     await interaction.deferUpdate().catch(() => {});
     await interaction.message.delete().catch(() => {});

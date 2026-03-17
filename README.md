@@ -22,10 +22,10 @@ MusicBro provides the following slash commands:
 
 And also the following button commands:
 
-1. `loopDisable` - Disables looping.
-2. `loopQueue` - Loops the queue.
-3. `loopTrack` - Loops the current song.
-4. `lyricsClose` - Closes the lyrics display.
+1. `embedClose` - Closes embed.
+2. `loopDisable` - Disables looping.
+3. `loopQueue` - Loops the queue.
+4. `loopTrack` - Loops the current song.
 5. `next` - Changes page to the next page of the queue.
 6. `pause` - Pauses the playback.
 7. `previous` - Changes page to the previous page of the queue.
@@ -53,10 +53,10 @@ Additionally, MusicBro provides the following prefix commands:
 
 ## Logging
 
-MusicBro logs events in 2 different files:
+MusicBro logs events to two separate files:
 
-1. `log.log` - Logs all events.
-2. `debug.log` - Logs only debug events from the `discord-player` package. (run `npm run debug` to enable)
+1. log.log - Records all general system events.
+2. dev.log - Records events in development mode; use the `debug` argument to enable more detailed logging, e.g., `npm run dev -- debug`.
 
 ## Setup
 

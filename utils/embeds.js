@@ -1,4 +1,10 @@
-const { EmbedBuilder, MessageFlags } = require("discord.js");
+const {
+  EmbedBuilder,
+  MessageFlags,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle
+} = require("discord.js");
 const { logInfo } = require("./logger");
 const { timedDelete } = require("./time");
 
@@ -59,6 +65,42 @@ async function printError(
   }
 }
 
+/**
+ * Builds a standardized Discord embed accompanied by a "Close" button.
+ * @param {Object} options - Configuration options for the embed and button.
+ * @param {string} options.title - The title of the embed.
+ * @param {string} options.description - The main text content of the embed.
+ * @param {string|number} options.color - The color of the embed side bar.
+ * @param {string|null} options.thumbnail
+ * - Optional URL for the embed thumbnail.
+ * @param {ButtonStyle} options.buttonStyle
+ * - The visual style of the close button.
+ * @returns {{ embed: EmbedBuilder, row: ActionRowBuilder }}
+ * An object containing the built embed and the action row with the button.
+ */
+function buildEmbedWithButton({
+  title,
+  description,
+  color = "Blue",
+  thumbnail = null,
+  buttonStyle = ButtonStyle.Secondary
+}) {
+  const embed = new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(description)
+    .setColor(color);
+  if (thumbnail) embed.setThumbnail(thumbnail);
+
+  const button = new ButtonBuilder()
+    .setCustomId("embedClose")
+    .setLabel("Zamknij")
+    .setStyle(buttonStyle);
+
+  const row = new ActionRowBuilder().addComponents(button);
+  return { embed, row };
+}
+
 module.exports = {
-  printError
+  printError,
+  buildEmbedWithButton
 };

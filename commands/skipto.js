@@ -32,7 +32,7 @@ module.exports = {
     queue.node.skipTo(songNumber - 1);
     queue.setRepeatMode(QueueRepeatMode.OFF);
     if (queue.node.isPaused()) queue.node.resume();
-    utils.sendStatus(queue);
+    utils.sendLoadingStatus(queue);
     await interaction.deleteReply();
   }
 };

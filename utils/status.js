@@ -5,6 +5,7 @@ const {
   ActionRowBuilder
 } = require("discord.js");
 const { logInfo } = require("./logger");
+const { buildEmbedWithButton } = require("./embeds");
 const { useMainPlayer } = require("discord-player");
 
 const QUEUE_PAGE_SIZE = 10;
@@ -343,8 +344,33 @@ function canPlayTrack(track) {
   };
 }
 
+async function sendLoadingStatus(queue) {
+  return runStatusSynchronized(queue, async () => {
+    if (!queue.currentTrack) return;
+
+    const { embed, row } = buildEmbedWithButton({
+      title: "Proszę czekać...",
+      description: "Trwa ładowanie utworu.",
+      color: "Blue",
+      thumbnail: "https://cdn-icons-png.flaticon.com/512/889/889843.png"
+    });
+    if (queue?.metadata?.statusMessage) {
+      await queue.metadata.statusMessage.edit({
+        embeds: [embed],
+        components: [row]
+      });
+    } else if (queue?.metadata?.textChannel) {
+      queue.metadata.statusMessage = await queue.metadata.textChannel.send({
+        embeds: [embed],
+        components: [row]
+      });
+    }
+  });
+}
+
 module.exports = {
   sendStatus,
   handleLyrics,
-  canPlayTrack
+  canPlayTrack,
+  sendLoadingStatus
 };
