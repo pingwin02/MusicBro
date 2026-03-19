@@ -220,7 +220,7 @@ async function playTrackInChannel(
         logInfo(`[EasterEgg] Track not found: ${trackUrl}`);
         safeCleanupQueue(queue, client, instanceId);
         await sleep(1000);
-        return;
+        continue;
       }
 
       const track = searchResult.tracks[0];

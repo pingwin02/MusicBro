@@ -107,12 +107,6 @@ The bot should now be online and ready to use in your Discord server.
 
 For development purposes, you can run the bot using the command `npm run dev`.
 
-## Known Issues
-
-- Spotify and SoundCloud are not supported for now.
-- When in queue is NSFW or premium video, bot might crash, because of
-  extractor error: `ERR_NO_RESULT: Could not extract stream for this track`.
-
 ## License
 
 MusicBro is released under the [MIT License](LICENSE).

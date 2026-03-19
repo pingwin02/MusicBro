@@ -25,6 +25,14 @@ module.exports = {
         )
         .setRequired(false)
     )
+    .addBooleanOption((option) =>
+      option
+        .setName("next")
+        .setDescription(
+          "Dodaje utwór na sam początek kolejki (odtworzy się jako następny)"
+        )
+        .setRequired(false)
+    )
     .setContexts(InteractionContextType.Guild),
 
   run: async ({ client, interaction }) => {
@@ -53,6 +61,7 @@ module.exports = {
     let queue;
     const player = useMainPlayer();
     const force = interaction.options.getBoolean("force") || false;
+    const next = interaction.options.getBoolean("next") || false;
 
     try {
       queue = player.nodes.create(interaction.guild, {
@@ -130,11 +139,11 @@ module.exports = {
       const songs = result.tracks;
 
       if (result.playlist) {
-        if (force) {
+        if (force || next) {
           queue.tasksQueue.release();
           return utils.printError(
             interaction,
-            "Opcja `force` jest wyłączona dla playlist!"
+            "Opcje `force` oraz `next` są wyłączone dla playlist!"
           );
         }
 
@@ -215,9 +224,8 @@ module.exports = {
           );
         }
 
-        if (force) {
+        if (force || next) {
           queue.insertTrack(song);
-          queue.setRepeatMode(QueueRepeatMode.OFF);
           queue.metadata.page = 0;
         } else {
           queue.addTrack(song);
@@ -225,6 +233,7 @@ module.exports = {
       }
 
       if (!queue.connection) await queue.connect(voiceChannel);
+
       if (force || !queue.currentTrack) {
         await queue.node.play();
         utils.sendLoadingStatus(queue);
