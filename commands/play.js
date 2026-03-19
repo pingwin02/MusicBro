@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, InteractionContextType } = require("discord.js");
-const { QueueRepeatMode, useMainPlayer } = require("discord-player");
+const { useMainPlayer } = require("discord-player");
 const utils = require("../utils");
 
 const MAX_TRACK_LENGTH_MS = Number.MAX_SAFE_INTEGER;
