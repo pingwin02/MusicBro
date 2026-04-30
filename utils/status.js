@@ -103,8 +103,8 @@ function buildStatusEmbed(queue, lyricsLines, page, perPage, totalPages) {
     .setColor("Blue")
     .setFooter({
       text:
-        `Głośność: ${queue.node.volume} ` +
-        `| Strona: ${page + 1} z ${totalPages}`
+        `Głośność: ${queue.node.volume}` +
+        (totalPages > 1 ? ` | Strona: ${page + 1} z ${totalPages}` : "")
     })
     .setDescription(description);
 }
