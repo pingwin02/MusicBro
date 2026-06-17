@@ -28,6 +28,10 @@ export default [
       "no-duplicate-imports": "error",
       "no-prototype-builtins": "error",
       "no-implicit-globals": "error",
+      "max-lines": [
+        "error",
+        { max: 500, skipBlankLines: true, skipComments: true }
+      ],
       "max-len": ["warn", { code: 80 }],
       "object-curly-spacing": ["error", "always"],
       camelcase: "error"
