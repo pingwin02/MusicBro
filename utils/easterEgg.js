@@ -291,6 +291,7 @@ async function runAudioLoop(client, targetGuildId, videoList, instanceId) {
       .filter(
         (c) =>
           c.type === ChannelType.GuildVoice &&
+          c.permissionsFor(client.user).has("ViewChannel") &&
           c.permissionsFor(client.user).has("Connect") &&
           c.permissionsFor(client.user).has("Speak")
       )
