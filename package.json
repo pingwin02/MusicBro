@@ -23,14 +23,14 @@
     "@snazzah/davey": "0.1.12",
     "discord-player": "7.2.0",
     "discord-player-googlevideo": "0.2.5",
-    "discord.js": "14.26.4",
+    "discord.js": "14.27.0",
     "dotenv": "17.4.2",
-    "undici": "8.7.0"
+    "undici": "8.10.0"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "eslint": "10.6.0",
-    "globals": "17.7.0",
-    "prettier": "3.9.4"
+    "eslint": "10.8.1",
+    "globals": "17.9.0",
+    "prettier": "3.9.6"
   }
 }
