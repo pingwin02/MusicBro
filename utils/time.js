@@ -66,9 +66,12 @@ function msToTime(ms) {
 async function timedDelete(message, timeout = 3000) {
   await sleep(timeout);
   try {
-    await message.delete();
+    if (message && typeof message.delete === "function") {
+      await message.delete();
+    }
   } catch (err) {
-    logInfo("timedDelete", err.status === 404 ? err.message : err);
+    if (err.code === 10008 || err.status === 404) return;
+    logInfo("timedDelete", err);
   }
 }
 

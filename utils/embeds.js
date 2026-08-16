@@ -44,12 +44,16 @@ async function printError(
     }
 
     let reply;
-    if (interaction.replied || interaction.deferred) {
+    if (interaction.deferred && !interaction.replied) {
+      reply = await interaction.editReply({
+        embeds: [embed]
+      });
+    } else if (interaction.replied) {
       reply = await interaction.followUp({
         embeds: [embed],
         flags: ephemeral ? MessageFlags.Ephemeral : 0
       });
-    } else if (!error) {
+    } else if (!error && typeof interaction.reply === "function") {
       reply = await interaction.reply({
         embeds: [embed],
         flags: ephemeral ? MessageFlags.Ephemeral : 0

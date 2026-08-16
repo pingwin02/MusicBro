@@ -62,11 +62,26 @@ module.exports = {
         "Kanał jest pełny! Spróbuj później."
       );
 
-    let queue;
-    const player = useMainPlayer();
     const mix = interaction.options.getBoolean("mix") || false;
     const next = interaction.options.getBoolean("next") || false;
     const force = interaction.options.getBoolean("force") || false;
+
+    if (force && next) {
+      return utils.printError(
+        interaction,
+        "Opcje `force` oraz `next` nie mogą być włączone jednocześnie!"
+      );
+    }
+
+    let query = interaction.options.getString("query");
+    const isManualQuery = !query.match(/^https?:\/\//);
+
+    if (!isManualQuery && query.includes("/shorts/")) {
+      query = query.replace("/shorts/", "/watch?v=");
+    }
+
+    let queue;
+    const player = useMainPlayer();
 
     try {
       queue = player.nodes.create(interaction.guild, {
@@ -85,13 +100,6 @@ module.exports = {
         interaction,
         "Wystąpił błąd podczas tworzenia węzła! Spróbuj ponownie później."
       );
-    }
-
-    let query = interaction.options.getString("query");
-    const isManualQuery = !query.match(/^https?:\/\//);
-
-    if (!isManualQuery && query.includes("/shorts/")) {
-      query = query.replace("/shorts/", "/watch?v=");
     }
 
     try {
@@ -177,14 +185,6 @@ module.exports = {
       const songs = result.tracks;
 
       if (result.playlist) {
-        if (force || next) {
-          queue.tasksQueue.release();
-          return utils.printError(
-            interaction,
-            "Opcje `force` oraz `next` są wyłączone dla playlist!"
-          );
-        }
-
         const removed = [];
         const allowed = [];
 
@@ -230,7 +230,20 @@ module.exports = {
           );
         }
 
-        queue.addTrack(allowed);
+        if (force || next) {
+          queue.options.noEmitInsert = true;
+          allowed.forEach((track, index) => {
+            queue.insertTrack(track, index);
+          });
+          queue.options.noEmitInsert = false;
+          queue.metadata.page = 0;
+
+          if (next && queue.currentTrack) {
+            queue.emit("audioTracksAdd", queue, allowed);
+          }
+        } else {
+          queue.addTrack(allowed);
+        }
       } else {
         const song = songs[0];
         const playability = utils.canPlayTrack(song);
@@ -262,8 +275,13 @@ module.exports = {
           );
         }
 
-        if (force || next) {
-          queue.insertTrack(song);
+        if (force) {
+          queue.options.noEmitInsert = true;
+          queue.insertTrack(song, 0);
+          queue.options.noEmitInsert = false;
+          queue.metadata.page = 0;
+        } else if (next) {
+          queue.insertTrack(song, 0);
           queue.metadata.page = 0;
         } else {
           queue.addTrack(song);
@@ -272,15 +290,23 @@ module.exports = {
 
       if (!queue.connection) await queue.connect(voiceChannel);
 
-      if (force || !queue.currentTrack) {
+      if (force) {
         await utils.sendLoadingStatus(queue);
-        if (interaction.deferred || interaction.replied) {
-          await interaction.deleteReply().catch(() => {});
+        await interaction.deleteReply().catch(() => {});
+        if (queue.currentTrack) {
+          queue.node.skip();
+        } else {
+          await queue.node.play();
         }
+      } else if (!queue.currentTrack) {
+        await utils.sendLoadingStatus(queue);
+        await interaction.deleteReply().catch(() => {});
         await queue.node.play();
+      } else {
+        await interaction.deleteReply().catch(() => {});
       }
     } catch (err) {
-      if (queue) queue.delete();
+      if (queue && !queue.currentTrack) queue.delete();
       utils.logInfo("Searching/Playing error", err);
       if (queue?.tasksQueue) queue.tasksQueue.release();
       return utils.printError(
@@ -289,9 +315,6 @@ module.exports = {
       );
     } finally {
       if (queue?.tasksQueue) queue.tasksQueue.release();
-      if (interaction.deferred || interaction.replied) {
-        await interaction.deleteReply().catch(() => {});
-      }
     }
   }
 };
