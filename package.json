@@ -8,6 +8,7 @@
     "debug": "node index.js debug",
     "deploy": "node index.js load",
     "dev": "node index.js dev",
+    "test": "node --test tests/**/*.test.js",
     "lint": "eslint . --fix",
     "prelint": "prettier . --write"
   },
@@ -20,17 +21,20 @@
   "author": "pingwin02",
   "license": "MIT",
   "dependencies": {
+    "@napi-rs/canvas": "1.0.6",
     "@snazzah/davey": "0.1.12",
+    "bgutils-js": "4.0.3",
     "discord-player": "7.2.0",
-    "discord-player-googlevideo": "0.2.5",
     "discord.js": "14.27.0",
     "dotenv": "17.4.2",
-    "undici": "8.10.0"
+    "jsdom": "30.0.1",
+    "undici": "8.10.0",
+    "youtubei.js": "18.0.0"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "eslint": "10.8.1",
-    "globals": "17.9.0",
+    "globals": "17.11.0",
     "prettier": "3.9.6"
   }
 }

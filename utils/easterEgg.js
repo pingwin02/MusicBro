@@ -47,6 +47,8 @@ function createDateTrigger(dateStr) {
 }
 
 function loadEventsFromJson() {
+  if (process.argv.includes("load")) return [];
+
   const configPath = path.join(__dirname, "../easter_eggs.json");
 
   if (!fs.existsSync(configPath)) {

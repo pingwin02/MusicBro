@@ -14,7 +14,7 @@ MusicBro provides the following slash commands:
 2. `info` - Displays information about the bot's ping.
 3. `nowplaying` - Displays information about the currently playing song with lyrics.
 4. `lyrics` - Fetches and displays the lyrics of the currently playing song or a specified song.
-5. `play` - Searches for a song or songs based on a link or search query and starts playing.
+5. `play` - Searches for a song or playlist based on a link or query and starts playing. Supports optional flags: `force` (plays immediately), `next` (inserts as next), and `mix` (automatically appends ~25 similar mix tracks).
 6. `remove` - Removes a song from the queue.
 7. `seek` - Seeks to a specified time in the current song.
 8. `skipto` - Skips to a specified song in the queue.

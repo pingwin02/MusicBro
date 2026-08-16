@@ -9,6 +9,6 @@ module.exports = {
         `(${track.url}) [${track.duration}]`
     );
     queue.metadata.page = queue.metadata.page || 0;
-    utils.sendStatus(queue);
+    await utils.sendStatus(queue);
   }
 };

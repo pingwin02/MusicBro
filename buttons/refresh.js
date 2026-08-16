@@ -14,7 +14,7 @@ module.exports = {
     ) {
       await interaction.deleteReply();
     } else {
-      utils.sendStatus(queue);
+      await utils.sendStatus(queue);
     }
   }
 };

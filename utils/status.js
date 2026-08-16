@@ -269,62 +269,65 @@ function runStatusSynchronized(queue, task) {
 
 async function sendStatus(queue, fetchLyrics = false) {
   return runStatusSynchronized(queue, async () => {
-    if (!queue?.currentTrack || queue.metadata.isEasterEgg) return;
-
-    const { perPage, totalPages, page } = getPaginationInfo(queue);
-    queue.metadata.page = page;
-    const lyricsLines = queue.metadata.lastLyricsLines || [
-      "Ładowanie tekstu..."
-    ];
-    queue.metadata.lastLyricsLines = lyricsLines;
-
-    const embed = buildStatusEmbed(
-      queue,
-      lyricsLines,
-      page,
-      perPage,
-      totalPages
-    );
-    const components = buildActionRows(queue, page, totalPages);
-
     try {
-      await queue.metadata.statusMessage.edit({ embeds: [embed], components });
-    } catch {
-      queue.metadata.statusMessage = await queue.metadata.textChannel.send({
-        embeds: [embed],
-        components
-      });
-    }
+      if (!queue?.currentTrack || queue.metadata.isEasterEgg) return;
 
-    if (fetchLyrics) {
-      const result = await handleLyrics({
+      const { perPage, totalPages, page } = getPaginationInfo(queue);
+      queue.metadata.page = page;
+      const lyricsLines = queue.metadata.lastLyricsLines || [
+        "Ładowanie tekstu..."
+      ];
+      queue.metadata.lastLyricsLines = lyricsLines;
+
+      const embed = buildStatusEmbed(
         queue,
-        onChange: async (lyricsBuffer) =>
-          await handleLyricsOnChange(queue, lyricsBuffer)
-      });
-      if (result) {
-        queue.metadata.lastLyricsLines = result.lyrics
-          ? ["Brak tekstu na żywo. Użyj /lyrics, aby zobaczyć tekst."]
-          : ["Tekst utworu zaraz się pojawi..."];
-      } else {
-        queue.metadata.lastLyricsLines = ["Nie znaleziono tekstu."];
-      }
-      if (!queue.metadata.statusMessage) return;
-      const updatedEmbed = buildStatusEmbed(
-        queue,
-        queue.metadata.lastLyricsLines,
+        lyricsLines,
         page,
         perPage,
         totalPages
       );
-      try {
+      const components = buildActionRows(queue, page, totalPages);
+
+      if (queue?.metadata?.statusMessage) {
+        await queue.metadata.statusMessage.edit({
+          embeds: [embed],
+          components
+        });
+      } else if (queue?.metadata?.textChannel) {
+        queue.metadata.statusMessage = await queue.metadata.textChannel.send({
+          embeds: [embed],
+          components
+        });
+      }
+
+      if (fetchLyrics) {
+        const result = await handleLyrics({
+          queue,
+          onChange: async (lyricsBuffer) =>
+            await handleLyricsOnChange(queue, lyricsBuffer)
+        });
+        if (result) {
+          queue.metadata.lastLyricsLines = result.lyrics
+            ? ["Brak tekstu na żywo. Użyj /lyrics, aby zobaczyć tekst."]
+            : ["Tekst utworu zaraz się pojawi..."];
+        } else {
+          queue.metadata.lastLyricsLines = ["Nie znaleziono tekstu."];
+        }
+        if (!queue.metadata.statusMessage) return;
+        const updatedEmbed = buildStatusEmbed(
+          queue,
+          queue.metadata.lastLyricsLines,
+          page,
+          perPage,
+          totalPages
+        );
         await queue.metadata.statusMessage.edit({
           embeds: [updatedEmbed],
           components
         });
-      } catch (err) {
-        logInfo("Error updating status message with updated embed", err);
       }
+    } catch (err) {
+      logInfo("sendStatus", err);
     }
   });
 }
@@ -346,24 +349,29 @@ function canPlayTrack(track) {
 
 async function sendLoadingStatus(queue) {
   return runStatusSynchronized(queue, async () => {
-    if (!queue.currentTrack) return;
+    try {
+      if (queue.isEmpty() && !queue.currentTrack) return;
 
-    const { embed, row } = buildEmbedWithButton({
-      title: "Proszę czekać...",
-      description: "Trwa ładowanie utworu.",
-      color: "Blue",
-      thumbnail: "https://cdn-icons-png.flaticon.com/512/889/889843.png"
-    });
-    if (queue?.metadata?.statusMessage) {
-      await queue.metadata.statusMessage.edit({
-        embeds: [embed],
-        components: [row]
+      const { embed, row } = buildEmbedWithButton({
+        title: "Proszę czekać...",
+        description: "Trwa ładowanie utworu.",
+        color: "Blue",
+        thumbnail: "https://cdn-icons-png.flaticon.com/512/889/889843.png"
       });
-    } else if (queue?.metadata?.textChannel) {
-      queue.metadata.statusMessage = await queue.metadata.textChannel.send({
-        embeds: [embed],
-        components: [row]
-      });
+
+      if (queue?.metadata?.statusMessage) {
+        await queue.metadata.statusMessage.edit({
+          embeds: [embed],
+          components: [row]
+        });
+      } else if (queue?.metadata?.textChannel) {
+        queue.metadata.statusMessage = await queue.metadata.textChannel.send({
+          embeds: [embed],
+          components: [row]
+        });
+      }
+    } catch (err) {
+      logInfo("sendLoadingStatus", err);
     }
   });
 }

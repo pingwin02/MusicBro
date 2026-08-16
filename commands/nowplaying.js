@@ -15,7 +15,7 @@ module.exports = {
         interaction,
         "Kolejka jest pusta! Użyj `/play`, aby dodać utwory."
       );
-    utils.sendStatus(queue);
+    await utils.sendStatus(queue);
     await interaction.deleteReply();
   }
 };

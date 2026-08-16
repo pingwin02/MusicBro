@@ -10,6 +10,6 @@ module.exports = {
     );
     queue.metadata?.unsubscribeLyrics?.();
     queue.metadata.lastLyricsLines = null;
-    utils.sendStatus(queue, true);
+    await utils.sendStatus(queue, true);
   }
 };

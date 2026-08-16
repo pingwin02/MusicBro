@@ -10,7 +10,7 @@ module.exports = {
       await interaction.deleteReply();
     } else {
       queue.node.skip();
-      utils.sendLoadingStatus(queue);
+      await utils.sendLoadingStatus(queue);
     }
   }
 };

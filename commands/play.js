@@ -19,10 +19,8 @@ module.exports = {
     )
     .addBooleanOption((option) =>
       option
-        .setName("force")
-        .setDescription(
-          "Jeśli włączone, odtwarza natychmiastowo utwór pomijając kolejkę"
-        )
+        .setName("mix")
+        .setDescription("Dodaje składankę podobnych utworów (ok. 25 pozycji)")
         .setRequired(false)
     )
     .addBooleanOption((option) =>
@@ -31,6 +29,12 @@ module.exports = {
         .setDescription(
           "Dodaje utwór na sam początek kolejki (odtworzy się jako następny)"
         )
+        .setRequired(false)
+    )
+    .addBooleanOption((option) =>
+      option
+        .setName("force")
+        .setDescription("Odtwarza natychmiastowo utwór pomijając kolejkę")
         .setRequired(false)
     )
     .setContexts(InteractionContextType.Guild),
@@ -60,8 +64,9 @@ module.exports = {
 
     let queue;
     const player = useMainPlayer();
-    const force = interaction.options.getBoolean("force") || false;
+    const mix = interaction.options.getBoolean("mix") || false;
     const next = interaction.options.getBoolean("next") || false;
+    const force = interaction.options.getBoolean("force") || false;
 
     try {
       queue = player.nodes.create(interaction.guild, {
@@ -117,14 +122,47 @@ module.exports = {
           );
         }
 
-        result = await player.search(resolvedUrl, {
+        let targetUrl = resolvedUrl;
+        if (mix) {
+          const videoId = resolvedUrl.match(
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+          )?.[1];
+          if (videoId) {
+            targetUrl =
+              "https://www.youtube.com/watch?" +
+              `v=${videoId}&list=RD${videoId}`;
+          }
+        }
+
+        result = await player.search(targetUrl, {
           requestedBy: interaction.user,
           ignoreCache: true
         });
       } else {
-        result = await player.search(query, {
+        let targetUrl = query;
+        if (mix && !query.includes("list=")) {
+          const videoId = query.match(
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+          )?.[1];
+          if (videoId) {
+            targetUrl =
+              "https://www.youtube.com/watch?" +
+              `v=${videoId}&list=RD${videoId}`;
+          }
+        }
+
+        result = await player.search(targetUrl, {
           requestedBy: interaction.user
         });
+      }
+
+      if ((!result || result.tracks.length === 0) && mix) {
+        result = await player.search(
+          isManualQuery ? "youtube: " + query : query,
+          {
+            requestedBy: interaction.user
+          }
+        );
       }
 
       if (!result || result.tracks.length === 0) {
@@ -235,8 +273,11 @@ module.exports = {
       if (!queue.connection) await queue.connect(voiceChannel);
 
       if (force || !queue.currentTrack) {
+        await utils.sendLoadingStatus(queue);
+        if (interaction.deferred || interaction.replied) {
+          await interaction.deleteReply().catch(() => {});
+        }
         await queue.node.play();
-        utils.sendLoadingStatus(queue);
       }
     } catch (err) {
       if (queue) queue.delete();
