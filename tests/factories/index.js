@@ -1,3 +1,5 @@
+process.env.NODE_ENV = "test";
+
 const { Client, GatewayIntentBits } = require("discord.js");
 const { Player, Track } = require("discord-player");
 const { YouTubeExtractor } = require("../../extractors");

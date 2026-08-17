@@ -2,6 +2,18 @@ const fs = require("fs");
 const { inspect } = require("util");
 
 /**
+ * Checks if the current process is running in a test environment.
+ * @returns {boolean} True if running in test environment.
+ */
+function isTestEnvironment() {
+  return (
+    process.env.NODE_ENV === "test" ||
+    process.execArgv.includes("--test") ||
+    process.argv.some((arg) => arg.includes("test"))
+  );
+}
+
+/**
  * Logs information to the console and appends it to a log file.
  * @param {string} info - Information to log.
  * @param {Error} error - Error to log (optional)
@@ -31,6 +43,8 @@ function logInfo(info, error = null) {
     console.log(logMessage); // eslint-disable-line no-console
   }
 
+  if (isTestEnvironment()) return;
+
   fs.appendFile(
     process.argv.includes("dev") ? "logs/dev.log" : "logs/log.log",
     `${logMessage}\n`,
@@ -58,6 +72,8 @@ function logDebug(info) {
 
   console.debug(logMessage); // eslint-disable-line no-console
 
+  if (isTestEnvironment()) return;
+
   fs.appendFile("logs/dev.log", `${logMessage}\n`, (err) => {
     if (err) {
       console.error("Error writing to dev file:", err);
@@ -67,5 +83,6 @@ function logDebug(info) {
 
 module.exports = {
   logInfo,
-  logDebug
+  logDebug,
+  isTestEnvironment
 };

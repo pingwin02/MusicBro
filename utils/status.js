@@ -6,10 +6,9 @@ const {
 } = require("discord.js");
 const { logInfo } = require("./logger");
 const { buildEmbedWithButton } = require("./embeds");
-const { useMainPlayer } = require("discord-player");
+const { handleLyrics } = require("./lyrics");
 
 const QUEUE_PAGE_SIZE = 10;
-const LYRICS_BUFFER_SIZE = 5;
 
 const BUTTONS = {
   resume: { emoji: "▶", disabled: (q) => q.node.isPlaying() },
@@ -145,108 +144,6 @@ function getPaginationInfo(queue) {
   return { perPage, totalPages, page };
 }
 
-async function handleLyrics({ queue, onChange, searchString }) {
-  const player = useMainPlayer();
-  let title, author;
-
-  if (searchString) {
-    const result = (await player.lyrics.search({ q: searchString }))[0];
-    if (!result)
-      return (
-        logInfo(`[LYRICS] Lyrics not found for "${searchString}"`),
-        false
-      );
-    return {
-      lyrics: result.plainLyrics,
-      title: result.trackName,
-      author: result.artistName
-    };
-  }
-
-  if (!queue?.currentTrack) return;
-
-  title = queue.currentTrack.title
-    .replace(/\s*[([].*?[)\]]\s*/g, "")
-    .replace(/\\/g, "")
-    .trim();
-  author = queue.currentTrack.author;
-
-  if (title.includes(" - ")) {
-    [author, title] = title.split(" - ").map((s) => s.trim());
-  }
-
-  let result;
-
-  try {
-    result = (
-      await player.lyrics.search({ trackName: title, artistName: author })
-    )[0];
-  } catch (err) {
-    return (
-      logInfo(`[LYRICS] Error fetching lyrics for ${author} - ${title}`, err),
-      false
-    );
-  }
-
-  if (!result)
-    return (
-      logInfo(`[LYRICS] Lyrics not found for ${author} - ${title}`),
-      false
-    );
-  logInfo(
-    `[LYRICS] Found ${result.syncedLyrics ? "live " : ""}` +
-      `lyrics for ${author} - ${title}`
-  );
-
-  if (onChange && result.syncedLyrics) {
-    const syncedLyrics = queue.syncedLyrics(result);
-
-    let lastBufferEndTime = -1;
-    const entries = Array.from(syncedLyrics.lyrics.entries()).filter(
-      ([, text]) => text.trim() !== ""
-    );
-
-    const updateBuffer = (timestamp) => {
-      const index = entries.findIndex(([time]) => time === timestamp);
-      if (index === -1) return;
-
-      const bufferEndTime =
-        entries[
-          Math.min(index + LYRICS_BUFFER_SIZE - 1, entries.length - 1)
-        ][0];
-
-      if (timestamp > lastBufferEndTime || queue.metadata.seeked) {
-        queue.metadata.seeked = false;
-        lastBufferEndTime = bufferEndTime;
-        const nextLines = entries
-          .slice(index, index + LYRICS_BUFFER_SIZE)
-          .map(([, text]) => text);
-        onChange(nextLines);
-      }
-    };
-
-    syncedLyrics.onChange((line, timestamp) => {
-      if (timestamp) updateBuffer(timestamp);
-    });
-
-    const unsubscribe = syncedLyrics.subscribe();
-    queue.metadata.unsubscribeLyrics = () => {
-      logInfo(
-        `[LYRICS] Unsubscribing from live lyrics updates: ${author} - ${title}`
-      );
-      unsubscribe();
-      queue.metadata.unsubscribeLyrics = null;
-    };
-    return true;
-  }
-
-  return {
-    lyrics: result.plainLyrics,
-    title: result.trackName,
-    author: result.artistName
-  };
-}
-
 async function handleLyricsOnChange(queue, lyricsLines) {
   queue.metadata.lastLyricsLines = lyricsLines;
   const { perPage, totalPages, page } = getPaginationInfo(queue);
@@ -378,7 +275,6 @@ async function sendLoadingStatus(queue) {
 
 module.exports = {
   sendStatus,
-  handleLyrics,
   canPlayTrack,
   sendLoadingStatus
 };
