@@ -1,14 +1,15 @@
-const {
-  Client,
-  GatewayIntentBits,
-  Partials,
-  Collection,
-  ActivityType,
-  PresenceUpdateStatus
-} = require("discord.js");
-const { REST, Routes } = require("discord.js");
 const fs = require("node:fs");
 const { Player } = require("discord-player");
+const {
+  ActivityType,
+  Client,
+  Collection,
+  GatewayIntentBits,
+  Partials,
+  PresenceUpdateStatus,
+  REST,
+  Routes
+} = require("discord.js");
 const { YouTubeExtractor } = require("./extractors");
 const utils = require("./utils");
 

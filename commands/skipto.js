@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, InteractionContextType } = require("discord.js");
-const { useQueue, QueueRepeatMode } = require("discord-player");
+const { QueueRepeatMode } = require("discord-player");
+const { InteractionContextType, SlashCommandBuilder } = require("discord.js");
 const utils = require("../utils");
 
 module.exports = {
@@ -16,19 +16,12 @@ module.exports = {
     .setContexts(InteractionContextType.Guild),
   run: async ({ interaction }) => {
     await interaction.deferReply();
-    const queue = useQueue(interaction.guildId);
-    if (!queue)
-      return utils.printError(
-        interaction,
-        "Kolejka jest pusta! Użyj `/play`, aby dodać utwory."
-      );
+    const queue = utils.requireQueue(interaction);
+    if (!queue) return;
+
     const songNumber = interaction.options.getInteger("number");
-    if (songNumber > queue.getSize())
-      return utils.printError(
-        interaction,
-        "Nie ma takiego utworu w kolejce! " +
-          "Upewnij się, że podałeś poprawny numer."
-      );
+    if (!utils.validateTrackNumber(interaction, queue, songNumber)) return;
+
     queue.node.skipTo(songNumber - 1);
     queue.setRepeatMode(QueueRepeatMode.OFF);
     if (queue.node.isPaused()) queue.node.resume();

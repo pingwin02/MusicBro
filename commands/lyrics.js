@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, ButtonStyle } = require("discord.js");
 const { useQueue } = require("discord-player");
+const { ButtonStyle, SlashCommandBuilder } = require("discord.js");
 const utils = require("../utils");
 
 module.exports = {

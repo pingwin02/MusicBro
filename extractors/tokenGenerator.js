@@ -1,5 +1,5 @@
-const { JSDOM } = require("jsdom");
 const { createCanvas } = require("@napi-rs/canvas");
+const { JSDOM } = require("jsdom");
 const vm = require("node:vm");
 
 const REQUEST_KEY = "O43z0dpjhgX20SCx4KAo";

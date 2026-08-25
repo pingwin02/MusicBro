@@ -10,7 +10,7 @@ module.exports = {
       !queue ||
       !queue.metadata ||
       !queue.metadata.statusMessage ||
-      queue.metadata.statusMessage.id !== interaction.message.id
+      queue.metadata.statusMessage.id !== interaction.message?.id
     ) {
       await interaction.deleteReply();
     } else {

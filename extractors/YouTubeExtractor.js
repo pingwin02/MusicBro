@@ -1,6 +1,6 @@
 const { BaseExtractor, Playlist, Track } = require("discord-player");
-const { Innertube, UniversalCache, Platform } = require("youtubei.js");
 const vm = require("node:vm");
+const { Innertube, Platform, UniversalCache } = require("youtubei.js");
 const { getPoToken } = require("./tokenGenerator");
 
 const MAX_SEARCH_RESULTS = 10;

@@ -1,5 +1,4 @@
-const { SlashCommandBuilder, InteractionContextType } = require("discord.js");
-const { useQueue } = require("discord-player");
+const { InteractionContextType, SlashCommandBuilder } = require("discord.js");
 const utils = require("../utils");
 
 module.exports = {
@@ -15,12 +14,8 @@ module.exports = {
     .setContexts(InteractionContextType.Guild),
   run: async ({ interaction }) => {
     await interaction.deferReply();
-    const queue = useQueue(interaction.guildId);
-    if (!queue)
-      return utils.printError(
-        interaction,
-        "Kolejka jest pusta! Użyj `/play`, aby dodać utwory."
-      );
+    const queue = utils.requireQueue(interaction);
+    if (!queue) return;
 
     const input = interaction.options.getString("time").trim();
     const parts = input.split(":");

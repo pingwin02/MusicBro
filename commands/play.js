@@ -1,11 +1,6 @@
-const { SlashCommandBuilder, InteractionContextType } = require("discord.js");
 const { useMainPlayer } = require("discord-player");
+const { InteractionContextType, SlashCommandBuilder } = require("discord.js");
 const utils = require("../utils");
-
-const MAX_TRACK_LENGTH_MS = Number.MAX_SAFE_INTEGER;
-const NO_RESULTS_MESSAGE =
-  "Nie znaleziono! Upewnij się, że link lub fraza jest poprawna.\n\n" +
-  "Wspierane serwisy: <:YouTube:1156904255979016203> Youtube";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -41,26 +36,8 @@ module.exports = {
 
   run: async ({ client, interaction }) => {
     await interaction.deferReply();
-    const voiceChannel = interaction.member.voice.channel;
-
-    if (!voiceChannel)
-      return utils.printError(interaction, "Musisz być na kanale głosowym!");
-
-    if (
-      !voiceChannel.permissionsFor(client.user).has("ViewChannel") ||
-      !voiceChannel.permissionsFor(client.user).has("Connect") ||
-      !voiceChannel.permissionsFor(client.user).has("Speak")
-    )
-      return utils.printError(
-        interaction,
-        "Nie mam uprawnień do połączenia się z kanałem głosowym!"
-      );
-
-    if (voiceChannel.full)
-      return utils.printError(
-        interaction,
-        "Kanał jest pełny! Spróbuj później."
-      );
+    const voiceChannel = utils.validateVoiceChannel(client, interaction);
+    if (!voiceChannel) return;
 
     const mix = interaction.options.getBoolean("mix") || false;
     const next = interaction.options.getBoolean("next") || false;
@@ -76,31 +53,13 @@ module.exports = {
     let query = interaction.options.getString("query");
     const isManualQuery = !query.match(/^https?:\/\//);
 
-    if (!isManualQuery && query.includes("/shorts/")) {
-      query = query.replace("/shorts/", "/watch?v=");
+    if (!isManualQuery) {
+      query = utils.cleanTrackUrl(query);
     }
 
-    let queue;
     const player = useMainPlayer();
-
-    try {
-      queue = player.nodes.create(interaction.guild, {
-        leaveOnEnd: true,
-        leaveOnStop: true,
-        leaveOnEmpty: true,
-        metadata: {
-          textChannel: interaction.channel,
-          statusMessage: null,
-          page: 0
-        }
-      });
-    } catch (err) {
-      utils.logInfo("Creating node", err);
-      return utils.printError(
-        interaction,
-        "Wystąpił błąd podczas tworzenia węzła! Spróbuj ponownie później."
-      );
-    }
+    const queue = utils.getOrCreateQueue(player, interaction);
+    if (!queue) return;
 
     try {
       let result;
@@ -114,7 +73,7 @@ module.exports = {
         if (!initialResult || initialResult.tracks.length === 0) {
           utils.logInfo(`[${interaction.guild.name}] No results for ${query}`);
           if (!queue.currentTrack) queue.delete();
-          return utils.printError(interaction, NO_RESULTS_MESSAGE);
+          return utils.printError(interaction, utils.NO_RESULTS_MESSAGE);
         }
 
         const resolvedUrl = initialResult.tracks[0]?.url;
@@ -176,7 +135,7 @@ module.exports = {
       if (!result || result.tracks.length === 0) {
         utils.logInfo(`[${interaction.guild.name}] No results for ${query}`);
         if (!queue.currentTrack) queue.delete();
-        return utils.printError(interaction, NO_RESULTS_MESSAGE);
+        return utils.printError(interaction, utils.NO_RESULTS_MESSAGE);
       }
 
       const entry = queue.tasksQueue.acquire();
@@ -190,7 +149,7 @@ module.exports = {
 
         for (const t of songs) {
           const playability = utils.canPlayTrack(t);
-          const tooLong = utils.isTrackLongerThan(t, MAX_TRACK_LENGTH_MS);
+          const tooLong = utils.isTrackLongerThan(t, utils.MAX_TRACK_LENGTH_MS);
 
           if (!playability.success || tooLong) {
             removed.push({
@@ -221,11 +180,12 @@ module.exports = {
               .map((r) => `${r.track.title} (${r.reason})`)
               .join(", ") + (removed.length > 3 ? "..." : "");
 
+          const maxLenStr = utils.msToTime(utils.MAX_TRACK_LENGTH_MS);
           await utils.sleep(2000);
           utils.printError(
             interaction.channel,
             `Pominięto **${removed.length}** utworów ` +
-              `(zablokowane lub > ${utils.msToTime(MAX_TRACK_LENGTH_MS)}).`,
+              `(zablokowane lub > ${maxLenStr}).`,
             new Error(`Removed: ${removedStr}`)
           );
         }
@@ -262,16 +222,17 @@ module.exports = {
           );
         }
 
-        if (utils.isTrackLongerThan(song, MAX_TRACK_LENGTH_MS)) {
+        if (utils.isTrackLongerThan(song, utils.MAX_TRACK_LENGTH_MS)) {
           utils.logInfo(
             `[${interaction.guild.name}] Track too long: ${song.title}`
           );
           queue.tasksQueue.release();
           if (!queue.currentTrack) queue.delete();
+          const maxLenStr = utils.msToTime(utils.MAX_TRACK_LENGTH_MS);
           return utils.printError(
             interaction,
             `Utwór [**${song.title}**](${song.url}) ` +
-              `przekracza limit **${utils.msToTime(MAX_TRACK_LENGTH_MS)}**.`
+              `przekracza limit **${maxLenStr}**.`
           );
         }
 
@@ -298,12 +259,8 @@ module.exports = {
         } else {
           await queue.node.play();
         }
-      } else if (!queue.currentTrack) {
-        await utils.sendLoadingStatus(queue);
-        await interaction.deleteReply().catch(() => {});
-        await queue.node.play();
       } else {
-        await interaction.deleteReply().catch(() => {});
+        await utils.startQueuePlayback(queue, interaction);
       }
     } catch (err) {
       if (queue && !queue.currentTrack) queue.delete();

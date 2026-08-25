@@ -1,10 +1,10 @@
+const crypto = require("crypto");
+const { useMainPlayer, useQueue } = require("discord-player");
 const { ChannelType } = require("discord.js");
-const { useQueue, useMainPlayer } = require("discord-player");
-const { logInfo } = require("./logger");
-const { sleep, waitForPlaying } = require("./time");
 const fs = require("fs");
 const path = require("path");
-const crypto = require("crypto");
+const { logInfo } = require("./logger");
+const { sleep, waitForPlaying } = require("./time");
 
 const DATE_GETTERS = {
   year: (d) => d.getFullYear(),

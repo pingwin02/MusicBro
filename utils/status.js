@@ -1,11 +1,11 @@
 const {
-  EmbedBuilder,
+  ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ActionRowBuilder
+  EmbedBuilder
 } = require("discord.js");
-const { logInfo } = require("./logger");
 const { buildEmbedWithButton } = require("./embeds");
+const { logInfo } = require("./logger");
 const { handleLyrics } = require("./lyrics");
 
 const QUEUE_PAGE_SIZE = 10;
@@ -61,10 +61,14 @@ function buildDescription(queue, lyricsLines, page, perPage) {
     .map((l) => l.replace(/\n/g, "").padEnd(49, " "))
     .join("\n\n");
 
+  const requestedByText = current.requestedBy?.id
+    ? `<@${current.requestedBy.id}>`
+    : "użytkownika";
+
   const desc =
     `[**${current.title}**](${current.url})\n` +
     `Autor **${current.author}**\n` +
-    `*dodane przez <@${current.requestedBy.id}>*\n\n` +
+    `*dodane przez ${requestedByText}*\n\n` +
     `**Tekst:**\n\`\`\`${lyricsBlock}\`\`\`\n` +
     `**Postęp:**\n${bar}\n\n**Kolejka:**\n`;
 

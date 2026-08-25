@@ -1,14 +1,9 @@
-const { useQueue } = require("discord-player");
+const utils = require("../utils");
 
 module.exports = {
   name: "stop",
-  run: async ({ interaction }) => {
-    await interaction.deferUpdate();
-    const queue = useQueue(interaction.guildId);
-    if (!queue) {
-      await interaction.deleteReply();
-    } else {
+  run: ({ interaction }) =>
+    utils.handleButton(interaction, (queue) => {
       queue.delete();
-    }
-  }
+    })
 };

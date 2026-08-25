@@ -1,8 +1,8 @@
 const {
-  Client,
-  GatewayIntentBits,
   ChannelType,
-  Events
+  Client,
+  Events,
+  GatewayIntentBits
 } = require("discord.js");
 require("dotenv").config({ quiet: true });
 
