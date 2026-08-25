@@ -21,7 +21,7 @@
   "author": "pingwin02",
   "license": "MIT",
   "dependencies": {
-    "@napi-rs/canvas": "1.0.7",
+    "@napi-rs/canvas": "1.0.8",
     "@snazzah/davey": "0.1.12",
     "bgutils-js": "4.0.3",
     "discord-player": "7.2.0",
@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "eslint": "10.8.1",
+    "eslint": "10.9.1",
     "globals": "17.11.0",
     "prettier": "3.9.6"
   }

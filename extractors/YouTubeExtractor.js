@@ -92,6 +92,9 @@ class YouTubeExtractor extends BaseExtractor {
     if (!this.#innertube) {
       throw new Error("YouTubeExtractor is not initialized");
     }
+    if (track.errorAttempts > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
     const videoId = this.#extractVideoId(track.url);
     if (!videoId) {
       throw new Error("Invalid YouTube URL");
