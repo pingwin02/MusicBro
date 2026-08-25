@@ -11,14 +11,16 @@ MusicBro is a music bot for Discord, built using discord.js and discord-player.
 MusicBro provides the following slash commands:
 
 1. `clear` - Clears the entire queue.
-2. `info` - Displays information about the bot's ping.
-3. `nowplaying` - Displays information about the currently playing song with lyrics.
-4. `lyrics` - Fetches and displays the lyrics of the currently playing song or a specified song.
-5. `play` - Searches for a song or playlist based on a link or query and starts playing. Supports optional flags: `force` (plays immediately), `next` (inserts as next), and `mix` (automatically appends ~25 similar mix tracks).
-6. `remove` - Removes a song from the queue.
-7. `seek` - Seeks to a specified time in the current song.
-8. `skipto` - Skips to a specified song in the queue.
-9. `volume` - Adjusts the volume of the playback.
+2. `export` - Exports the current queue into a URL list (each link on a new line).
+3. `import` - Imports and enqueues songs from a space-separated URL string.
+4. `info` - Displays information about the bot's ping.
+5. `nowplaying` - Displays information about the currently playing song with lyrics.
+6. `lyrics` - Fetches and displays the lyrics of the currently playing song or a specified song.
+7. `play` - Searches for a song or playlist based on a link or query and starts playing. Supports optional flags: `force` (plays immediately), `next` (inserts as next), and `mix` (automatically appends ~25 similar mix tracks).
+8. `remove` - Removes a song from the queue.
+9. `seek` - Seeks to a specified time in the current song.
+10. `skipto` - Skips to a specified song in the queue.
+11. `volume` - Adjusts the volume of the playback.
 
 And also the following button commands:
 

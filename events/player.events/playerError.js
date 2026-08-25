@@ -10,8 +10,9 @@ module.exports = {
       track.errorAttempts = (track.errorAttempts || 0) + 1;
     }
     const attempt = track?.errorAttempts || 1;
+    const trackInfo = track?.title ? ` for ${track.title} (${track.url})` : "";
     utils.logInfo(
-      `[${queue.guild.name}] playerError event ` +
+      `[${queue.guild.name}] playerError event${trackInfo} ` +
         `(attempt ${attempt}/${MAX_RETRY_ATTEMPTS})`,
       error
     );

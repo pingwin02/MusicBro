@@ -38,6 +38,7 @@ module.exports = {
         botVoiceChannel &&
         interaction.customId !== "refresh" &&
         interaction.commandName !== "info" &&
+        interaction.commandName !== "export" &&
         interaction.member?.voice?.channel !== botVoiceChannel
       ) {
         utils.logInfo(

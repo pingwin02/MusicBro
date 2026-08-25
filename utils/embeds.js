@@ -1,9 +1,9 @@
 const {
-  EmbedBuilder,
-  MessageFlags,
   ActionRowBuilder,
   ButtonBuilder,
-  ButtonStyle
+  ButtonStyle,
+  EmbedBuilder,
+  MessageFlags
 } = require("discord.js");
 const { logInfo } = require("./logger");
 const { timedDelete } = require("./time");
@@ -44,14 +44,9 @@ async function printError(
     }
 
     let reply;
-    if (interaction.deferred && !interaction.replied) {
+    if (interaction.deferred || interaction.replied) {
       reply = await interaction.editReply({
         embeds: [embed]
-      });
-    } else if (interaction.replied) {
-      reply = await interaction.followUp({
-        embeds: [embed],
-        flags: ephemeral ? MessageFlags.Ephemeral : 0
       });
     } else if (!error && typeof interaction.reply === "function") {
       reply = await interaction.reply({
