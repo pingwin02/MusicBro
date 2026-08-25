@@ -1,11 +1,11 @@
-const test = require("node:test");
 const assert = require("node:assert/strict");
+const test = require("node:test");
 const { createFFmpegStream } = require("discord-player");
 const {
-  createTestPlayer,
   TEST_IDS,
+  TEST_QUERIES,
   TEST_URLS,
-  TEST_QUERIES
+  createTestPlayer
 } = require("./factories");
 
 test("YouTubeExtractor - initialization and registration", async () => {

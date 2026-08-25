@@ -1,14 +1,17 @@
 process.env.NODE_ENV = "test";
 
-const { Client, GatewayIntentBits } = require("discord.js");
 const { Player, Track } = require("discord-player");
+const { Client, GatewayIntentBits } = require("discord.js");
+const { Log } = require("youtubei.js");
 const { YouTubeExtractor } = require("../../extractors");
 const {
+  TEST_ERRORS,
   TEST_IDS,
-  TEST_URLS,
   TEST_QUERIES,
-  TEST_ERRORS
+  TEST_URLS
 } = require("./constants");
+
+Log.setLevel(Log.Level.NONE);
 
 function createMockTrack(player, overrides = {}) {
   const title = overrides.title || "Test Track";
@@ -67,6 +70,7 @@ function createMockInteraction(overrides = {}) {
   };
 
   const interaction = {
+    guildId: overrides.guild?.id || TEST_IDS.MOCK_GUILD_ID,
     deferred: overrides.deferred !== undefined ? overrides.deferred : true,
     replied: overrides.replied !== undefined ? overrides.replied : false,
     guild: overrides.guild || createMockGuild(),
@@ -75,6 +79,8 @@ function createMockInteraction(overrides = {}) {
     member: overrides.member !== undefined ? overrides.member : defaultMember,
     options: {
       getString: (name) => optionsMap[name] || null,
+      getInteger: (name) =>
+        optionsMap[name] !== undefined ? optionsMap[name] : null,
       getBoolean: (name) => Boolean(optionsMap[name])
     },
     editReply: async ({ embeds }) => {

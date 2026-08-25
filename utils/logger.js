@@ -21,6 +21,8 @@ function isTestEnvironment() {
  * @returns {void}
  */
 function logInfo(info, error = null) {
+  if (isTestEnvironment()) return;
+
   const currentdate = new Date()
     .toLocaleString("pl-PL", {
       timeZone: "Europe/Warsaw",
@@ -43,8 +45,6 @@ function logInfo(info, error = null) {
     console.log(logMessage); // eslint-disable-line no-console
   }
 
-  if (isTestEnvironment()) return;
-
   fs.appendFile(
     process.argv.includes("dev") ? "logs/dev.log" : "logs/log.log",
     `${logMessage}\n`,
@@ -62,6 +62,8 @@ function logInfo(info, error = null) {
  * @returns {void}
  */
 function logDebug(info) {
+  if (isTestEnvironment()) return;
+
   const currentdate = new Date()
     .toLocaleString("pl-PL", {
       timeZone: "Europe/Warsaw"
@@ -71,8 +73,6 @@ function logDebug(info) {
   const logMessage = `[${currentdate}] - [DEBUG] ${info}`;
 
   console.debug(logMessage); // eslint-disable-line no-console
-
-  if (isTestEnvironment()) return;
 
   fs.appendFile("logs/dev.log", `${logMessage}\n`, (err) => {
     if (err) {

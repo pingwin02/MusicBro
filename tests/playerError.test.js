@@ -1,11 +1,11 @@
-const test = require("node:test");
 const assert = require("node:assert/strict");
+const test = require("node:test");
 const { QueueRepeatMode } = require("discord-player");
 const playerErrorEvent = require("../events/player.events/playerError");
 const {
+  createMockGuild,
   createMockTrack,
   createMockTracks,
-  createMockGuild,
   createTestPlayer
 } = require("./factories");
 

@@ -30,7 +30,8 @@ const TEST_QUERIES = {
 const TEST_ERRORS = {
   FORCE_AND_NEXT_CONFLICT:
     "Opcje `force` oraz `next` nie mogą być włączone jednocześnie!",
-  VOICE_CHANNEL_REQUIRED: "Musisz być na kanale głosowym!"
+  VOICE_CHANNEL_REQUIRED: "Musisz być na kanale głosowym!",
+  QUEUE_EMPTY: "Kolejka jest pusta! Użyj `/play`, aby dodać utwory."
 };
 
 module.exports = {

@@ -1,7 +1,7 @@
-const test = require("node:test");
 const assert = require("node:assert/strict");
-const { parseTrackForLyrics, handleLyrics } = require("../utils/lyrics");
+const test = require("node:test");
 const { isTestEnvironment } = require("../utils/logger");
+const { handleLyrics, parseTrackForLyrics } = require("../utils/lyrics");
 
 test("parseTrackForLyrics - cleans bracketed video metadata", () => {
   const track = {
