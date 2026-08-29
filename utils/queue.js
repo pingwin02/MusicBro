@@ -83,6 +83,17 @@ function cleanTrackUrl(url) {
   return url.includes("/shorts/") ? url.replace("/shorts/", "/watch?v=") : url;
 }
 
+const YOUTUBE_SHORT_URL_REGEX = new RegExp(
+  "(?:youtube\\.com\\/(?:watch\\?(?:.*&)?v=|shorts\\/)|" +
+    "youtu\\.be\\/)([a-zA-Z0-9_-]{11})"
+);
+
+function toShortTrackUrl(url) {
+  if (typeof url !== "string") return url;
+  const match = url.match(YOUTUBE_SHORT_URL_REGEX);
+  return match ? `https://youtu.be/${match[1]}` : url;
+}
+
 function isPlayableTrack(track, maxTrackLengthMs = Number.MAX_SAFE_INTEGER) {
   const playability = canPlayTrack(track);
   const tooLong = isTrackLongerThan(track, maxTrackLengthMs);
@@ -128,14 +139,15 @@ function cleanupEmptyQueue(queue) {
 }
 
 module.exports = {
-  validateVoiceChannel,
-  getOrCreateQueue,
-  requireQueue,
-  validateTrackNumber,
   cleanTrackUrl,
-  isPlayableTrack,
-  startQueuePlayback,
-  handleButton,
+  cleanupEmptyQueue,
   formatFailedUrls,
-  cleanupEmptyQueue
+  getOrCreateQueue,
+  handleButton,
+  isPlayableTrack,
+  requireQueue,
+  startQueuePlayback,
+  toShortTrackUrl,
+  validateTrackNumber,
+  validateVoiceChannel
 };

@@ -35,7 +35,9 @@ module.exports = {
       );
     }
 
-    const urls = tracks.map((t) => t.url).filter(Boolean);
+    const urls = tracks
+      .map((t) => utils.toShortTrackUrl(t.url))
+      .filter(Boolean);
     const exportString = urls.join("\n");
 
     if (!exportString) {

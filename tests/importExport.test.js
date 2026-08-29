@@ -76,8 +76,8 @@ test("export command - exports formatted tracks string", async () => {
 
   assert.ok(sentEmbed);
   const desc = sentEmbed.data.description;
-  assert.ok(desc.includes("https://youtube.com/watch?v=11111111111"));
-  assert.ok(desc.includes("https://youtube.com/watch?v=22222222222"));
+  assert.ok(desc.includes("https://youtu.be/11111111111"));
+  assert.ok(desc.includes("https://youtu.be/22222222222"));
   assert.ok(desc.includes("\n"));
 
   queue.delete();

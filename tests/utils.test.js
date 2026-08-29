@@ -146,6 +146,36 @@ test("utils.queue - cleanTrackUrl converts shorts and handles strings", () => {
   assert.equal(utils.cleanTrackUrl(12345), 12345);
 });
 
+test("utils.queue - toShortTrackUrl converts YouTube URLs to youtu.be", () => {
+  assert.equal(
+    utils.toShortTrackUrl("https://youtube.com/watch?v=11111111111"),
+    "https://youtu.be/11111111111"
+  );
+  assert.equal(
+    utils.toShortTrackUrl(
+      "https://www.youtube.com/watch?feature=shared&v=11111111111"
+    ),
+    "https://youtu.be/11111111111"
+  );
+  assert.equal(
+    utils.toShortTrackUrl("https://youtube.com/shorts/11111111111"),
+    "https://youtu.be/11111111111"
+  );
+  assert.equal(
+    utils.toShortTrackUrl("https://music.youtube.com/watch?v=11111111111"),
+    "https://youtu.be/11111111111"
+  );
+  assert.equal(
+    utils.toShortTrackUrl("https://youtu.be/11111111111?si=test"),
+    "https://youtu.be/11111111111"
+  );
+  assert.equal(
+    utils.toShortTrackUrl("https://spotify.com/track/123"),
+    "https://spotify.com/track/123"
+  );
+  assert.equal(utils.toShortTrackUrl(12345), 12345);
+});
+
 test("utils.queue - isPlayableTrack verifies track restrictions", async () => {
   const { player } = await createTestPlayer();
 
