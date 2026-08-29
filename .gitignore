@@ -1,8 +1,8 @@
+.vscode
+logs
 node_modules
 .env
 .replit
-replit.nix
-package-lock.json
-logs
-.vscode
 easter_eggs.json
+package-lock.json
+replit.nix
