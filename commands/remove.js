@@ -4,11 +4,11 @@ const utils = require("../utils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("remove")
-    .setDescription("Usuwa wybrany utwór z kolejki")
+    .setDescription(utils.t("commands.remove.description"))
     .addIntegerOption((option) =>
       option
         .setName("number")
-        .setDescription("Numer utworu w kolejce")
+        .setDescription(utils.t("commands.remove.options.number"))
         .setMinValue(1)
         .setRequired(true)
     )

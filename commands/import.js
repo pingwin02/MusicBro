@@ -9,11 +9,11 @@ const utils = require("../utils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("import")
-    .setDescription("Importuje utwory do kolejki z wyeksportowanych linków")
+    .setDescription(utils.t("commands.import.description"))
     .addStringOption((option) =>
       option
         .setName("data")
-        .setDescription("Ciąg znaków z linkami oddzielonymi spacjami")
+        .setDescription(utils.t("commands.import.options.data"))
         .setRequired(true)
     )
     .setContexts(InteractionContextType.Guild),
@@ -32,7 +32,7 @@ module.exports = {
     if (urls.length === 0) {
       return utils.printError(
         interaction,
-        "Nie podano żadnych prawidłowych linków do zaimportowania!"
+        utils.t("commands.import.empty_data")
       );
     }
 
@@ -40,12 +40,19 @@ module.exports = {
     const queue = utils.getOrCreateQueue(player, interaction);
     if (!queue) return;
 
+    const trackWord =
+      urls.length === 1
+        ? utils.t("commands.import.track_single")
+        : utils.t("commands.import.track_plural");
+
     const progressEmbed = new EmbedBuilder()
-      .setTitle("📥 Importowanie kolejki")
+      .setTitle(utils.t("commands.import.title"))
       .setColor("Blue")
       .setDescription(
-        `Rozpoczynanie importu **${urls.length}** ` +
-          `${urls.length === 1 ? "utworu" : "utworów"}...`
+        utils.t("commands.import.starting", {
+          count: urls.length,
+          trackWord
+        })
       );
 
     await interaction.editReply({ embeds: [progressEmbed] });
@@ -62,8 +69,10 @@ module.exports = {
         const url = utils.cleanTrackUrl(rawUrl);
 
         progressEmbed.setDescription(
-          `Przetwarzanie **${i + 1}/${urls.length}**...\n` +
-            `Zaimportowano pomyślnie: **${importedCount}**`
+          utils.t("commands.import.progress", {
+            current: i + 1,
+            total: urls.length
+          })
         );
         await interaction
           .editReply({ embeds: [progressEmbed] })
@@ -100,8 +109,9 @@ module.exports = {
         utils.cleanupEmptyQueue(queue);
         return utils.printError(
           interaction,
-          "Nie udało się zaimportować utworów z podanych linków:\n" +
-            utils.formatFailedUrls(failedUrls)
+          utils.t("commands.import.failed_all", {
+            failedUrls: utils.formatFailedUrls(failedUrls)
+          })
         );
       }
 
@@ -114,17 +124,15 @@ module.exports = {
           interaction.channel || queue.metadata?.textChannel;
         await utils.printError(
           targetChannel,
-          "Nie udało się zaimportować niektórych linków:\n" +
-            utils.formatFailedUrls(failedUrls)
+          utils.t("commands.import.failed_some", {
+            failedUrls: utils.formatFailedUrls(failedUrls)
+          })
         );
       }
     } catch (err) {
       utils.cleanupEmptyQueue(queue);
       utils.logInfo("Import processing error", err);
-      return utils.printError(
-        interaction,
-        "Wystąpił błąd podczas przetwarzania importu."
-      );
+      return utils.printError(interaction, utils.t("commands.import.error"));
     } finally {
       if (queue?.tasksQueue) queue.tasksQueue.release();
     }

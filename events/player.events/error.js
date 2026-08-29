@@ -7,7 +7,7 @@ module.exports = {
     utils.logInfo(`[${queue.guild.name}] error event`, error);
     utils.printError(
       queue.metadata.textChannel,
-      "Wystąpił błąd podczas odtwarzania muzyki! Spróbuj ponownie później.",
+      utils.t("errors.playback_error"),
       error
     );
     queue.delete();

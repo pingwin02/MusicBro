@@ -51,7 +51,9 @@ const client = new Client({
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction],
   presence: {
-    activities: [{ name: "słucha /play", type: ActivityType.Custom }],
+    activities: [
+      { name: utils.t("status.activity"), type: ActivityType.Custom }
+    ],
     status: PresenceUpdateStatus.Online
   }
 });

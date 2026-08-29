@@ -1,42 +1,49 @@
+const { t } = require("../../utils/i18n");
+
 const TEST_IDS = {
-  VIDEO_ID: "XXYlFuWEuKI",
+  EXTRACTOR_ID: "com.musicbro.youtube",
   MIX_VIDEO_ID: "4NRXx6U8ABQ",
+  NON_MUSIC_VIDEO_ID: "_joQEa-mB-w",
   PLAYLIST_ID: "PLMC9KNkIncKtPzgY-5rmhvj7fax8fdxoj",
-  MOCK_GUILD_ID: "123456789012345678",
-  MOCK_GUILD_ID_2: "123456789012345679",
-  MOCK_USER_ID: "987654321098765432",
-  EXTRACTOR_ID: "com.musicbro.youtube"
+  VIDEO_ID: "XXYlFuWEuKI"
 };
 
 const TEST_URLS = {
-  VIDEO_URL: `https://www.youtube.com/watch?v=${TEST_IDS.VIDEO_ID}`,
-  VIDEO_SHORT_URL: `https://youtu.be/${TEST_IDS.VIDEO_ID}`,
-  SHORTS_URL: `https://www.youtube.com/shorts/${TEST_IDS.VIDEO_ID}`,
   CANONICAL_VIDEO_URL: `https://youtube.com/watch?v=${TEST_IDS.VIDEO_ID}`,
+  INVALID_URL: "arbitrary",
   MIX_URL:
     `https://www.youtube.com/watch?v=${TEST_IDS.MIX_VIDEO_ID}&` +
     `list=RD${TEST_IDS.VIDEO_ID}&start_radio=1`,
+  NON_MUSIC_VIDEO_URL:
+    "https://www.youtube.com/watch?v=" + `${TEST_IDS.NON_MUSIC_VIDEO_ID}`,
   PLAYLIST_URL: `https://www.youtube.com/playlist?list=${TEST_IDS.PLAYLIST_ID}`,
-  INVALID_URL: "arbitrary"
+  SHORTS_URL: `https://www.youtube.com/shorts/${TEST_IDS.VIDEO_ID}`,
+  VIDEO_SHORT_URL: `https://youtu.be/${TEST_IDS.VIDEO_ID}`,
+  VIDEO_URL: `https://www.youtube.com/watch?v=${TEST_IDS.VIDEO_ID}`
 };
 
 const TEST_QUERIES = {
-  TRACK_QUERY: "The Weeknd",
   SEARCH_QUERY: "youtube: The Weeknd - Save Your Tears",
-  YT_SEARCH_QUERY: "ytsearch: Never Gonna Give You Up",
-  YT_PLAYLIST_QUERY: "ytplaylist: Top 50 Global Hits"
+  TRACK_QUERY: "The Weeknd",
+  YT_PLAYLIST_QUERY: "ytplaylist: Top 50 Global Hits",
+  YT_SEARCH_QUERY: "ytsearch: Never Gonna Give You Up"
 };
 
 const TEST_ERRORS = {
-  FORCE_AND_NEXT_CONFLICT:
-    "Opcje `force` oraz `next` nie mogą być włączone jednocześnie!",
-  VOICE_CHANNEL_REQUIRED: "Musisz być na kanale głosowym!",
-  QUEUE_EMPTY: "Kolejka jest pusta! Użyj `/play`, aby dodać utwory."
+  get FORCE_AND_NEXT_CONFLICT() {
+    return t("commands.play.conflict");
+  },
+  get QUEUE_EMPTY() {
+    return t("errors.queue_empty");
+  },
+  get VOICE_CHANNEL_REQUIRED() {
+    return t("errors.voice_channel_required");
+  }
 };
 
 module.exports = {
+  TEST_ERRORS,
   TEST_IDS,
-  TEST_URLS,
   TEST_QUERIES,
-  TEST_ERRORS
+  TEST_URLS
 };

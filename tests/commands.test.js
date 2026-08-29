@@ -7,308 +7,312 @@ const removeCommand = require("../commands/remove");
 const seekCommand = require("../commands/seek");
 const skiptoCommand = require("../commands/skipto");
 const volumeCommand = require("../commands/volume");
+const { t } = require("../utils/i18n");
 const {
   TEST_ERRORS,
   createMockGuild,
   createMockInteraction,
+  createMockQueue,
   createMockTrack,
   createMockTracks,
   createTestPlayer
 } = require("./factories");
 
-test("clear command - metadata and empty queue check", async () => {
-  const json = clearCommand.data.toJSON();
-  assert.equal(json.name, "clear");
+let client;
+let player;
 
-  const { client } = await createTestPlayer();
-  const mockInteraction = createMockInteraction();
-
-  await clearCommand.run({ client, interaction: mockInteraction });
-  assert.equal(mockInteraction.getCapturedError(), TEST_ERRORS.QUEUE_EMPTY);
+test.before(async () => {
+  const setup = await createTestPlayer();
+  client = setup.client;
+  player = setup.player;
 });
 
-test("clear command - clears tracks in active queue", async () => {
-  const { client, player } = await createTestPlayer();
-  const guild = createMockGuild({ id: "mock-clear-active" });
-  client.guilds.cache.set(guild.id, guild);
+test(
+  "clear command - metadata and empty queue check",
+  { concurrency: true },
+  async () => {
+    const json = clearCommand.data.toJSON();
+    assert.equal(json.name, "clear");
 
-  const textChannel = { send: async () => ({ delete: async () => {} }) };
-  const queue = player.nodes.create(guild.id, {
-    metadata: { textChannel, page: 0 }
-  });
-  const tracks = createMockTracks(player, 3);
-  queue.addTrack(tracks);
+    const mockInteraction = createMockInteraction();
+    await clearCommand.run({ client, interaction: mockInteraction });
+    assert.equal(mockInteraction.getCapturedError(), TEST_ERRORS.QUEUE_EMPTY);
+  }
+);
 
-  assert.equal(queue.getSize(), 3);
+test(
+  "clear command - clears tracks in active queue",
+  { concurrency: true },
+  async () => {
+    const { guild, queue } = createMockQueue(player, client);
+    queue.addTrack(createMockTracks(player, 3));
+    assert.equal(queue.getSize(), 3);
 
-  const mockInteraction = createMockInteraction({ guild, deferred: true });
-  mockInteraction.guildId = guild.id;
+    const mockInteraction = createMockInteraction({ deferred: true, guild });
+    mockInteraction.guildId = guild.id;
 
-  await clearCommand.run({ client, interaction: mockInteraction });
-  assert.equal(queue.getSize(), 0);
+    await clearCommand.run({ client, interaction: mockInteraction });
+    assert.equal(queue.getSize(), 0);
 
-  queue.delete();
-});
+    queue.delete();
+  }
+);
 
-test("nowplaying command - metadata and empty queue check", async () => {
-  const json = nowplayingCommand.data.toJSON();
-  assert.equal(json.name, "nowplaying");
+test(
+  "nowplaying command - metadata and empty queue check",
+  { concurrency: true },
+  async () => {
+    const json = nowplayingCommand.data.toJSON();
+    assert.equal(json.name, "nowplaying");
 
-  const { client } = await createTestPlayer();
-  const mockInteraction = createMockInteraction();
+    const mockInteraction = createMockInteraction();
+    await nowplayingCommand.run({ client, interaction: mockInteraction });
+    assert.equal(mockInteraction.getCapturedError(), TEST_ERRORS.QUEUE_EMPTY);
+  }
+);
 
-  await nowplayingCommand.run({ client, interaction: mockInteraction });
-  assert.equal(mockInteraction.getCapturedError(), TEST_ERRORS.QUEUE_EMPTY);
-});
+test(
+  "remove command - validates empty queue and invalid index",
+  { concurrency: true },
+  async () => {
+    const json = removeCommand.data.toJSON();
+    assert.equal(json.name, "remove");
 
-test("remove command - validates empty queue and invalid index", async () => {
-  const json = removeCommand.data.toJSON();
-  assert.equal(json.name, "remove");
+    const emptyGuild = createMockGuild();
+    const mockInteractionEmpty = createMockInteraction({
+      guild: emptyGuild,
+      options: { number: 1 }
+    });
+    mockInteractionEmpty.guildId = emptyGuild.id;
+    await removeCommand.run({ client, interaction: mockInteractionEmpty });
+    assert.equal(
+      mockInteractionEmpty.getCapturedError(),
+      TEST_ERRORS.QUEUE_EMPTY
+    );
 
-  const { client, player } = await createTestPlayer();
-  const guild = createMockGuild({ id: "mock-remove-guild" });
-  client.guilds.cache.set(guild.id, guild);
+    const { guild, queue } = createMockQueue(player, client);
+    queue.addTrack([createMockTrack(player, { title: "Track 1" })]);
 
-  const mockInteractionEmpty = createMockInteraction({
-    guild,
-    options: { number: 1 }
-  });
-  mockInteractionEmpty.guildId = guild.id;
-  await removeCommand.run({ client, interaction: mockInteractionEmpty });
-  assert.equal(
-    mockInteractionEmpty.getCapturedError(),
-    TEST_ERRORS.QUEUE_EMPTY
-  );
+    const mockInteractionOutOfBounds = createMockInteraction({
+      guild,
+      options: { number: 5 }
+    });
+    mockInteractionOutOfBounds.guildId = guild.id;
+    await removeCommand.run({
+      client,
+      interaction: mockInteractionOutOfBounds
+    });
+    assert.equal(
+      mockInteractionOutOfBounds.getCapturedError(),
+      t("errors.invalid_track_number")
+    );
 
-  const textChannel = { send: async () => ({ delete: async () => {} }) };
-  const queue = player.nodes.create(guild.id, {
-    metadata: { textChannel, page: 0 }
-  });
-  queue.addTrack([createMockTrack(player, { title: "Track 1" })]);
+    const mockInteractionValid = createMockInteraction({
+      guild,
+      options: { number: 1 }
+    });
+    mockInteractionValid.guildId = guild.id;
+    await removeCommand.run({ client, interaction: mockInteractionValid });
+    assert.equal(queue.getSize(), 0);
 
-  const mockInteractionOutOfBounds = createMockInteraction({
-    guild,
-    options: { number: 5 }
-  });
-  mockInteractionOutOfBounds.guildId = guild.id;
-  await removeCommand.run({
-    client,
-    interaction: mockInteractionOutOfBounds
-  });
-  assert.ok(
-    mockInteractionOutOfBounds
-      .getCapturedError()
-      .includes("Nie ma takiego utworu w kolejce")
-  );
+    queue.delete();
+  }
+);
 
-  const mockInteractionValid = createMockInteraction({
-    guild,
-    options: { number: 1 }
-  });
-  mockInteractionValid.guildId = guild.id;
-  await removeCommand.run({ client, interaction: mockInteractionValid });
-  assert.equal(queue.getSize(), 0);
+test(
+  "skipto command - validates empty queue, index, and skips",
+  { concurrency: true },
+  async () => {
+    const json = skiptoCommand.data.toJSON();
+    assert.equal(json.name, "skipto");
 
-  queue.delete();
-});
+    const emptyGuild = createMockGuild();
+    const mockInteractionEmpty = createMockInteraction({
+      guild: emptyGuild,
+      options: { number: 1 }
+    });
+    mockInteractionEmpty.guildId = emptyGuild.id;
+    await skiptoCommand.run({ client, interaction: mockInteractionEmpty });
+    assert.equal(
+      mockInteractionEmpty.getCapturedError(),
+      TEST_ERRORS.QUEUE_EMPTY
+    );
 
-test("skipto command - validates empty queue, index, and skips", async () => {
-  const json = skiptoCommand.data.toJSON();
-  assert.equal(json.name, "skipto");
+    const { guild, queue } = createMockQueue(player, client);
+    queue.addTrack(createMockTracks(player, 3));
 
-  const { client, player } = await createTestPlayer();
-  const guild = createMockGuild({ id: "mock-skipto-guild" });
-  client.guilds.cache.set(guild.id, guild);
+    const mockInteractionOutOfBounds = createMockInteraction({
+      guild,
+      options: { number: 10 }
+    });
+    mockInteractionOutOfBounds.guildId = guild.id;
+    await skiptoCommand.run({
+      client,
+      interaction: mockInteractionOutOfBounds
+    });
+    assert.equal(
+      mockInteractionOutOfBounds.getCapturedError(),
+      t("errors.invalid_track_number")
+    );
 
-  const mockInteractionEmpty = createMockInteraction({
-    guild,
-    options: { number: 1 }
-  });
-  mockInteractionEmpty.guildId = guild.id;
-  await skiptoCommand.run({ client, interaction: mockInteractionEmpty });
-  assert.equal(
-    mockInteractionEmpty.getCapturedError(),
-    TEST_ERRORS.QUEUE_EMPTY
-  );
+    const mockInteractionValid = createMockInteraction({
+      guild,
+      options: { number: 2 }
+    });
+    mockInteractionValid.guildId = guild.id;
+    let skipped = false;
+    queue.node.skipTo = () => {
+      skipped = true;
+    };
+    await skiptoCommand.run({ client, interaction: mockInteractionValid });
+    assert.equal(skipped, true);
 
-  const textChannel = { send: async () => ({ delete: async () => {} }) };
-  const queue = player.nodes.create(guild.id, {
-    metadata: { textChannel, page: 0 }
-  });
-  queue.addTrack(createMockTracks(player, 3));
+    queue.delete();
+  }
+);
 
-  const mockInteractionOutOfBounds = createMockInteraction({
-    guild,
-    options: { number: 10 }
-  });
-  mockInteractionOutOfBounds.guildId = guild.id;
-  await skiptoCommand.run({
-    client,
-    interaction: mockInteractionOutOfBounds
-  });
-  assert.ok(
-    mockInteractionOutOfBounds
-      .getCapturedError()
-      .includes("Nie ma takiego utworu w kolejce")
-  );
+test(
+  "seek command - validates input formatting and time bounds",
+  { concurrency: true },
+  async () => {
+    const json = seekCommand.data.toJSON();
+    assert.equal(json.name, "seek");
 
-  const mockInteractionValid = createMockInteraction({
-    guild,
-    options: { number: 2 }
-  });
-  mockInteractionValid.guildId = guild.id;
-  let skipped = false;
-  queue.node.skipTo = () => {
-    skipped = true;
-  };
-  await skiptoCommand.run({ client, interaction: mockInteractionValid });
-  assert.equal(skipped, true);
+    const { guild, queue } = createMockQueue(player, client);
 
-  queue.delete();
-});
+    const mockInvalidFormat = createMockInteraction({
+      guild,
+      options: { time: "invalid:format:time" }
+    });
+    mockInvalidFormat.guildId = guild.id;
+    await seekCommand.run({ client, interaction: mockInvalidFormat });
+    assert.equal(
+      mockInvalidFormat.getCapturedError(),
+      t("commands.seek.format_error")
+    );
 
-test("seek command - validates input formatting and time bounds", async () => {
-  const json = seekCommand.data.toJSON();
-  assert.equal(json.name, "seek");
+    const mockNan = createMockInteraction({
+      guild,
+      options: { time: "abc:def" }
+    });
+    mockNan.guildId = guild.id;
+    await seekCommand.run({ client, interaction: mockNan });
+    assert.equal(mockNan.getCapturedError(), t("commands.seek.format_error"));
 
-  const { client, player } = await createTestPlayer();
-  const guild = createMockGuild({ id: "mock-seek-guild" });
-  client.guilds.cache.set(guild.id, guild);
+    Object.defineProperty(queue, "currentTrack", {
+      configurable: true,
+      value: null,
+      writable: true
+    });
 
-  const textChannel = { send: async () => ({ delete: async () => {} }) };
-  const queue = player.nodes.create(guild.id, {
-    metadata: { textChannel, page: 0 }
-  });
+    const mockNoTrack = createMockInteraction({
+      guild,
+      options: { time: "1:30" }
+    });
+    mockNoTrack.guildId = guild.id;
+    await seekCommand.run({ client, interaction: mockNoTrack });
+    assert.equal(
+      mockNoTrack.getCapturedError(),
+      t("commands.seek.no_duration")
+    );
 
-  const mockInvalidFormat = createMockInteraction({
-    guild,
-    options: { time: "invalid:format:time" }
-  });
-  mockInvalidFormat.guildId = guild.id;
-  await seekCommand.run({ client, interaction: mockInvalidFormat });
-  assert.ok(
-    mockInvalidFormat.getCapturedError().includes("Nieprawidłowy format czasu")
-  );
+    const testTrack = createMockTrack(player, {
+      duration: "2:00",
+      durationMS: 120000
+    });
+    Object.defineProperty(queue, "currentTrack", {
+      configurable: true,
+      value: testTrack,
+      writable: true
+    });
 
-  const mockNan = createMockInteraction({
-    guild,
-    options: { time: "abc:def" }
-  });
-  mockNan.guildId = guild.id;
-  await seekCommand.run({ client, interaction: mockNan });
-  assert.ok(mockNan.getCapturedError().includes("Nieprawidłowy format czasu"));
+    const mockTooLong = createMockInteraction({
+      guild,
+      options: { time: "3:00" }
+    });
+    mockTooLong.guildId = guild.id;
+    await seekCommand.run({ client, interaction: mockTooLong });
+    assert.equal(
+      mockTooLong.getCapturedError(),
+      t("commands.seek.out_of_range", { duration: "2:00" })
+    );
 
-  Object.defineProperty(queue, "currentTrack", {
-    value: null,
-    configurable: true,
-    writable: true
-  });
+    let seekedMs = null;
+    queue.node.seek = async (ms) => {
+      seekedMs = ms;
+    };
+    const mockValid = createMockInteraction({
+      guild,
+      options: { time: "1:15" }
+    });
+    mockValid.guildId = guild.id;
+    await seekCommand.run({ client, interaction: mockValid });
+    assert.equal(seekedMs, 75000);
 
-  const mockNoTrack = createMockInteraction({
-    guild,
-    options: { time: "1:30" }
-  });
-  mockNoTrack.guildId = guild.id;
-  await seekCommand.run({ client, interaction: mockNoTrack });
-  assert.ok(
-    mockNoTrack.getCapturedError().includes("Nie można przewinąć tego utworu")
-  );
+    queue.delete();
+  }
+);
 
-  const testTrack = createMockTrack(player, {
-    durationMS: 120000,
-    duration: "2:00"
-  });
-  Object.defineProperty(queue, "currentTrack", {
-    value: testTrack,
-    configurable: true,
-    writable: true
-  });
+test(
+  "volume command - validates empty queue and updates volume",
+  { concurrency: true },
+  async () => {
+    const json = volumeCommand.data.toJSON();
+    assert.equal(json.name, "volume");
 
-  const mockTooLong = createMockInteraction({
-    guild,
-    options: { time: "3:00" }
-  });
-  mockTooLong.guildId = guild.id;
-  await seekCommand.run({ client, interaction: mockTooLong });
-  assert.ok(
-    mockTooLong
-      .getCapturedError()
-      .includes("Podaj czas krótszy niż długość utworu")
-  );
+    const emptyGuild = createMockGuild();
+    const mockEmpty = createMockInteraction({
+      guild: emptyGuild,
+      options: { value: 80 }
+    });
+    mockEmpty.guildId = emptyGuild.id;
+    await volumeCommand.run({ client, interaction: mockEmpty });
+    assert.equal(mockEmpty.getCapturedError(), TEST_ERRORS.QUEUE_EMPTY);
 
-  let seekedMs = null;
-  queue.node.seek = async (ms) => {
-    seekedMs = ms;
-  };
-  const mockValid = createMockInteraction({
-    guild,
-    options: { time: "1:15" }
-  });
-  mockValid.guildId = guild.id;
-  await seekCommand.run({ client, interaction: mockValid });
-  assert.equal(seekedMs, 75000);
+    const { guild, queue } = createMockQueue(player, client);
 
-  queue.delete();
-});
+    let newVolume = null;
+    queue.node.setVolume = (vol) => {
+      newVolume = vol;
+    };
 
-test("volume command - validates empty queue and updates volume", async () => {
-  const json = volumeCommand.data.toJSON();
-  assert.equal(json.name, "volume");
+    const mockValid = createMockInteraction({
+      guild,
+      options: { value: 75 }
+    });
+    mockValid.guildId = guild.id;
+    await volumeCommand.run({ client, interaction: mockValid });
+    assert.equal(newVolume, 75);
 
-  const { client, player } = await createTestPlayer();
-  const guild = createMockGuild({ id: "mock-vol-guild" });
-  client.guilds.cache.set(guild.id, guild);
+    queue.delete();
+  }
+);
 
-  const mockEmpty = createMockInteraction({
-    guild,
-    options: { value: 80 }
-  });
-  mockEmpty.guildId = guild.id;
-  await volumeCommand.run({ client, interaction: mockEmpty });
-  assert.equal(mockEmpty.getCapturedError(), TEST_ERRORS.QUEUE_EMPTY);
+test(
+  "info command - metadata and replies with ephemeral stats",
+  { concurrency: true },
+  async () => {
+    const json = infoCommand.data.toJSON();
+    assert.equal(json.name, "info");
 
-  const textChannel = { send: async () => ({ delete: async () => {} }) };
-  const queue = player.nodes.create(guild.id, {
-    metadata: { textChannel, page: 0 }
-  });
+    const mockClient = {
+      uptime: 125000,
+      user: { username: "MusicBro" },
+      ws: { ping: 42 }
+    };
 
-  let newVolume = null;
-  queue.node.setVolume = (vol) => {
-    newVolume = vol;
-  };
+    let repliedData = null;
+    const interaction = {
+      createdTimestamp: Date.now() - 50,
+      reply: async (data) => {
+        repliedData = data;
+      }
+    };
 
-  const mockValid = createMockInteraction({
-    guild,
-    options: { value: 75 }
-  });
-  mockValid.guildId = guild.id;
-  await volumeCommand.run({ client, interaction: mockValid });
-  assert.equal(newVolume, 75);
-
-  queue.delete();
-});
-
-test("info command - metadata and replies with ephemeral stats", async () => {
-  const json = infoCommand.data.toJSON();
-  assert.equal(json.name, "info");
-
-  const client = {
-    user: { username: "MusicBro" },
-    ws: { ping: 42 },
-    uptime: 125000
-  };
-
-  let repliedData = null;
-  const interaction = {
-    createdTimestamp: Date.now() - 50,
-    reply: async (data) => {
-      repliedData = data;
-    }
-  };
-
-  await infoCommand.run({ client, interaction });
-  assert.ok(repliedData);
-  assert.ok(repliedData.embeds?.[0]);
-  assert.ok(repliedData.embeds[0].data.description.includes("Ping"));
-  assert.ok(repliedData.embeds[0].data.description.includes("Uptime"));
-});
+    await infoCommand.run({ client: mockClient, interaction });
+    assert.ok(repliedData);
+    assert.ok(repliedData.embeds?.[0]);
+    assert.ok(repliedData.embeds[0].data.description.includes("Ping"));
+    assert.ok(repliedData.embeds[0].data.description.includes("Uptime"));
+  }
+);

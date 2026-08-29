@@ -4,33 +4,15 @@ const {
   ButtonStyle,
   EmbedBuilder
 } = require("discord.js");
+const {
+  BUTTONS,
+  DISCORD_API_ERROR_CODES,
+  QUEUE_PAGE_SIZE
+} = require("./constants");
 const { buildEmbedWithButton } = require("./embeds");
+const { t } = require("./i18n");
 const { logInfo } = require("./logger");
 const { handleLyrics } = require("./lyrics");
-
-const QUEUE_PAGE_SIZE = 10;
-
-const BUTTONS = {
-  resume: { emoji: "▶", disabled: (q) => q.node.isPlaying() },
-  pause: { emoji: "⏸", disabled: (q) => q.node.isPaused() },
-  stop: { emoji: "⏹" },
-  skip: { emoji: "⏭", disabled: (q) => q.node.isPaused() },
-  loopTrack: { emoji: "🔂", disabled: (q) => q.repeatMode === 1 },
-  loopQueue: { emoji: "🔁", disabled: (q) => q.repeatMode === 2 },
-  loopDisable: { emoji: "➡", disabled: (q) => q.repeatMode === 0 },
-  shuffle: { emoji: "🔀" },
-  previous: {
-    label: "Poprzednia strona",
-    style: ButtonStyle.Secondary,
-    disabled: (_, page) => page === 0
-  },
-  next: {
-    label: "Następna strona",
-    style: ButtonStyle.Secondary,
-    disabled: (_, page, total) => page === total - 1
-  },
-  refresh: { label: "Odśwież" }
-};
 
 function createButton(id, queue, page = 0, total = 1) {
   const data = BUTTONS[id];
@@ -38,7 +20,8 @@ function createButton(id, queue, page = 0, total = 1) {
     .setCustomId(id)
     .setStyle(data.style || ButtonStyle.Primary);
 
-  if (data.label) btn.setLabel(data.label);
+  if (data.labelKey) btn.setLabel(t(data.labelKey));
+  else if (data.label) btn.setLabel(data.label);
   if (data.emoji) btn.setEmoji(data.emoji);
 
   const isDisabled =
@@ -63,14 +46,20 @@ function buildDescription(queue, lyricsLines, page, perPage) {
 
   const requestedByText = current.requestedBy?.id
     ? `<@${current.requestedBy.id}>`
-    : "użytkownika";
+    : t("errors.track_fallback");
+
+  const addedBy = t("status.added_by", { user: requestedByText });
+  const author = t("status.author", { author: current.author });
+  const lyricsHeader = t("status.lyrics");
+  const progressHeader = t("status.progress");
+  const queueHeader = t("status.queue_header");
 
   const desc =
     `[**${current.title}**](${current.url})\n` +
-    `Autor **${current.author}**\n` +
-    `*dodane przez ${requestedByText}*\n\n` +
-    `**Tekst:**\n\`\`\`${lyricsBlock}\`\`\`\n` +
-    `**Postęp:**\n${bar}\n\n**Kolejka:**\n`;
+    `${author}\n` +
+    `*${addedBy}*\n\n` +
+    `**${lyricsHeader}**\n\`\`\`${lyricsBlock}\`\`\`\n` +
+    `**${progressHeader}**\n${bar}\n\n**${queueHeader}**\n`;
 
   const tracks = queue.tracks
     .toArray()
@@ -84,30 +73,33 @@ function buildDescription(queue, lyricsLines, page, perPage) {
             `*${page * perPage + i + 1}*. **${s.title}** [${s.duration}]`
         )
         .join("\n")
-      : "*Pusta*")
+      : `*${t("status.empty_queue")}*`)
   );
 }
 
 function buildStatusEmbed(queue, lyricsLines, page, perPage, totalPages) {
   const titleParts = [
-    "Teraz gra",
-    queue.node.isPaused() && "(:pause_button: wstrzymane)",
-    queue.repeatMode === 1 && "(:repeat_one: powtarzanie utworu)",
-    queue.repeatMode === 2 && "(:repeat: powtarzanie całej kolejki)"
+    t("status.now_playing"),
+    queue.node.isPaused() && `(:pause_button: ${t("status.paused")})`,
+    queue.repeatMode === 1 && `(:repeat_one: ${t("status.repeat_track")})`,
+    queue.repeatMode === 2 && `(:repeat: ${t("status.repeat_queue")})`
   ]
     .filter(Boolean)
     .join(" ");
   const description = buildDescription(queue, lyricsLines, page, perPage);
   if (!description) return;
 
+  const pageStr =
+    totalPages > 1
+      ? ` | ${t("status.page_of", { page: page + 1, total: totalPages })}`
+      : "";
+
   return new EmbedBuilder()
     .setTitle(titleParts)
     .setThumbnail(queue.currentTrack?.thumbnail)
     .setColor("Blue")
     .setFooter({
-      text:
-        `Głośność: ${queue.node.volume}` +
-        (totalPages > 1 ? ` | Strona: ${page + 1} z ${totalPages}` : "")
+      text: `${t("status.volume", { volume: queue.node.volume })}${pageStr}`
     })
     .setDescription(description);
 }
@@ -157,6 +149,13 @@ async function handleLyricsOnChange(queue, lyricsLines) {
   try {
     await queue.metadata.statusMessage?.edit({ embeds: [embed], components });
   } catch (err) {
+    if (
+      err.code === DISCORD_API_ERROR_CODES.UNKNOWN_MESSAGE ||
+      err.rawError?.code === DISCORD_API_ERROR_CODES.UNKNOWN_MESSAGE
+    ) {
+      queue.metadata.statusMessage = null;
+      return;
+    }
     logInfo("Live lyrics statusMessage edit", err);
   }
 }
@@ -176,7 +175,7 @@ async function sendStatus(queue, fetchLyrics = false) {
       const { perPage, totalPages, page } = getPaginationInfo(queue);
       queue.metadata.page = page;
       const lyricsLines = queue.metadata.lastLyricsLines || [
-        "Ładowanie tekstu..."
+        t("status.loading_lyrics")
       ];
       queue.metadata.lastLyricsLines = lyricsLines;
 
@@ -209,10 +208,10 @@ async function sendStatus(queue, fetchLyrics = false) {
         });
         if (result) {
           queue.metadata.lastLyricsLines = result.lyrics
-            ? ["Brak tekstu na żywo. Użyj /lyrics, aby zobaczyć tekst."]
-            : ["Tekst utworu zaraz się pojawi..."];
+            ? [t("status.no_live_lyrics")]
+            : [t("status.lyrics_coming_soon")];
         } else {
-          queue.metadata.lastLyricsLines = ["Nie znaleziono tekstu."];
+          queue.metadata.lastLyricsLines = [t("status.no_lyrics_found")];
         }
         if (!queue.metadata.statusMessage) return;
         const updatedEmbed = buildStatusEmbed(
@@ -228,6 +227,13 @@ async function sendStatus(queue, fetchLyrics = false) {
         });
       }
     } catch (err) {
+      if (
+        err.code === DISCORD_API_ERROR_CODES.UNKNOWN_MESSAGE ||
+        err.rawError?.code === DISCORD_API_ERROR_CODES.UNKNOWN_MESSAGE
+      ) {
+        queue.metadata.statusMessage = null;
+        return;
+      }
       logInfo("sendStatus", err);
     }
   });
@@ -235,7 +241,7 @@ async function sendStatus(queue, fetchLyrics = false) {
 
 function canPlayTrack(track) {
   const status = track.raw?.playability_status?.status;
-  const reason = track.raw?.playability_status?.reason || "Brak powodu";
+  const reason = track.raw?.playability_status?.reason || t("status.no_reason");
 
   if (!status || status === "OK") {
     return { success: true };
@@ -254,8 +260,8 @@ async function sendLoadingStatus(queue) {
       if (queue.isEmpty() && !queue.currentTrack) return;
 
       const { embed, row } = buildEmbedWithButton({
-        title: "Proszę czekać...",
-        description: "Trwa ładowanie utworu.",
+        title: t("status.please_wait"),
+        description: t("status.loading_track"),
         color: "Blue",
         thumbnail: "https://cdn-icons-png.flaticon.com/512/889/889843.png"
       });
@@ -278,7 +284,7 @@ async function sendLoadingStatus(queue) {
 }
 
 module.exports = {
-  sendStatus,
   canPlayTrack,
-  sendLoadingStatus
+  sendLoadingStatus,
+  sendStatus
 };

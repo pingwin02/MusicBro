@@ -11,7 +11,7 @@ const utils = require("../utils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("export")
-    .setDescription("Eksportuje aktualną kolejkę utworów")
+    .setDescription(utils.t("commands.export.description"))
     .setContexts(InteractionContextType.Guild),
 
   run: async ({ interaction }) => {
@@ -29,7 +29,7 @@ module.exports = {
     if (tracks.length === 0) {
       return utils.printError(
         interaction,
-        "Kolejka jest pusta! Nie ma nic do wyeksportowania.",
+        utils.t("commands.export.empty"),
         null,
         true
       );
@@ -43,32 +43,35 @@ module.exports = {
     if (!exportString) {
       return utils.printError(
         interaction,
-        "Nie znaleziono linków w aktualnej kolejce.",
+        utils.t("commands.export.no_urls"),
         null,
         true
       );
     }
 
+    const trackWord =
+      tracks.length === 1
+        ? utils.t("commands.export.exported_single")
+        : utils.t("commands.export.exported_plural");
+
     const embed = new EmbedBuilder()
-      .setTitle("📦 Eksport kolejki")
+      .setTitle(utils.t("commands.export.title"))
       .setColor("Blue");
 
     if (exportString.length <= 4000) {
-      embed.setDescription(
-        `Wyeksportowano **${tracks.length}** ` +
-          `${tracks.length === 1 ? "utwór" : "utworów"}:\n` +
-          "```\n" +
-          exportString +
-          "\n```"
-      );
+      const header = utils.t("commands.export.exported_title", {
+        count: tracks.length,
+        trackWord
+      });
+      embed.setDescription(`${header}\n\`\`\`\n${exportString}\n\`\`\``);
       await interaction.editReply({ embeds: [embed] });
     } else {
-      embed.setDescription(
-        `Wyeksportowano **${tracks.length}** ` +
-          `${tracks.length === 1 ? "utwór" : "utworów"}.\n` +
-          "Lista jest zbyt długa na wiadomość, " +
-          "została dołączona w pliku poniżej."
-      );
+      const header = utils.t("commands.export.exported_title", {
+        count: tracks.length,
+        trackWord
+      });
+      const note = utils.t("commands.export.file_attached");
+      embed.setDescription(`${header}\n${note}`);
       const attachment = new AttachmentBuilder(
         Buffer.from(exportString, "utf-8"),
         { name: "queue.txt" }

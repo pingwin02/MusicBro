@@ -5,32 +5,46 @@ const utils = require("../utils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("play")
-    .setDescription("Dodaje muzykę do kolejki")
+    .setDescription(utils.t("commands.play.description"))
     .addStringOption((option) =>
       option
         .setName("query")
-        .setDescription("Wyszukiwana fraza lub link do utworu/playlisty")
+        .setDescription(utils.t("commands.play.options.query"))
         .setRequired(true)
     )
     .addBooleanOption((option) =>
       option
         .setName("mix")
-        .setDescription("Dodaje składankę podobnych utworów (ok. 25 pozycji)")
+        .setDescription(utils.t("commands.play.options.mix"))
         .setRequired(false)
     )
     .addBooleanOption((option) =>
       option
         .setName("next")
-        .setDescription(
-          "Dodaje utwór na sam początek kolejki (odtworzy się jako następny)"
-        )
+        .setDescription(utils.t("commands.play.options.next"))
         .setRequired(false)
     )
     .addBooleanOption((option) =>
       option
         .setName("force")
-        .setDescription("Odtwarza natychmiastowo utwór pomijając kolejkę")
+        .setDescription(utils.t("commands.play.options.force"))
         .setRequired(false)
+    )
+    .addStringOption((option) =>
+      option
+        .setName("mode")
+        .setDescription(utils.t("commands.play.options.mode"))
+        .setRequired(false)
+        .addChoices(
+          {
+            name: utils.t("commands.play.choices.music"),
+            value: "music"
+          },
+          {
+            name: utils.t("commands.play.choices.general"),
+            value: "general"
+          }
+        )
     )
     .setContexts(InteractionContextType.Guild),
 
@@ -42,12 +56,11 @@ module.exports = {
     const mix = interaction.options.getBoolean("mix") || false;
     const next = interaction.options.getBoolean("next") || false;
     const force = interaction.options.getBoolean("force") || false;
+    const mode = interaction.options.getString("mode") || "music";
+    const searchPrefix = mode === "general" ? "ytvideo: " : "youtube: ";
 
     if (force && next) {
-      return utils.printError(
-        interaction,
-        "Opcje `force` oraz `next` nie mogą być włączone jednocześnie!"
-      );
+      return utils.printError(interaction, utils.t("commands.play.conflict"));
     }
 
     let query = interaction.options.getString("query");
@@ -65,15 +78,16 @@ module.exports = {
       let result;
 
       if (isManualQuery) {
-        const initialResult = await player.search("youtube: " + query, {
+        const initialResult = await player.search(searchPrefix + query, {
+          ignoreCache: true,
           requestedBy: interaction.user,
-          ignoreCache: true
+          requestOptions: { mode }
         });
 
         if (!initialResult || initialResult.tracks.length === 0) {
           utils.logInfo(`[${interaction.guild.name}] No results for ${query}`);
           if (!queue.currentTrack) queue.delete();
-          return utils.printError(interaction, utils.NO_RESULTS_MESSAGE);
+          return utils.printError(interaction, utils.t("errors.no_results"));
         }
 
         const resolvedUrl = initialResult.tracks[0]?.url;
@@ -83,10 +97,7 @@ module.exports = {
             `[${interaction.guild.name}] Could not resolve URL for ${query}`
           );
           if (!queue.currentTrack) queue.delete();
-          return utils.printError(
-            interaction,
-            "Nie udało się rozpoznać adresu URL dla wyszukanego utworu."
-          );
+          return utils.printError(interaction, utils.t("commands.play.no_url"));
         }
 
         let targetUrl = resolvedUrl;
@@ -125,9 +136,10 @@ module.exports = {
 
       if ((!result || result.tracks.length === 0) && mix) {
         result = await player.search(
-          isManualQuery ? "youtube: " + query : query,
+          isManualQuery ? searchPrefix + query : query,
           {
-            requestedBy: interaction.user
+            requestedBy: interaction.user,
+            requestOptions: { mode }
           }
         );
       }
@@ -135,7 +147,7 @@ module.exports = {
       if (!result || result.tracks.length === 0) {
         utils.logInfo(`[${interaction.guild.name}] No results for ${query}`);
         if (!queue.currentTrack) queue.delete();
-        return utils.printError(interaction, utils.NO_RESULTS_MESSAGE);
+        return utils.printError(interaction, utils.t("errors.no_results"));
       }
 
       const entry = queue.tasksQueue.acquire();
@@ -154,7 +166,9 @@ module.exports = {
           if (!playability.success || tooLong) {
             removed.push({
               track: t,
-              reason: tooLong ? "Zbyt długi" : playability.reason
+              reason: tooLong
+                ? utils.t("commands.play.too_long_reason")
+                : playability.reason
             });
           } else {
             allowed.push(t);
@@ -169,7 +183,7 @@ module.exports = {
           if (!queue.currentTrack) queue.delete();
           return utils.printError(
             interaction,
-            "Żaden utwór z playlisty nie może zostać odtworzony."
+            utils.t("commands.play.playlist_unplayable")
           );
         }
 
@@ -184,8 +198,10 @@ module.exports = {
           await utils.sleep(2000);
           utils.printError(
             interaction.channel,
-            `Pominięto **${removed.length}** utworów ` +
-              `(zablokowane lub > ${maxLenStr}).`,
+            utils.t("commands.play.playlist_skipped", {
+              count: removed.length,
+              maxDuration: maxLenStr
+            }),
             new Error(`Removed: ${removedStr}`)
           );
         }
@@ -217,8 +233,12 @@ module.exports = {
           if (!queue.currentTrack) queue.delete();
           return utils.printError(
             interaction,
-            `Nie można odtworzyć [**${song.title}**](${song.url})\n` +
-              `**Powód:** ${playability.reason} (\`${playability.status}\`)`
+            utils.t("commands.play.unplayable", {
+              reason: playability.reason,
+              status: playability.status,
+              title: song.title,
+              url: song.url
+            })
           );
         }
 
@@ -231,8 +251,11 @@ module.exports = {
           const maxLenStr = utils.msToTime(utils.MAX_TRACK_LENGTH_MS);
           return utils.printError(
             interaction,
-            `Utwór [**${song.title}**](${song.url}) ` +
-              `przekracza limit **${maxLenStr}**.`
+            utils.t("commands.play.too_long_track", {
+              maxDuration: maxLenStr,
+              title: song.title,
+              url: song.url
+            })
           );
         }
 
@@ -266,10 +289,7 @@ module.exports = {
       if (queue && !queue.currentTrack) queue.delete();
       utils.logInfo("Searching/Playing error", err);
       if (queue?.tasksQueue) queue.tasksQueue.release();
-      return utils.printError(
-        interaction,
-        "Wystąpił błąd podczas przetwarzania utworu."
-      );
+      return utils.printError(interaction, utils.t("commands.play.error"));
     } finally {
       if (queue?.tasksQueue) queue.tasksQueue.release();
     }

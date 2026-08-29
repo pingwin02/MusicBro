@@ -4,11 +4,11 @@ const utils = require("../utils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("volume")
-    .setDescription("Ustawia głośność odtwarzacza")
+    .setDescription(utils.t("commands.volume.description"))
     .addIntegerOption((option) =>
       option
         .setName("value")
-        .setDescription("Wartość głośności")
+        .setDescription(utils.t("commands.volume.options.value"))
         .setMinValue(1)
         .setRequired(true)
     )

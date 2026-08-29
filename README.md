@@ -16,7 +16,7 @@ MusicBro provides the following slash commands:
 4. `info` - Displays information about the bot's ping.
 5. `nowplaying` - Displays information about the currently playing song with lyrics.
 6. `lyrics` - Fetches and displays the lyrics of the currently playing song or a specified song.
-7. `play` - Searches for a song or playlist based on a link or query and starts playing. Supports optional flags: `force` (plays immediately), `next` (inserts as next), and `mix` (automatically appends ~25 similar mix tracks).
+7. `play` - Searches for a song or playlist based on a link or query and starts playing. Supports optional flags: `force` (plays immediately), `next` (inserts as next), `mix` (automatically appends ~25 similar mix tracks), and `mode` (search mode: `music` or `general`; default: `Music`).
 8. `remove` - Removes a song from the queue.
 9. `seek` - Seeks to a specified time in the current song.
 10. `skipto` - Skips to a specified song in the queue.
@@ -76,6 +76,7 @@ npm install
 - `ADMIN_ID`: ID of the admin.
 
   Optional:
+  - `LOCALE`: Language code for bot messages and commands (`pl` or `en`, default: `pl`).
   - `TOKEN_DEV`: Token of the bot for development purposes.
   - `CLIENT_ID_DEV`: Client ID of the bot for development purposes.
 

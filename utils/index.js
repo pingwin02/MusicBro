@@ -3,6 +3,7 @@ module.exports = {
   ...require("./easterEgg"),
   ...require("./embeds"),
   ...require("./events"),
+  ...require("./i18n"),
   ...require("./logger"),
   ...require("./lyrics"),
   ...require("./queue"),

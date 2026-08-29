@@ -3,13 +3,20 @@ const utils = require("../../utils");
 
 module.exports = {
   name: GuildQueueEvent.PlayerStart,
-  async execute(queue) {
-    utils.logInfo(
-      `[${queue.guild.name}] Playing ${queue.currentTrack.title} ` +
-        `(${queue.currentTrack.url}) [${queue.currentTrack.duration}]`
-    );
-    queue.metadata?.unsubscribeLyrics?.();
-    queue.metadata.lastLyricsLines = null;
+  async execute(queue, track) {
+    const currentTrack = track || queue.currentTrack;
+    if (currentTrack) {
+      utils.logInfo(
+        `[${queue.guild.name}] Playing ${currentTrack.title} ` +
+          `(${currentTrack.url}) [${currentTrack.duration}]`
+      );
+    }
+    if (queue.metadata) {
+      queue.metadata.trackStartTime = Date.now();
+      queue.metadata.skippedByUser = false;
+      queue.metadata?.unsubscribeLyrics?.();
+      queue.metadata.lastLyricsLines = null;
+    }
     await utils.sendStatus(queue, true);
   }
 };

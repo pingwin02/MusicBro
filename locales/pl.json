@@ -1,0 +1,157 @@
+{
+  "buttons": {
+    "close": "Zamknij",
+    "next": "Następna strona",
+    "previous": "Poprzednia strona",
+    "refresh": "Odśwież"
+  },
+  "commands": {
+    "clear": {
+      "description": "Czyści kolejkę utworów"
+    },
+    "export": {
+      "description": "Eksportuje aktualną kolejkę utworów",
+      "empty": "Kolejka jest pusta! Nie ma nic do wyeksportowania.",
+      "exported_plural": "utworów",
+      "exported_single": "utwór",
+      "exported_title": "Wyeksportowano **{count}** {trackWord}:",
+      "file_attached": "Lista jest zbyt długa na wiadomość, została dołączona w pliku poniżej.",
+      "no_urls": "Nie znaleziono linków w aktualnej kolejce.",
+      "title": "📦 Eksport kolejki"
+    },
+    "import": {
+      "description": "Importuje utwory do kolejki z wyeksportowanych linków",
+      "empty_data": "Nie podano żadnych prawidłowych linków do zaimportowania!",
+      "error": "Wystąpił błąd podczas przetwarzania importu.",
+      "failed_all": "Nie udało się zaimportować utworów z podanych linków:\n{failedUrls}",
+      "failed_some": "Nie udało się zaimportować niektórych linków:\n{failedUrls}",
+      "options": {
+        "data": "Ciąg znaków z linkami oddzielonymi spacjami"
+      },
+      "progress": "Przetwarzanie **{current}/{total}**...",
+      "starting": "Rozpoczynanie importu **{count}** {trackWord}...",
+      "title": "📥 Importowanie kolejki",
+      "track_plural": "utworów",
+      "track_single": "utworu"
+    },
+    "info": {
+      "api_ping": ":robot: Ping API wynosi **{apiPing}ms**",
+      "created_by": "Stworzony z :heart: przez <@{adminId}>",
+      "description": "Wyświetla informacje o bocie",
+      "ping": ":ping_pong: Ping wynosi **{ping}ms**",
+      "title": "Informacje o {username}",
+      "uptime": ":clock1: Uptime wynosi **{uptime}**"
+    },
+    "lyrics": {
+      "description": "Wyświetl tekst wskazanego utworu lub aktualnie granego",
+      "error": "Wystąpił błąd podczas pobierania tekstu.",
+      "not_found": "Nie znaleziono tekstu dla podanego utworu.",
+      "options": {
+        "query": "Tytuł utworu do wyszukania tekstu"
+      },
+      "title": "Tekst: {author} - {title}"
+    },
+    "nowplaying": {
+      "description": "Wyświetla informacje o aktualnie granym utworze"
+    },
+    "play": {
+      "choices": {
+        "general": "Ogólne / Wideo",
+        "music": "Muzyka"
+      },
+      "conflict": "Opcje `force` oraz `next` nie mogą być włączone jednocześnie!",
+      "description": "Dodaje muzykę do kolejki",
+      "error": "Wystąpił błąd podczas przetwarzania utworu.",
+      "no_url": "Nie udało się rozpoznać adresu URL dla wyszukanego utworu.",
+      "options": {
+        "force": "Odtwarza natychmiastowo utwór pomijając kolejkę",
+        "mix": "Dodaje składankę podobnych utworów (ok. 25 pozycji)",
+        "mode": "Tryb wyszukiwania (domyślnie: Muzyka)",
+        "next": "Dodaje utwór na sam początek kolejki (odtworzy się jako następny)",
+        "query": "Wyszukiwana fraza lub link do utworu/playlisty"
+      },
+      "playlist_skipped": "Pominięto **{count}** utworów (zablokowane lub > {maxDuration}).",
+      "playlist_unplayable": "Żaden utwór z playlisty nie może zostać odtworzony.",
+      "too_long": "Podany utwór jest zbyt długi! Maksymalna długość to **{maxDuration}**.",
+      "too_long_reason": "Zbyt długi",
+      "too_long_track": "Utwór [**{title}**]({url}) przekracza limit **{maxDuration}**.",
+      "unplayable": "Nie można odtworzyć [**{title}**]({url})\n**Powód:** {reason} (`{status}`)"
+    },
+    "remove": {
+      "description": "Usuwa wybrany utwór z kolejki",
+      "options": {
+        "number": "Numer utworu w kolejce"
+      }
+    },
+    "seek": {
+      "description": "Przewija aktualnie odtwarzany utwór do podanego czasu",
+      "format_error": "Nieprawidłowy format czasu! Użyj `mm:ss` lub `mm`, np. `2:15` albo `3`.",
+      "no_duration": "Nie można przewinąć tego utworu. Brak informacji o długości.",
+      "options": {
+        "time": "Czas w formacie mm:ss lub mm (np. 1:30 lub 2)"
+      },
+      "out_of_range": "Podaj czas krótszy niż długość utworu (**{duration}**)."
+    },
+    "skipto": {
+      "description": "Przeskakuje do wybranego utworu w kolejce",
+      "options": {
+        "number": "Numer utworu w kolejce"
+      }
+    },
+    "volume": {
+      "description": "Ustawia głośność odtwarzacza",
+      "options": {
+        "value": "Wartość głośności"
+      }
+    }
+  },
+  "errors": {
+    "channel_permissions": "Nie mam uprawnień do tego kanału!",
+    "command_error": "Wystąpił błąd podczas wykonywania komendy! Spróbuj ponownie później.",
+    "invalid_track_number": "Nie ma takiego utworu w kolejce! Upewnij się, że podałeś poprawny numer.",
+    "more_failed": "...i jeszcze {count} więcej",
+    "no_results": "Nie znaleziono! Upewnij się, że link lub fraza jest poprawna.\n\nWspierane serwisy: <:YouTube:1156904255979016203> Youtube",
+    "node_error": "Wystąpił błąd podczas tworzenia węzła! Spróbuj ponownie później.",
+    "playback_error": "Wystąpił błąd podczas odtwarzania muzyki! Spróbuj ponownie później.",
+    "player_error": "Wystąpił błąd podczas odtwarzania {track}! Utwór został pominięty.",
+    "queue_empty": "Kolejka jest pusta! Użyj `/play`, aby dodać utwory.",
+    "title": ":x: Błąd",
+    "track_fallback": "użytkownika",
+    "voice_channel_full": "Kanał jest pełny! Spróbuj później.",
+    "voice_channel_permissions": "Nie mam uprawnień do połączenia się z kanałem głosowym!",
+    "voice_channel_required": "Musisz być na kanale głosowym!",
+    "voice_channel_same": "Musisz być na tym samym kanale głosowym co bot!"
+  },
+  "prefix": {
+    "deleted_messages": "Usunąłem **{count}** moich wiadomości",
+    "no_messages": "Nie znaleziono żadnych wiadomości do usunięcia"
+  },
+  "status": {
+    "activity": "słucha /play",
+    "added_by": "dodane przez {user}",
+    "author": "Autor **{author}**",
+    "empty_queue": "Pusta",
+    "loading_lyrics": "Ładowanie tekstu...",
+    "loading_track": "Trwa ładowanie utworu.",
+    "lyrics": "Tekst:",
+    "lyrics_coming_soon": "Tekst utworu zaraz się pojawi...",
+    "no_live_lyrics": "Brak tekstu na żywo. Użyj /lyrics, aby zobaczyć tekst.",
+    "no_lyrics_found": "Nie znaleziono tekstu.",
+    "no_reason": "Brak powodu",
+    "now_playing": "Teraz gra",
+    "page_of": "Strona: {page} z {total}",
+    "paused": "wstrzymane",
+    "please_wait": "Proszę czekać...",
+    "progress": "Postęp:",
+    "queue_header": "Kolejka:",
+    "repeat_queue": "powtarzanie całej kolejki",
+    "repeat_track": "powtarzanie utworu",
+    "volume": "Głośność: {volume}"
+  },
+  "time": {
+    "days": "dni",
+    "hours": "godzin",
+    "minutes": "minut",
+    "seconds": "sekund"
+  }
+}

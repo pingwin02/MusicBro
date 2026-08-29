@@ -5,11 +5,11 @@ const utils = require("../utils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("skipto")
-    .setDescription("Przeskakuje do wybranego utworu w kolejce")
+    .setDescription(utils.t("commands.skipto.description"))
     .addIntegerOption((option) =>
       option
         .setName("number")
-        .setDescription("Numer utworu w kolejce")
+        .setDescription(utils.t("commands.skipto.options.number"))
         .setMinValue(1)
         .setRequired(true)
     )
@@ -22,6 +22,9 @@ module.exports = {
     const songNumber = interaction.options.getInteger("number");
     if (!utils.validateTrackNumber(interaction, queue, songNumber)) return;
 
+    if (queue.metadata) {
+      queue.metadata.skippedByUser = true;
+    }
     queue.node.skipTo(songNumber - 1);
     queue.setRepeatMode(QueueRepeatMode.OFF);
     if (queue.node.isPaused()) queue.node.resume();

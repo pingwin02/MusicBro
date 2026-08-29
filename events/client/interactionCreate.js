@@ -7,19 +7,20 @@ module.exports = {
     try {
       const client = interaction.client;
 
-      if (!interaction.guild)
+      if (!interaction.guild) {
         utils.logInfo(`[DM] @${interaction.user.username} used ${interaction}`);
-      else if (interaction.isButton()) {
+      } else if (interaction.isButton()) {
         utils.logInfo(
           `[${interaction.guild.name}] @${interaction.user.username} ` +
             `used ${interaction.customId} button ` +
             `in #${interaction.channel.name}`
         );
-      } else
+      } else {
         utils.logInfo(
           `[${interaction.guild.name}] @${interaction.user.username} ` +
             `used ${interaction} in #${interaction.channel.name}`
         );
+      }
 
       if (
         interaction.guild &&
@@ -28,7 +29,7 @@ module.exports = {
       ) {
         return utils.printError(
           interaction,
-          "Nie mam uprawnień do tego kanału!"
+          utils.t("errors.channel_permissions")
         );
       }
 
@@ -46,7 +47,7 @@ module.exports = {
         );
         return utils.printError(
           interaction,
-          "Musisz być na tym samym kanale głosowym co bot!",
+          utils.t("errors.voice_channel_same"),
           null,
           true
         );
@@ -84,8 +85,7 @@ module.exports = {
       if (interaction.channel && err.status !== 404) {
         return utils.printError(
           interaction.channel,
-          "Wystąpił błąd podczas wykonywania komendy! " +
-            "Spróbuj ponownie później.",
+          utils.t("errors.command_error"),
           err
         );
       }

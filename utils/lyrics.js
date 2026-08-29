@@ -1,7 +1,6 @@
 const { useMainPlayer } = require("discord-player");
+const { LYRICS_BUFFER_SIZE } = require("./constants");
 const { logInfo } = require("./logger");
-
-const LYRICS_BUFFER_SIZE = 5;
 
 function parseTrackForLyrics(track) {
   if (!track) {

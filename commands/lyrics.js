@@ -5,11 +5,11 @@ const utils = require("../utils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("lyrics")
-    .setDescription("Wyświetl tekst wskazanego utworu lub aktualnie granego")
+    .setDescription(utils.t("commands.lyrics.description"))
     .addStringOption((option) =>
       option
         .setName("query")
-        .setDescription("Tytuł utworu do wyszukania tekstu")
+        .setDescription(utils.t("commands.lyrics.options.query"))
         .setRequired(false)
     ),
   run: async ({ interaction }) => {
@@ -18,10 +18,7 @@ module.exports = {
     const query = interaction.options.getString("query");
 
     if (!queue && !query) {
-      return utils.printError(
-        interaction,
-        "Kolejka jest pusta! Użyj `/play`, aby dodać utwory."
-      );
+      return utils.printError(interaction, utils.t("errors.queue_empty"));
     }
 
     let result;
@@ -34,7 +31,7 @@ module.exports = {
     } catch (err) {
       return utils.printError(
         interaction,
-        "Wystąpił błąd podczas pobierania tekstu.",
+        utils.t("commands.lyrics.error"),
         err
       );
     }
@@ -42,13 +39,16 @@ module.exports = {
     if (!result?.lyrics) {
       return utils.printError(
         interaction,
-        "Nie znaleziono tekstu dla podanego utworu."
+        utils.t("commands.lyrics.not_found")
       );
     }
 
     const trimmedLyrics = result.lyrics.substring(0, 4093);
     const { embed, row } = utils.buildEmbedWithButton({
-      title: `Tekst: ${result.author} - ${result.title}`,
+      title: utils.t("commands.lyrics.title", {
+        author: result.author,
+        title: result.title
+      }),
       description:
         trimmedLyrics.length === 4093 ? `${trimmedLyrics}...` : trimmedLyrics,
       color: "Yellow",

@@ -4,11 +4,11 @@ const utils = require("../utils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("seek")
-    .setDescription("Przewija aktualnie odtwarzany utwór do podanego czasu")
+    .setDescription(utils.t("commands.seek.description"))
     .addStringOption((option) =>
       option
         .setName("time")
-        .setDescription("Czas w formacie mm:ss lub mm (np. 1:30 lub 2)")
+        .setDescription(utils.t("commands.seek.options.time"))
         .setRequired(true)
     )
     .setContexts(InteractionContextType.Guild),
@@ -19,8 +19,7 @@ module.exports = {
 
     const input = interaction.options.getString("time").trim();
     const parts = input.split(":");
-    const formatError =
-      "Nieprawidłowy format czasu! Użyj `mm:ss` lub `mm`, np. `2:15` albo `3`.";
+    const formatError = utils.t("commands.seek.format_error");
 
     let minutes, seconds;
 
@@ -41,14 +40,16 @@ module.exports = {
     if (!currentTrack || isNaN(currentTrack.durationMS)) {
       return utils.printError(
         interaction,
-        "Nie można przewinąć tego utworu. Brak informacji o długości."
+        utils.t("commands.seek.no_duration")
       );
     }
 
     if (targetMs >= currentTrack.durationMS) {
       return utils.printError(
         interaction,
-        `Podaj czas krótszy niż długość utworu (**${currentTrack.duration}**).`
+        utils.t("commands.seek.out_of_range", {
+          duration: currentTrack.duration
+        })
       );
     }
 

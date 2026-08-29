@@ -1,0 +1,157 @@
+{
+  "buttons": {
+    "close": "Close",
+    "next": "Next page",
+    "previous": "Previous page",
+    "refresh": "Refresh"
+  },
+  "commands": {
+    "clear": {
+      "description": "Clears the tracks queue"
+    },
+    "export": {
+      "description": "Exports current queue of tracks",
+      "empty": "The queue is empty! Nothing to export.",
+      "exported_plural": "tracks",
+      "exported_single": "track",
+      "exported_title": "Exported **{count}** {trackWord}:",
+      "file_attached": "The list is too long for a message and has been attached as a file below.",
+      "no_urls": "No links found in current queue.",
+      "title": "📦 Queue Export"
+    },
+    "import": {
+      "description": "Imports tracks to queue from exported links",
+      "empty_data": "No valid links provided to import!",
+      "error": "An error occurred while processing the import.",
+      "failed_all": "Failed to import tracks from the provided links:\n{failedUrls}",
+      "failed_some": "Failed to import some links:\n{failedUrls}",
+      "options": {
+        "data": "String with space-separated links"
+      },
+      "progress": "Processing **{current}/{total}**...",
+      "starting": "Starting import of **{count}** {trackWord}...",
+      "title": "📥 Queue Import",
+      "track_plural": "tracks",
+      "track_single": "track"
+    },
+    "info": {
+      "api_ping": ":robot: API Ping is **{apiPing}ms**",
+      "created_by": "Created with :heart: by <@{adminId}>",
+      "description": "Displays bot information",
+      "ping": ":ping_pong: Ping is **{ping}ms**",
+      "title": "Information about {username}",
+      "uptime": ":clock1: Uptime is **{uptime}**"
+    },
+    "lyrics": {
+      "description": "Displays lyrics for the specified or currently playing track",
+      "error": "An error occurred while fetching lyrics.",
+      "not_found": "Lyrics not found for the specified track.",
+      "options": {
+        "query": "Track title to search lyrics for"
+      },
+      "title": "Lyrics: {author} - {title}"
+    },
+    "nowplaying": {
+      "description": "Displays information about currently playing track"
+    },
+    "play": {
+      "choices": {
+        "general": "General / Video",
+        "music": "Music"
+      },
+      "conflict": "Options `force` and `next` cannot be enabled at the same time!",
+      "description": "Adds music to the queue",
+      "error": "An error occurred while processing track.",
+      "no_url": "Could not resolve URL for the searched track.",
+      "options": {
+        "force": "Plays track immediately, skipping the queue",
+        "mix": "Adds mix of similar tracks (~25 items)",
+        "mode": "Search mode (default: Music)",
+        "next": "Adds track to the front of queue (plays next)",
+        "query": "Search query or link to track/playlist"
+      },
+      "playlist_skipped": "Skipped **{count}** tracks (blocked or > {maxDuration}).",
+      "playlist_unplayable": "None of the tracks from the playlist can be played.",
+      "too_long": "Specified track is too long! Maximum length is **{maxDuration}**.",
+      "too_long_reason": "Too long",
+      "too_long_track": "Track [**{title}**]({url}) exceeds the limit of **{maxDuration}**.",
+      "unplayable": "Cannot play [**{title}**]({url})\n**Reason:** {reason} (`{status}`)"
+    },
+    "remove": {
+      "description": "Removes selected track from the queue",
+      "options": {
+        "number": "Track number in queue"
+      }
+    },
+    "seek": {
+      "description": "Seeks currently playing track to specified time",
+      "format_error": "Invalid time format! Use `mm:ss` or `mm`, e.g. `2:15` or `3`.",
+      "no_duration": "Cannot seek this track. No duration information.",
+      "options": {
+        "time": "Time in mm:ss or mm format (e.g. 1:30 or 2)"
+      },
+      "out_of_range": "Please provide a time shorter than track duration (**{duration}**)."
+    },
+    "skipto": {
+      "description": "Skips to selected track in the queue",
+      "options": {
+        "number": "Track number in queue"
+      }
+    },
+    "volume": {
+      "description": "Sets the player volume",
+      "options": {
+        "value": "Volume value"
+      }
+    }
+  },
+  "errors": {
+    "channel_permissions": "I do not have permission for this channel!",
+    "command_error": "An error occurred while executing the command! Try again later.",
+    "invalid_track_number": "No such track in queue! Make sure you provided a valid number.",
+    "more_failed": "...and {count} more",
+    "no_results": "Not found! Make sure the link or query is correct.\n\nSupported services: <:YouTube:1156904255979016203> Youtube",
+    "node_error": "An error occurred while creating node! Try again later.",
+    "playback_error": "An error occurred while playing music! Try again later.",
+    "player_error": "An error occurred while playing {track}! The track was skipped.",
+    "queue_empty": "The queue is empty! Use `/play` to add tracks.",
+    "title": ":x: Error",
+    "track_fallback": "user",
+    "voice_channel_full": "Channel is full! Try again later.",
+    "voice_channel_permissions": "I do not have permission to connect to the voice channel!",
+    "voice_channel_required": "You must be in a voice channel!",
+    "voice_channel_same": "You must be in the same voice channel as the bot!"
+  },
+  "prefix": {
+    "deleted_messages": "Deleted **{count}** of my messages",
+    "no_messages": "No messages found to delete"
+  },
+  "status": {
+    "activity": "listening to /play",
+    "added_by": "added by {user}",
+    "author": "Author **{author}**",
+    "empty_queue": "Empty",
+    "loading_lyrics": "Loading lyrics...",
+    "loading_track": "Loading track...",
+    "lyrics": "Lyrics:",
+    "lyrics_coming_soon": "Lyrics will appear shortly...",
+    "no_live_lyrics": "No live lyrics. Use /lyrics to view lyrics.",
+    "no_lyrics_found": "Lyrics not found.",
+    "no_reason": "No reason",
+    "now_playing": "Now playing",
+    "page_of": "Page: {page} of {total}",
+    "paused": "paused",
+    "please_wait": "Please wait...",
+    "progress": "Progress:",
+    "queue_header": "Queue:",
+    "repeat_queue": "repeating entire queue",
+    "repeat_track": "repeating track",
+    "volume": "Volume: {volume}"
+  },
+  "time": {
+    "days": "days",
+    "hours": "hours",
+    "minutes": "minutes",
+    "seconds": "seconds"
+  }
+}

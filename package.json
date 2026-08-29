@@ -8,7 +8,7 @@
     "debug": "node index.js debug",
     "deploy": "node index.js load",
     "dev": "node index.js dev",
-    "test": "node --test tests/**/*.test.js",
+    "test": "node --test --test-concurrency=8 tests/**/*.test.js",
     "lint": "eslint . --fix",
     "prelint": "prettier . --write"
   },
@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@faker-js/faker": "10.6.0",
     "eslint": "10.9.1",
     "globals": "17.11.0",
     "prettier": "3.9.6"

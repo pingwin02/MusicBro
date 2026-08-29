@@ -1,8 +1,6 @@
 const { GuildQueueEvent, QueueRepeatMode } = require("discord-player");
 const utils = require("../../utils");
 
-const MAX_RETRY_ATTEMPTS = 5;
-
 module.exports = {
   name: GuildQueueEvent.PlayerError,
   async execute(queue, error, track) {
@@ -13,22 +11,23 @@ module.exports = {
     const trackInfo = track?.title ? ` for ${track.title} (${track.url})` : "";
     utils.logInfo(
       `[${queue.guild.name}] playerError event${trackInfo} ` +
-        `(attempt ${attempt}/${MAX_RETRY_ATTEMPTS})`,
+        `(attempt ${attempt}/${utils.MAX_RETRY_ATTEMPTS})`,
       error
     );
 
-    if (track && attempt < MAX_RETRY_ATTEMPTS) {
+    if (track && attempt < utils.MAX_RETRY_ATTEMPTS) {
       queue.options.noEmitInsert = true;
       queue.insertTrack(track, 0);
       queue.options.noEmitInsert = false;
       return;
     }
 
-    const trackTitle = track?.title ? `**${track.title}**` : "utworu";
+    const trackTitle = track?.title
+      ? `**${track.title}**`
+      : utils.t("errors.track_fallback");
     utils.printError(
       queue.metadata?.textChannel,
-      `Wystąpił błąd podczas odtwarzania ${trackTitle}! ` +
-        "Utwór został pominięty.",
+      utils.t("errors.player_error", { track: trackTitle }),
       error
     );
 

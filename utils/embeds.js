@@ -5,6 +5,7 @@ const {
   EmbedBuilder,
   MessageFlags
 } = require("discord.js");
+const { t } = require("./i18n");
 const { logInfo } = require("./logger");
 const { timedDelete } = require("./time");
 
@@ -29,7 +30,7 @@ async function printError(
   try {
     if (!interaction) return;
     const embed = new EmbedBuilder()
-      .setTitle(":x: Błąd")
+      .setTitle(t("errors.title"))
       .setDescription(description)
       .setColor("Red");
 
@@ -92,7 +93,7 @@ function buildEmbedWithButton({
 
   const button = new ButtonBuilder()
     .setCustomId("embedClose")
-    .setLabel("Zamknij")
+    .setLabel(t("buttons.close"))
     .setStyle(buttonStyle);
 
   const row = new ActionRowBuilder().addComponents(button);
@@ -100,6 +101,6 @@ function buildEmbedWithButton({
 }
 
 module.exports = {
-  printError,
-  buildEmbedWithButton
+  buildEmbedWithButton,
+  printError
 };

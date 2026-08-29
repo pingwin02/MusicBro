@@ -2,18 +2,29 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 const exportCommand = require("../commands/export");
 const importCommand = require("../commands/import");
+const { t } = require("../utils/i18n");
 const {
   TEST_ERRORS,
   createMockGuild,
   createMockInteraction,
+  createMockQueue,
   createMockTrack,
   createTestPlayer
 } = require("./factories");
 
+let client;
+let player;
+
+test.before(async () => {
+  const setup = await createTestPlayer();
+  client = setup.client;
+  player = setup.player;
+});
+
 test("export command - metadata definition", () => {
   const json = exportCommand.data.toJSON();
   assert.equal(json.name, "export");
-  assert.equal(json.description, "Eksportuje aktualną kolejkę utworów");
+  assert.equal(json.description, t("commands.export.description"));
 });
 
 test("import command - metadata and options definition", () => {
@@ -25,31 +36,17 @@ test("import command - metadata and options definition", () => {
 });
 
 test("export command - returns error when queue is empty", async () => {
-  const { client } = await createTestPlayer();
-  const guild = createMockGuild({ id: "mock-export-empty" });
+  const guild = createMockGuild();
   const mockInteraction = createMockInteraction({ guild });
   mockInteraction.guildId = guild.id;
 
   await exportCommand.run({ client, interaction: mockInteraction });
 
-  assert.equal(
-    mockInteraction.getCapturedError(),
-    "Kolejka jest pusta! Nie ma nic do wyeksportowania."
-  );
+  assert.equal(mockInteraction.getCapturedError(), t("commands.export.empty"));
 });
 
 test("export command - exports formatted tracks string", async () => {
-  const { client, player } = await createTestPlayer();
-  const guild = createMockGuild({ id: "mock-export-tracks" });
-  client.guilds.cache.set(guild.id, guild);
-
-  const textChannel = {
-    send: async () => ({ delete: async () => {} })
-  };
-
-  const queue = player.nodes.create(guild.id, {
-    metadata: { textChannel, page: 0 }
-  });
+  const { guild, queue } = createMockQueue(player, client);
 
   const t1 = createMockTrack(player, {
     title: "Song 1",
@@ -64,8 +61,8 @@ test("export command - exports formatted tracks string", async () => {
 
   let sentEmbed = null;
   const mockInteraction = createMockInteraction({
-    guild,
-    deferred: true
+    deferred: true,
+    guild
   });
   mockInteraction.guildId = guild.id;
   mockInteraction.editReply = async (data) => {
@@ -84,7 +81,6 @@ test("export command - exports formatted tracks string", async () => {
 });
 
 test("import command - requires voice channel", async () => {
-  const { client } = await createTestPlayer();
   const mockInteraction = createMockInteraction({
     member: { voice: { channel: null } },
     options: {
@@ -101,7 +97,6 @@ test("import command - requires voice channel", async () => {
 });
 
 test("import command - validates empty data input", async () => {
-  const { client } = await createTestPlayer();
   const mockInteraction = createMockInteraction({
     options: {
       data: "   \n  \n \r\n   "
@@ -112,12 +107,11 @@ test("import command - validates empty data input", async () => {
 
   assert.equal(
     mockInteraction.getCapturedError(),
-    "Nie podano żadnych prawidłowych linków do zaimportowania!"
+    t("commands.import.empty_data")
   );
 });
 
 test("import command - parses space-separated URLs", async () => {
-  const { client } = await createTestPlayer();
   const mockInteraction = createMockInteraction({
     member: { voice: { channel: null } },
     options: {
@@ -136,32 +130,36 @@ test("import command - parses space-separated URLs", async () => {
 });
 
 test("import command - displays failed URLs when empty", async () => {
-  const { client, player } = await createTestPlayer();
-  const guild = createMockGuild({ id: "mock-import-failed" });
+  const guild = createMockGuild();
   client.guilds.cache.set(guild.id, guild);
 
   const voiceChannel = {
-    permissionsFor: () => ({ has: () => true }),
-    full: false
+    full: false,
+    permissionsFor: () => ({ has: () => true })
   };
 
   const mockInteraction = createMockInteraction({
+    deferred: true,
     guild,
     member: { voice: { channel: voiceChannel } },
     options: {
       data: "https://youtube.com/watch?v=invalid123"
-    },
-    deferred: true
+    }
   });
   mockInteraction.guildId = guild.id;
 
+  const originalSearch = player.search.bind(player);
   player.search = async () => ({ tracks: [] });
 
   await importCommand.run({ client, interaction: mockInteraction });
 
+  player.search = originalSearch;
+
   const captured = mockInteraction.getCapturedError();
   assert.ok(
-    captured.includes("Nie udało się zaimportować utworów z podanych linków:")
+    captured.includes(
+      t("commands.import.failed_all", { failedUrls: "" }).split("\n")[0]
+    )
   );
   assert.ok(captured.includes("https://youtube.com/watch?v=invalid123"));
 });

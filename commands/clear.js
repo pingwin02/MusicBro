@@ -4,7 +4,7 @@ const utils = require("../utils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("clear")
-    .setDescription("Czyści kolejkę utworów")
+    .setDescription(utils.t("commands.clear.description"))
     .setContexts(InteractionContextType.Guild),
   run: async ({ interaction }) => {
     await interaction.deferReply();

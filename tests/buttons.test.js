@@ -14,209 +14,193 @@ const shuffleBtn = require("../buttons/shuffle");
 const skipBtn = require("../buttons/skip");
 const stopBtn = require("../buttons/stop");
 const {
-  createMockGuild,
+  createMockButtonInteraction,
+  createMockQueue,
   createMockTrack,
   createMockTracks,
   createTestPlayer
 } = require("./factories");
 
-function createMockButtonInteraction(guildId = null) {
-  let deferredUpdate = false;
-  let deletedReply = false;
-  return {
-    guildId,
-    guild: guildId ? { id: guildId } : null,
-    message: { id: "default-msg-id" },
-    deferUpdate: async () => {
-      deferredUpdate = true;
-    },
-    deleteReply: async () => {
-      deletedReply = true;
-    },
-    isDeferred: () => deferredUpdate,
-    isDeletedReply: () => deletedReply
-  };
-}
+let client;
+let player;
 
-test("buttons - handles missing queue with deleteReply", async () => {
-  await createTestPlayer();
-  const buttons = [
-    pauseBtn,
-    resumeBtn,
-    skipBtn,
-    stopBtn,
-    shuffleBtn,
-    loopDisableBtn,
-    loopQueueBtn,
-    loopTrackBtn,
-    nextBtn,
-    previousBtn
-  ];
+test.before(async () => {
+  const setup = await createTestPlayer();
+  client = setup.client;
+  player = setup.player;
+});
 
-  for (const btn of buttons) {
-    const interaction = createMockButtonInteraction("non-existent-guild");
-    await btn.run({ interaction });
-    assert.equal(interaction.isDeferred(), true);
-    assert.equal(interaction.isDeletedReply(), true);
+test(
+  "buttons - handles missing queue with deleteReply",
+  { concurrency: true },
+  async () => {
+    const buttons = [
+      pauseBtn,
+      resumeBtn,
+      skipBtn,
+      stopBtn,
+      shuffleBtn,
+      loopDisableBtn,
+      loopQueueBtn,
+      loopTrackBtn,
+      nextBtn,
+      previousBtn
+    ];
+
+    for (const btn of buttons) {
+      const interaction = createMockButtonInteraction("non-existent-guild");
+      await btn.run({ interaction });
+      assert.equal(interaction.isDeferred(), true);
+      assert.equal(interaction.isDeletedReply(), true);
+    }
   }
-});
+);
 
-test("playback control buttons - controls playback state", async () => {
-  const { client, player } = await createTestPlayer();
-  const guild = createMockGuild({ id: "mock-buttons-guild" });
-  client.guilds.cache.set(guild.id, guild);
+test(
+  "playback control buttons - controls playback state",
+  { concurrency: true },
+  async () => {
+    const { guild, queue } = createMockQueue(player, client);
+    queue.addTrack(createMockTracks(player, 3));
 
-  const textChannel = { send: async () => ({ delete: async () => {} }) };
-  const queue = player.nodes.create(guild.id, {
-    metadata: { textChannel, page: 0 }
-  });
-  queue.addTrack(createMockTracks(player, 3));
+    let pausedState = null;
+    queue.node.setPaused = (val) => {
+      pausedState = val;
+    };
+    let skipped = false;
+    queue.node.skip = () => {
+      skipped = true;
+    };
 
-  let pausedState = null;
-  queue.node.setPaused = (val) => {
-    pausedState = val;
-  };
-  let skipped = false;
-  queue.node.skip = () => {
-    skipped = true;
-  };
+    const interaction = createMockButtonInteraction(guild.id);
 
-  const interaction = createMockButtonInteraction(guild.id);
+    await pauseBtn.run({ interaction });
+    assert.equal(pausedState, true);
 
-  await pauseBtn.run({ interaction });
-  assert.equal(pausedState, true);
+    await resumeBtn.run({ interaction });
+    assert.equal(pausedState, false);
 
-  await resumeBtn.run({ interaction });
-  assert.equal(pausedState, false);
+    await skipBtn.run({ interaction });
+    assert.equal(skipped, true);
 
-  await skipBtn.run({ interaction });
-  assert.equal(skipped, true);
+    let shuffled = false;
+    queue.tracks.shuffle = () => {
+      shuffled = true;
+    };
+    await shuffleBtn.run({ interaction });
+    assert.equal(shuffled, true);
 
-  let shuffled = false;
-  queue.tracks.shuffle = () => {
-    shuffled = true;
-  };
-  await shuffleBtn.run({ interaction });
-  assert.equal(shuffled, true);
+    await stopBtn.run({ interaction });
+    assert.equal(player.nodes.get(guild.id), null);
+  }
+);
 
-  await stopBtn.run({ interaction });
-  assert.equal(player.nodes.get(guild.id), null);
-});
+test(
+  "loop mode buttons - loopTrack, loopQueue, loopDisable",
+  { concurrency: true },
+  async () => {
+    const { guild, queue } = createMockQueue(player, client);
+    const interaction = createMockButtonInteraction(guild.id);
 
-test("loop mode buttons - loopTrack, loopQueue, loopDisable", async () => {
-  const { client, player } = await createTestPlayer();
-  const guild = createMockGuild({ id: "mock-loop-buttons" });
-  client.guilds.cache.set(guild.id, guild);
+    await loopTrackBtn.run({ interaction });
+    assert.equal(queue.repeatMode, QueueRepeatMode.TRACK);
 
-  const textChannel = { send: async () => ({ delete: async () => {} }) };
-  const queue = player.nodes.create(guild.id, {
-    metadata: { textChannel, page: 0 }
-  });
-  const interaction = createMockButtonInteraction(guild.id);
+    await loopQueueBtn.run({ interaction });
+    assert.equal(queue.repeatMode, QueueRepeatMode.QUEUE);
 
-  await loopTrackBtn.run({ interaction });
-  assert.equal(queue.repeatMode, QueueRepeatMode.TRACK);
+    await loopDisableBtn.run({ interaction });
+    assert.equal(queue.repeatMode, QueueRepeatMode.OFF);
 
-  await loopQueueBtn.run({ interaction });
-  assert.equal(queue.repeatMode, QueueRepeatMode.QUEUE);
+    queue.delete();
+  }
+);
 
-  await loopDisableBtn.run({ interaction });
-  assert.equal(queue.repeatMode, QueueRepeatMode.OFF);
+test(
+  "pagination buttons - next and previous page changes",
+  { concurrency: true },
+  async () => {
+    const { guild, queue } = createMockQueue(player, client);
+    const interaction = createMockButtonInteraction(guild.id);
 
-  queue.delete();
-});
+    await nextBtn.run({ interaction });
+    assert.equal(queue.metadata.page, 1);
 
-test("pagination buttons - next and previous page changes", async () => {
-  const { client, player } = await createTestPlayer();
-  const guild = createMockGuild({ id: "mock-page-buttons" });
-  client.guilds.cache.set(guild.id, guild);
+    await nextBtn.run({ interaction });
+    assert.equal(queue.metadata.page, 2);
 
-  const textChannel = { send: async () => ({ delete: async () => {} }) };
-  const queue = player.nodes.create(guild.id, {
-    metadata: { textChannel, page: 0 }
-  });
-  const interaction = createMockButtonInteraction(guild.id);
+    await previousBtn.run({ interaction });
+    assert.equal(queue.metadata.page, 1);
 
-  await nextBtn.run({ interaction });
-  assert.equal(queue.metadata.page, 1);
+    await previousBtn.run({ interaction });
+    assert.equal(queue.metadata.page, 0);
 
-  await nextBtn.run({ interaction });
-  assert.equal(queue.metadata.page, 2);
+    await previousBtn.run({ interaction });
+    assert.equal(queue.metadata.page, 0);
 
-  await previousBtn.run({ interaction });
-  assert.equal(queue.metadata.page, 1);
+    queue.delete();
+  }
+);
 
-  await previousBtn.run({ interaction });
-  assert.equal(queue.metadata.page, 0);
+test(
+  "refresh button - handles message id matching",
+  { concurrency: true },
+  async () => {
+    let edited = false;
+    const statusMessage = {
+      edit: async () => {
+        edited = true;
+      },
+      id: "valid-msg-123"
+    };
 
-  await previousBtn.run({ interaction });
-  assert.equal(queue.metadata.page, 0);
+    const { guild, queue } = createMockQueue(player, client, {
+      metadata: { statusMessage }
+    });
 
-  queue.delete();
-});
+    const currentTrack = createMockTrack(player, {
+      requestedBy: { id: "123" },
+      title: "Track 1"
+    });
+    Object.defineProperty(queue, "currentTrack", {
+      configurable: true,
+      value: currentTrack,
+      writable: true
+    });
 
-test("refresh button - handles message id matching", async () => {
-  const { client, player } = await createTestPlayer();
-  const guild = createMockGuild({ id: "mock-refresh-buttons" });
-  client.guilds.cache.set(guild.id, guild);
+    const interactionMismatch = createMockButtonInteraction(guild.id, {
+      message: { id: "different-id" }
+    });
 
-  let edited = false;
-  const statusMessage = {
-    id: "valid-msg-123",
-    edit: async () => {
-      edited = true;
-    }
-  };
+    await refreshBtn.run({ interaction: interactionMismatch });
+    assert.equal(interactionMismatch.isDeletedReply(), true);
 
-  const queue = player.nodes.create(guild.id, {
-    metadata: {
-      textChannel: { send: async () => statusMessage },
-      page: 0,
-      statusMessage
-    }
-  });
+    const interactionMatch = createMockButtonInteraction(guild.id, {
+      message: { id: "valid-msg-123" }
+    });
 
-  const currentTrack = createMockTrack(player, {
-    title: "Track 1",
-    requestedBy: { id: "123" }
-  });
-  Object.defineProperty(queue, "currentTrack", {
-    value: currentTrack,
-    configurable: true,
-    writable: true
-  });
+    await refreshBtn.run({ interaction: interactionMatch });
+    assert.equal(interactionMatch.isDeferred(), true);
+    assert.equal(edited, true);
 
-  const interactionMismatch = createMockButtonInteraction(guild.id);
-  interactionMismatch.message = { id: "different-id" };
+    queue.delete();
+  }
+);
 
-  await refreshBtn.run({ interaction: interactionMismatch });
-  assert.equal(interactionMismatch.isDeletedReply(), true);
-
-  const interactionMatch = createMockButtonInteraction(guild.id);
-  interactionMatch.message = { id: "valid-msg-123" };
-
-  await refreshBtn.run({ interaction: interactionMatch });
-  assert.equal(interactionMatch.isDeferred(), true);
-  assert.equal(edited, true);
-
-  queue.delete();
-});
-
-test("embedClose button - defers and deletes interaction message", async () => {
-  let deferred = false;
-  let deleted = false;
-  const interaction = {
-    deferUpdate: async () => {
-      deferred = true;
-    },
-    message: {
-      delete: async () => {
-        deleted = true;
+test(
+  "embedClose button - defers and deletes interaction message",
+  { concurrency: true },
+  async () => {
+    let deletedMessage = false;
+    const interaction = {
+      deferUpdate: async () => {},
+      message: {
+        delete: async () => {
+          deletedMessage = true;
+        }
       }
-    }
-  };
+    };
 
-  await embedCloseBtn.run({ interaction });
-  assert.equal(deferred, true);
-  assert.equal(deleted, true);
-});
+    await embedCloseBtn.run({ interaction });
+    assert.equal(deletedMessage, true);
+  }
+);

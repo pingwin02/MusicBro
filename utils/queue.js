@@ -1,5 +1,7 @@
 const { useQueue } = require("discord-player");
+const { YOUTUBE_SHORT_URL_REGEX } = require("./constants");
 const { printError } = require("./embeds");
+const { t } = require("./i18n");
 const { logInfo } = require("./logger");
 const { canPlayTrack, sendLoadingStatus } = require("./status");
 const { isTrackLongerThan } = require("./time");
@@ -8,7 +10,7 @@ function validateVoiceChannel(client, interaction) {
   const voiceChannel = interaction.member?.voice?.channel;
 
   if (!voiceChannel) {
-    printError(interaction, "Musisz być na kanale głosowym!");
+    printError(interaction, t("errors.voice_channel_required"));
     return null;
   }
 
@@ -17,15 +19,12 @@ function validateVoiceChannel(client, interaction) {
     !voiceChannel.permissionsFor(client.user).has("Connect") ||
     !voiceChannel.permissionsFor(client.user).has("Speak")
   ) {
-    printError(
-      interaction,
-      "Nie mam uprawnień do połączenia się z kanałem głosowym!"
-    );
+    printError(interaction, t("errors.voice_channel_permissions"));
     return null;
   }
 
   if (voiceChannel.full) {
-    printError(interaction, "Kanał jest pełny! Spróbuj później.");
+    printError(interaction, t("errors.voice_channel_full"));
     return null;
   }
 
@@ -46,10 +45,7 @@ function getOrCreateQueue(player, interaction) {
     });
   } catch (err) {
     logInfo("Creating node", err);
-    printError(
-      interaction,
-      "Wystąpił błąd podczas tworzenia węzła! " + "Spróbuj ponownie później."
-    );
+    printError(interaction, t("errors.node_error"));
     return null;
   }
 }
@@ -57,10 +53,7 @@ function getOrCreateQueue(player, interaction) {
 function requireQueue(interaction, { checkEmpty = false } = {}) {
   const queue = useQueue(interaction.guildId || interaction.guild?.id);
   if (!queue || (checkEmpty && queue.getSize() === 0)) {
-    printError(
-      interaction,
-      "Kolejka jest pusta! Użyj `/play`, aby dodać utwory."
-    );
+    printError(interaction, t("errors.queue_empty"));
     return null;
   }
   return queue;
@@ -68,11 +61,7 @@ function requireQueue(interaction, { checkEmpty = false } = {}) {
 
 function validateTrackNumber(interaction, queue, songNumber) {
   if (songNumber > queue.getSize()) {
-    printError(
-      interaction,
-      "Nie ma takiego utworu w kolejce! " +
-        "Upewnij się, że podałeś poprawny numer."
-    );
+    printError(interaction, t("errors.invalid_track_number"));
     return false;
   }
   return true;
@@ -82,11 +71,6 @@ function cleanTrackUrl(url) {
   if (typeof url !== "string") return url;
   return url.includes("/shorts/") ? url.replace("/shorts/", "/watch?v=") : url;
 }
-
-const YOUTUBE_SHORT_URL_REGEX = new RegExp(
-  "(?:youtube\\.com\\/(?:watch\\?(?:.*&)?v=|shorts\\/)|" +
-    "youtu\\.be\\/)([a-zA-Z0-9_-]{11})"
-);
 
 function toShortTrackUrl(url) {
   if (typeof url !== "string") return url;
@@ -127,7 +111,7 @@ function formatFailedUrls(failedUrls) {
     .join("\n");
   const extra =
     failedUrls.length > 10
-      ? `\n...i jeszcze ${failedUrls.length - 10} więcej`
+      ? `\n${t("errors.more_failed", { count: failedUrls.length - 10 })}`
       : "";
   return `${preview}${extra}`;
 }
