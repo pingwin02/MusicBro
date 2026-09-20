@@ -53,7 +53,22 @@ module.exports = {
       );
     }
 
-    await queue.node.seek(targetMs);
+    queue.setTransitioning(true);
+    try {
+      const seekSuccess = await queue.node.seek(targetMs);
+      if (seekSuccess === false) {
+        queue.setTransitioning(false);
+      }
+      await utils.sleep(1000);
+    } catch (err) {
+      queue.setTransitioning(false);
+      throw err;
+    } finally {
+      if (queue.isTransitioning()) {
+        queue.setTransitioning(false);
+      }
+    }
+
     queue.metadata.seeked = true;
     utils.sendStatus(queue);
     await interaction.deleteReply();

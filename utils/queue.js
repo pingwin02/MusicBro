@@ -37,6 +37,7 @@ function getOrCreateQueue(player, interaction) {
       leaveOnEnd: true,
       leaveOnStop: true,
       leaveOnEmpty: true,
+      bufferingTimeout: 3000,
       metadata: {
         textChannel: interaction.channel,
         statusMessage: null,

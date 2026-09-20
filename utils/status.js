@@ -144,6 +144,7 @@ async function handleLyricsOnChange(queue, lyricsLines) {
   queue.metadata.lastLyricsLines = lyricsLines;
   const { perPage, totalPages, page } = getPaginationInfo(queue);
   const embed = buildStatusEmbed(queue, lyricsLines, page, perPage, totalPages);
+  if (!embed || queue.deleted || !queue.currentTrack) return;
   const components = buildActionRows(queue, page, totalPages);
 
   try {
@@ -221,6 +222,7 @@ async function sendStatus(queue, fetchLyrics = false) {
           perPage,
           totalPages
         );
+        if (!updatedEmbed || queue.deleted || !queue.currentTrack) return;
         await queue.metadata.statusMessage.edit({
           embeds: [updatedEmbed],
           components

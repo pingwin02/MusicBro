@@ -1,7 +1,7 @@
 const { ButtonStyle } = require("discord.js");
 
 const BUTTONS = {
-  resume: { emoji: "▶", disabled: (q) => q.node.isPlaying() },
+  resume: { emoji: "▶", disabled: (q) => !q.node.isPaused() },
   pause: { emoji: "⏸", disabled: (q) => q.node.isPaused() },
   stop: { emoji: "⏹" },
   skip: { emoji: "⏭", disabled: (q) => q.node.isPaused() },
