@@ -1,7 +1,11 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const { isTestEnvironment } = require("../utils/logger");
-const { handleLyrics, parseTrackForLyrics } = require("../utils/lyrics");
+const {
+  handleLyrics,
+  parseTrackForLyrics,
+  searchLyricsWithRetry
+} = require("../utils/lyrics");
 
 test(
   "parseTrackForLyrics - cleans bracketed video metadata",
@@ -109,5 +113,80 @@ test(
   { concurrency: true },
   () => {
     assert.equal(isTestEnvironment(), true);
+  }
+);
+
+test(
+  "searchLyricsWithRetry - retries on ServerOverloaded and succeeds",
+  { concurrency: true },
+  async () => {
+    let calls = 0;
+    const mockPlayer = {
+      lyrics: {
+        search: async () => {
+          calls++;
+          if (calls === 1) {
+            const err = new Error("The server is busy");
+            err.name = "ServerOverloaded";
+            throw err;
+          }
+          return [{ plainLyrics: "Test lyrics", trackName: "Test" }];
+        }
+      }
+    };
+
+    const res = await searchLyricsWithRetry(mockPlayer, { q: "test" }, 10, 2);
+    assert.equal(calls, 2);
+    assert.equal(res[0].plainLyrics, "Test lyrics");
+  }
+);
+
+test(
+  "searchLyricsWithRetry - throws after exceeding max retries",
+  { concurrency: true },
+  async () => {
+    let calls = 0;
+    const mockPlayer = {
+      lyrics: {
+        search: async () => {
+          calls++;
+          const err = new Error("The server is busy");
+          err.name = "ServerOverloaded";
+          throw err;
+        }
+      }
+    };
+
+    await assert.rejects(
+      async () => {
+        await searchLyricsWithRetry(mockPlayer, { q: "test" }, 10, 2);
+      },
+      { name: "ServerOverloaded" }
+    );
+    assert.equal(calls, 3);
+  }
+);
+
+test(
+  "searchLyricsWithRetry - throws immediately on non-overload error",
+  { concurrency: true },
+  async () => {
+    let calls = 0;
+    const mockPlayer = {
+      lyrics: {
+        search: async () => {
+          calls++;
+          throw new Error("Invalid query");
+        }
+      }
+    };
+
+    await assert.rejects(
+      async () => {
+        await searchLyricsWithRetry(mockPlayer, { q: "test" }, 10, 2);
+      },
+      { message: "Invalid query" }
+    );
+    assert.equal(calls, 1);
   }
 );

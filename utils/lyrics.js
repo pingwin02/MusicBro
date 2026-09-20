@@ -1,6 +1,12 @@
 const { useMainPlayer } = require("discord-player");
-const { LYRICS_BUFFER_SIZE } = require("./constants");
+const {
+  LYRICS_BUFFER_SIZE,
+  LYRICS_MAX_RETRIES,
+  LYRICS_QUERY_DELAY_MS,
+  LYRICS_RETRY_DELAY_MS
+} = require("./constants");
 const { logInfo } = require("./logger");
+const { sleep } = require("./time");
 
 function parseTrackForLyrics(track) {
   if (!track) {
@@ -33,22 +39,57 @@ function parseTrackForLyrics(track) {
   return { title, author, cleanTitle, rawTitle };
 }
 
+async function searchLyricsWithRetry(
+  player,
+  query,
+  retryDelay = LYRICS_RETRY_DELAY_MS,
+  maxRetries = LYRICS_MAX_RETRIES
+) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await player.lyrics.search(query);
+    } catch (err) {
+      const isOverloaded =
+        err?.name === "ServerOverloaded" ||
+        /busy|overload|503/i.test(err?.message || "");
+      if (isOverloaded && attempt < maxRetries) {
+        await sleep(retryDelay * (attempt + 1));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 async function handleLyrics({ queue, onChange, searchString }) {
   if (!queue?.currentTrack && !searchString) return;
 
   const player = useMainPlayer();
 
   if (searchString) {
-    let result = (await player.lyrics.search({ q: searchString }))[0];
-    if (!result) {
-      const cleaned = searchString
-        .replace(/[([].*?[)\]]/g, " ")
-        .replace(/\\/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-      if (cleaned && cleaned !== searchString) {
-        result = (await player.lyrics.search({ q: cleaned }))[0];
+    let result;
+    try {
+      const searchResults = await searchLyricsWithRetry(player, {
+        q: searchString
+      });
+      result = searchResults?.[0];
+      if (!result) {
+        const cleaned = searchString
+          .replace(/[([].*?[)\]]/g, " ")
+          .replace(/\\/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (cleaned && cleaned !== searchString) {
+          await sleep(LYRICS_QUERY_DELAY_MS);
+          const cleanedResults = await searchLyricsWithRetry(player, {
+            q: cleaned
+          });
+          result = cleanedResults?.[0];
+        }
       }
+    } catch (err) {
+      logInfo(`[LYRICS] Error fetching lyrics for "${searchString}"`, err);
+      return false;
     }
     if (!result) {
       logInfo(`[LYRICS] Lyrics not found for "${searchString}"`);
@@ -97,8 +138,11 @@ async function handleLyrics({ queue, onChange, searchString }) {
 
   let result;
   try {
-    for (const q of uniqueQueries) {
-      const res = await player.lyrics.search(q);
+    for (let i = 0; i < uniqueQueries.length; i++) {
+      if (i > 0) {
+        await sleep(LYRICS_QUERY_DELAY_MS);
+      }
+      const res = await searchLyricsWithRetry(player, uniqueQueries[i]);
       if (res?.length && (res[0].plainLyrics || res[0].syncedLyrics)) {
         result = res[0];
         break;
@@ -170,5 +214,6 @@ async function handleLyrics({ queue, onChange, searchString }) {
 
 module.exports = {
   handleLyrics,
-  parseTrackForLyrics
+  parseTrackForLyrics,
+  searchLyricsWithRetry
 };

@@ -39,6 +39,9 @@ const DURATION_DIGITS_REGEX = /^\d+:\d+(:\d+)?$/;
 const DURATION_LABEL_REGEX =
   /(?:(\d+)\s+hours?)?[,\s]*(?:(\d+)\s+minutes?)?[,\s]*(?:(\d+)\s+seconds?)?/;
 const LYRICS_BUFFER_SIZE = 5;
+const LYRICS_MAX_RETRIES = 2;
+const LYRICS_QUERY_DELAY_MS = 250;
+const LYRICS_RETRY_DELAY_MS = 1000;
 const MAX_PLAYLIST_TRACKS = 100;
 const MAX_RELATED_TRACKS = 5;
 const MAX_RETRY_ATTEMPTS = 5;
@@ -61,6 +64,9 @@ module.exports = {
   DURATION_LABEL_REGEX,
   HTTP_STATUS,
   LYRICS_BUFFER_SIZE,
+  LYRICS_MAX_RETRIES,
+  LYRICS_QUERY_DELAY_MS,
+  LYRICS_RETRY_DELAY_MS,
   MAX_PLAYLIST_TRACKS,
   MAX_RELATED_TRACKS,
   MAX_RETRY_ATTEMPTS,
