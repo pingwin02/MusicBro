@@ -108,7 +108,11 @@ async function initMinter(innertube) {
   return WebPoMinter.create({ integrityToken: response[0] }, webPoSignalOutput);
 }
 
-async function getPoToken(innertube, videoId) {
+async function getPoToken(innertube, videoId, forceRefresh = false) {
+  if (forceRefresh) {
+    cachedMinter = null;
+    minterPromise = null;
+  }
   if (!cachedMinter) {
     if (!minterPromise) {
       minterPromise = initMinter(innertube)

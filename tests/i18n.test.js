@@ -7,20 +7,20 @@ const { getLocale, setLocale, t } = require("../utils/i18n");
 test("i18n - default and custom locale setting", () => {
   setLocale(null);
   delete process.env.LOCALE;
+  assert.equal(getLocale(), "en");
+
+  process.env.LOCALE = "pl";
   assert.equal(getLocale(), "pl");
 
-  process.env.LOCALE = "en";
-  assert.equal(getLocale(), "en");
-
   delete process.env.LOCALE;
-  setLocale("en");
-  assert.equal(getLocale(), "en");
-
   setLocale("pl");
   assert.equal(getLocale(), "pl");
 
+  setLocale("en");
+  assert.equal(getLocale(), "en");
+
   setLocale("invalid_locale");
-  assert.equal(getLocale(), "pl");
+  assert.equal(getLocale(), "en");
   setLocale(null);
 });
 

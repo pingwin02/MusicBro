@@ -1,4 +1,7 @@
 const { BaseExtractor, Playlist, Track } = require("discord-player");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const vm = require("node:vm");
 const { Innertube, Platform, UniversalCache } = require("youtubei.js");
 const {
@@ -17,6 +20,17 @@ const {
 } = require("./helpers");
 const { getPoToken } = require("./tokenGenerator");
 
+async function ensureCachePermissions(cacheDir) {
+  await fs.promises.mkdir(cacheDir, { recursive: true }).catch(() => {});
+  await fs.promises.chown(cacheDir, 1000, 1000).catch(() => {});
+  const files = await fs.promises.readdir(cacheDir).catch(() => []);
+  for (const file of files) {
+    await fs.promises
+      .chown(path.join(cacheDir, file), 1000, 1000)
+      .catch(() => {});
+  }
+}
+
 function setupYoutubeJsEvaluator() {
   Platform.shim.eval = async (data, env) => {
     const properties = [];
@@ -31,12 +45,26 @@ function setupYoutubeJsEvaluator() {
 class YouTubeExtractor extends BaseExtractor {
   static identifier = "com.musicbro.youtube";
   #innertube = null;
+  #refreshPromise = null;
 
   async activate() {
     setupYoutubeJsEvaluator();
-    this.#innertube = await Innertube.create({
-      cache: new UniversalCache(true, "/tmp/.cache")
-    });
+    const cacheDir =
+      process.env.CACHE_DIR ||
+      (process.platform === "win32"
+        ? path.join(os.tmpdir(), "musicbro")
+        : "/tmp/musicbro");
+    await ensureCachePermissions(cacheDir);
+    try {
+      this.#innertube = await Innertube.create({
+        cache: new UniversalCache(true, cacheDir)
+      });
+      await ensureCachePermissions(cacheDir);
+    } catch {
+      this.#innertube = await this.#reinitInnertube().catch(() =>
+        Innertube.create({ cache: new UniversalCache(false) })
+      );
+    }
     this.protocols = [
       "ytsearch",
       "youtube",
@@ -44,6 +72,33 @@ class YouTubeExtractor extends BaseExtractor {
       "ytvideo",
       "general"
     ];
+  }
+
+  async resetCache() {
+    return this.#reinitInnertube();
+  }
+
+  async #reinitInnertube() {
+    if (this.#refreshPromise) return this.#refreshPromise;
+    this.#refreshPromise = (async () => {
+      const cacheDir =
+        process.env.CACHE_DIR ||
+        (process.platform === "win32"
+          ? path.join(os.tmpdir(), "musicbro")
+          : "/tmp/musicbro");
+      const files = await fs.promises.readdir(cacheDir).catch(() => []);
+      for (const file of files) {
+        await fs.promises.unlink(path.join(cacheDir, file)).catch(() => {});
+      }
+      await ensureCachePermissions(cacheDir);
+      this.#innertube = await Innertube.create({
+        cache: new UniversalCache(true, cacheDir)
+      });
+      await ensureCachePermissions(cacheDir);
+    })().finally(() => {
+      this.#refreshPromise = null;
+    });
+    return this.#refreshPromise;
   }
 
   async deactivate() {
@@ -117,43 +172,59 @@ class YouTubeExtractor extends BaseExtractor {
       throw new Error("Invalid YouTube URL");
     }
 
-    let poToken;
-    try {
-      poToken = await getPoToken(this.#innertube, videoId);
-    } catch {
-      poToken = null;
-    }
-
-    const clients = ["YTMUSIC", "IOS", "MWEB", "WEB"];
-    for (const client of clients) {
+    const resolveStreamUrl = async (forceRefresh = false) => {
+      let poToken;
       try {
-        const info = await this.#innertube.getBasicInfo(videoId, { client });
-        if (info.playability_status?.status !== "OK" || !info.streaming_data) {
+        poToken = await getPoToken(this.#innertube, videoId, forceRefresh);
+      } catch {
+        poToken = null;
+      }
+
+      const clients = ["YTMUSIC", "IOS", "MWEB", "WEB"];
+      for (const client of clients) {
+        try {
+          const info = await this.#innertube.getBasicInfo(videoId, { client });
+          if (
+            info.playability_status?.status !== "OK" ||
+            !info.streaming_data
+          ) {
+            continue;
+          }
+          const audio = info.chooseFormat({ type: "audio", quality: "best" });
+          if (!audio) continue;
+
+          let url = await audio.decipher(this.#innertube.session.player);
+          if (!url) continue;
+
+          if (poToken) {
+            const urlObj = new URL(url);
+            urlObj.searchParams.set("pot", poToken);
+            url = urlObj.toString();
+          }
+
+          if (client === "YTMUSIC") {
+            return url;
+          }
+
+          return createHttpStream(url, audio.content_length);
+        } catch {
           continue;
         }
-        const audio = info.chooseFormat({ type: "audio", quality: "best" });
-        if (!audio) continue;
-
-        let url = await audio.decipher(this.#innertube.session.player);
-        if (!url) continue;
-
-        if (poToken) {
-          const urlObj = new URL(url);
-          urlObj.searchParams.set("pot", poToken);
-          url = urlObj.toString();
-        }
-
-        if (client === "YTMUSIC") {
-          return url;
-        }
-
-        return createHttpStream(url, audio.content_length);
-      } catch {
-        continue;
       }
+      return null;
+    };
+
+    let stream = await resolveStreamUrl(false);
+    if (!stream) {
+      await this.#reinitInnertube().catch(() => {});
+      stream = await resolveStreamUrl(true);
     }
 
-    throw new Error("No suitable audio format found");
+    if (!stream) {
+      throw new Error("No suitable audio format found");
+    }
+
+    return stream;
   }
 
   async getRelatedTracks(track) {
@@ -187,7 +258,7 @@ class YouTubeExtractor extends BaseExtractor {
   async #handleDynamicMix(playlistId, videoId, context) {
     try {
       const nextData = await this.#innertube.actions.execute("/next", {
-        videoId: videoId || void 0,
+        videoId: videoId || undefined,
         playlistId
       });
       const plData =

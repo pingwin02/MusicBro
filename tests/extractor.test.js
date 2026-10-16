@@ -1,4 +1,7 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const test = require("node:test");
 const { createFFmpegStream } = require("discord-player");
 const {
@@ -202,3 +205,24 @@ test(
     }
   }
 );
+
+test("YouTubeExtractor - cache reset and reinitialization", async () => {
+  const cacheDir =
+    process.env.CACHE_DIR ||
+    (process.platform === "win32"
+      ? path.join(os.tmpdir(), "musicbro")
+      : "/tmp/musicbro");
+  await fs.promises.mkdir(cacheDir, { recursive: true });
+  const dummyFile = path.join(cacheDir, "test_stale_cache.tmp");
+  await fs.promises.writeFile(dummyFile, "stale_data");
+  assert.equal(fs.existsSync(dummyFile), true);
+
+  await extractor.resetCache();
+
+  assert.equal(fs.existsSync(dummyFile), false);
+  const cacheFiles = await fs.promises.readdir(cacheDir);
+  assert.ok(cacheFiles.length > 0);
+  assert.ok(extractor);
+  const isValid = await extractor.validate(TEST_URLS.VIDEO_URL, "youtube");
+  assert.equal(isValid, true);
+});

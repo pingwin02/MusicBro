@@ -2,7 +2,7 @@ const en = require("../locales/en.json");
 const pl = require("../locales/pl.json");
 
 const LOCALES = { en, pl };
-const DEFAULT_LOCALE = "pl";
+const DEFAULT_LOCALE = "en";
 
 let activeLocale = null;
 

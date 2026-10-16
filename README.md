@@ -76,7 +76,8 @@ npm install
 - `ADMIN_ID`: ID of the admin.
 
   Optional:
-  - `LOCALE`: Language code for bot messages and commands (`pl` or `en`, default: `pl`).
+  - `LOCALE`: Language code for bot messages and commands (`en` or `pl`, default: `en`).
+  - `CACHE_DIR`: Directory path for YouTube player and session cache (default: `/tmp/musicbro`).
   - `TOKEN_DEV`: Token of the bot for development purposes.
   - `CLIENT_ID_DEV`: Client ID of the bot for development purposes.
 
