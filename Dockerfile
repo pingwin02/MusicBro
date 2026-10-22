@@ -12,4 +12,4 @@ COPY . .
 
 RUN npm --version
 
-ENTRYPOINT [ "sh", "-c", "npm run deploy && exec npm start" ]
+ENTRYPOINT [ "npm", "start" ]
