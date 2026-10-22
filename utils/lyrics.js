@@ -3,7 +3,8 @@ const {
   LYRICS_BUFFER_SIZE,
   LYRICS_MAX_RETRIES,
   LYRICS_QUERY_DELAY_MS,
-  LYRICS_RETRY_DELAY_MS
+  LYRICS_RETRY_DELAY_MS,
+  LYRICS_USER_AGENT
 } = require("./constants");
 const { logInfo } = require("./logger");
 const { sleep } = require("./time");
@@ -39,12 +40,33 @@ function parseTrackForLyrics(track) {
   return { title, author, cleanTitle, rawTitle };
 }
 
+function setupLyricsUserAgent(player) {
+  if (
+    !player?.lyrics ||
+    typeof player.lyrics.request !== "function" ||
+    player.lyrics._customUserAgentApplied
+  ) {
+    return;
+  }
+  const originalRequest = player.lyrics.request.bind(player.lyrics);
+  player.lyrics.request = (path, options = {}) =>
+    originalRequest(path, {
+      ...options,
+      headers: {
+        "User-Agent": LYRICS_USER_AGENT,
+        ...options?.headers
+      }
+    });
+  player.lyrics._customUserAgentApplied = true;
+}
+
 async function searchLyricsWithRetry(
   player,
   query,
   retryDelay = LYRICS_RETRY_DELAY_MS,
   maxRetries = LYRICS_MAX_RETRIES
 ) {
+  setupLyricsUserAgent(player);
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await player.lyrics.search(query);
@@ -121,10 +143,15 @@ async function handleLyrics({ queue, onChange, searchString }) {
   if (author && title && title !== cleanTitle) {
     queries.push({ q: `${author} ${title}` });
   }
-  if (rawTitle) {
+  if (
+    rawTitle &&
+    rawTitle !== `${author} - ${title}` &&
+    rawTitle !== `${author} ${cleanTitle}` &&
+    rawTitle !== `${author} ${title}`
+  ) {
     queries.push({ q: rawTitle });
   }
-  if (cleanTitle) {
+  if (!author && cleanTitle) {
     queries.push({ trackName: cleanTitle });
   }
 
@@ -215,5 +242,6 @@ async function handleLyrics({ queue, onChange, searchString }) {
 module.exports = {
   handleLyrics,
   parseTrackForLyrics,
-  searchLyricsWithRetry
+  searchLyricsWithRetry,
+  setupLyricsUserAgent
 };

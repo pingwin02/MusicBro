@@ -1,10 +1,12 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const { isTestEnvironment } = require("../utils/logger");
+const { LYRICS_USER_AGENT } = require("../utils/constants");
 const {
   handleLyrics,
   parseTrackForLyrics,
-  searchLyricsWithRetry
+  searchLyricsWithRetry,
+  setupLyricsUserAgent
 } = require("../utils/lyrics");
 
 test(
@@ -188,5 +190,25 @@ test(
       { message: "Invalid query" }
     );
     assert.equal(calls, 1);
+  }
+);
+
+test(
+  "setupLyricsUserAgent - sets custom User-Agent on player.lyrics.request",
+  { concurrency: true },
+  async () => {
+    let capturedHeaders = null;
+    const mockPlayer = {
+      lyrics: {
+        request: async (_path, options) => {
+          capturedHeaders = options?.headers;
+          return [];
+        }
+      }
+    };
+
+    setupLyricsUserAgent(mockPlayer);
+    await mockPlayer.lyrics.request("search?q=test");
+    assert.equal(capturedHeaders?.["User-Agent"], LYRICS_USER_AGENT);
   }
 );

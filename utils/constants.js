@@ -40,8 +40,11 @@ const DURATION_LABEL_REGEX =
   /(?:(\d+)\s+hours?)?[,\s]*(?:(\d+)\s+minutes?)?[,\s]*(?:(\d+)\s+seconds?)?/;
 const LYRICS_BUFFER_SIZE = 5;
 const LYRICS_MAX_RETRIES = 2;
-const LYRICS_QUERY_DELAY_MS = 250;
-const LYRICS_RETRY_DELAY_MS = 1000;
+const LYRICS_QUERY_DELAY_MS = 500;
+const LYRICS_RETRY_DELAY_MS = 1500;
+const LYRICS_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+  "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36";
 const MAX_PLAYLIST_TRACKS = 100;
 const MAX_RELATED_TRACKS = 5;
 const MAX_RETRY_ATTEMPTS = 5;
@@ -67,6 +70,7 @@ module.exports = {
   LYRICS_MAX_RETRIES,
   LYRICS_QUERY_DELAY_MS,
   LYRICS_RETRY_DELAY_MS,
+  LYRICS_USER_AGENT,
   MAX_PLAYLIST_TRACKS,
   MAX_RELATED_TRACKS,
   MAX_RETRY_ATTEMPTS,
