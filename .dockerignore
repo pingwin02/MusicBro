@@ -5,7 +5,6 @@
 !extractors
 !locales
 !utils
-!.env
 !easter_eggs.json
 !img/bot_banner_anim.gif
 !img/bot_logo_anim.gif

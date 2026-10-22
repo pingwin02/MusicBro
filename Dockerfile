@@ -10,8 +10,6 @@ RUN npm install
 
 COPY . .
 
-RUN npm run deploy
-
 RUN npm --version
 
-ENTRYPOINT [ "npm", "start" ]
+ENTRYPOINT [ "sh", "-c", "npm run deploy && exec npm start" ]
