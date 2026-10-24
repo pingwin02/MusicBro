@@ -9,6 +9,9 @@ module.exports = {
         `(${track.url}) [${track.duration}]`
     );
     queue.metadata.page = queue.metadata.page || 0;
+    if (queue.isEmpty() && !queue.currentTrack) {
+      utils.prefetchLyrics(track);
+    }
     await utils.sendStatus(queue);
   }
 };

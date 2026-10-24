@@ -27,6 +27,8 @@ module.exports = {
       );
     }
 
-    utils.sendLoadingStatus(queue);
+    if (queue.isEmpty()) {
+      utils.sendLoadingStatus(queue);
+    }
   }
 };

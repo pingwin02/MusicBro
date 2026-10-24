@@ -3,10 +3,14 @@ const test = require("node:test");
 const { isTestEnvironment } = require("../utils/logger");
 const { LYRICS_USER_AGENT } = require("../utils/constants");
 const {
+  fetchTrackLyrics,
   findBestLyricsMatch,
   handleLyrics,
+  parseRetryAfterHeader,
   parseTrackForLyrics,
+  prefetchLyrics,
   searchLyricsWithRetry,
+  setupLyricsClient,
   setupLyricsUserAgent
 } = require("../utils/lyrics");
 
@@ -281,5 +285,89 @@ test(
     assert.equal(findBestLyricsMatch([]), null);
     assert.equal(findBestLyricsMatch(null), null);
     assert.equal(findBestLyricsMatch([{ id: 1 }]), null);
+  }
+);
+
+test(
+  "fetchTrackLyrics - returns cached lyrics result if already resolved",
+  { concurrency: true },
+  async () => {
+    const cachedResult = { plainLyrics: "Cached lyrics", trackName: "Test" };
+    const track = {
+      title: "Test",
+      _lyricsResult: cachedResult
+    };
+    const res = await fetchTrackLyrics(null, track);
+    assert.deepEqual(res, cachedResult);
+  }
+);
+
+test(
+  "fetchTrackLyrics - handles null track gracefully",
+  { concurrency: true },
+  async () => {
+    const res = await fetchTrackLyrics(null, null);
+    assert.equal(res, null);
+  }
+);
+
+test(
+  "prefetchLyrics - does nothing if track already has result or promise",
+  { concurrency: true },
+  () => {
+    const track = { title: "Test", _lyricsResult: {} };
+    assert.doesNotThrow(() => prefetchLyrics(track));
+  }
+);
+
+test(
+  "parseRetryAfterHeader - parses seconds and dates correctly",
+  { concurrency: true },
+  () => {
+    assert.equal(parseRetryAfterHeader("1"), 1000);
+    assert.equal(parseRetryAfterHeader("2.5"), 2500);
+    assert.equal(parseRetryAfterHeader(null), null);
+    assert.equal(parseRetryAfterHeader(""), null);
+    assert.equal(parseRetryAfterHeader("invalid"), null);
+  }
+);
+
+test(
+  "setupLyricsClient - extracts Retry-After header into error.retryAfterMs",
+  { concurrency: true },
+  async () => {
+    const mockBucket = {
+      _request: async (req) => {
+        await req();
+        const err = new Error("The server is busy");
+        err.name = "ServerOverloaded";
+        throw err;
+      }
+    };
+    const mockPlayer = {
+      lyrics: {
+        bucket: mockBucket,
+        request: async () => {}
+      }
+    };
+
+    setupLyricsClient(mockPlayer);
+
+    const fakeReq = async () => ({
+      ok: false,
+      status: 503,
+      headers: new Map([["retry-after", "2"]])
+    });
+
+    await assert.rejects(
+      async () => {
+        await mockBucket._request(fakeReq);
+      },
+      (err) => {
+        assert.equal(err.name, "ServerOverloaded");
+        assert.equal(err.retryAfterMs, 2000);
+        return true;
+      }
+    );
   }
 );

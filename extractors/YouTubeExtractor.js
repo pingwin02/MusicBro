@@ -180,7 +180,7 @@ class YouTubeExtractor extends BaseExtractor {
         poToken = null;
       }
 
-      const clients = ["YTMUSIC", "IOS", "MWEB", "WEB"];
+      const clients = ["YTMUSIC", "VISIONOS", "IOS", "MWEB", "WEB"];
       for (const client of clients) {
         try {
           const info = await this.#innertube.getBasicInfo(videoId, { client });
@@ -196,13 +196,13 @@ class YouTubeExtractor extends BaseExtractor {
           let url = await audio.decipher(this.#innertube.session.player);
           if (!url) continue;
 
-          if (poToken) {
+          if (poToken && client !== "VISIONOS" && client !== "IOS") {
             const urlObj = new URL(url);
             urlObj.searchParams.set("pot", poToken);
             url = urlObj.toString();
           }
 
-          if (client === "YTMUSIC") {
+          if (client === "YTMUSIC" || client === "VISIONOS") {
             return url;
           }
 

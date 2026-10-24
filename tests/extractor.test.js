@@ -226,3 +226,15 @@ test("YouTubeExtractor - cache reset and reinitialization", async () => {
   const isValid = await extractor.validate(TEST_URLS.VIDEO_URL, "youtube");
   assert.equal(isValid, true);
 });
+
+test(
+  "patchFFmpegStream - ensures FFmpeg implements _write and _final",
+  { concurrency: true },
+  () => {
+    const { FFmpeg } = require("@discord-player/ffmpeg");
+    const { patchFFmpegStream } = require("../extractors/helpers");
+    patchFFmpegStream();
+    assert.equal(typeof FFmpeg.prototype._write, "function");
+    assert.equal(typeof FFmpeg.prototype._final, "function");
+  }
+);

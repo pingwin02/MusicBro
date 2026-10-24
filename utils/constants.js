@@ -39,9 +39,9 @@ const DURATION_DIGITS_REGEX = /^\d+:\d+(:\d+)?$/;
 const DURATION_LABEL_REGEX =
   /(?:(\d+)\s+hours?)?[,\s]*(?:(\d+)\s+minutes?)?[,\s]*(?:(\d+)\s+seconds?)?/;
 const LYRICS_BUFFER_SIZE = 5;
-const LYRICS_MAX_RETRIES = 2;
-const LYRICS_QUERY_DELAY_MS = 500;
-const LYRICS_RETRY_DELAY_MS = 1500;
+const LYRICS_MAX_RETRIES = 3;
+const LYRICS_QUERY_DELAY_MS = 600;
+const LYRICS_RETRY_DELAY_MS = 1000;
 const LYRICS_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
   "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36";

@@ -123,24 +123,76 @@ function findBestLyricsMatch(
   return bestResult;
 }
 
-function setupLyricsUserAgent(player) {
-  if (
-    !player?.lyrics ||
-    typeof player.lyrics.request !== "function" ||
-    player.lyrics._customUserAgentApplied
-  ) {
+function getHeader(headers, name) {
+  if (!headers) return null;
+  if (typeof headers.get === "function") {
+    return headers.get(name) || headers.get(name.toLowerCase());
+  }
+  return headers[name] || headers[name.toLowerCase()] || null;
+}
+
+function parseRetryAfterHeader(header) {
+  if (!header) return null;
+  const raw = typeof header === "string" ? header.trim() : header;
+  const seconds = Number(raw);
+  if (!Number.isNaN(seconds) && seconds >= 0) {
+    return Math.round(seconds * 1000);
+  }
+  const dateMs = Date.parse(raw);
+  if (!Number.isNaN(dateMs)) {
+    return Math.max(0, dateMs - Date.now());
+  }
+  return null;
+}
+
+function setupLyricsClient(player) {
+  if (!player?.lyrics || player.lyrics._customClientApplied) {
     return;
   }
-  const originalRequest = player.lyrics.request.bind(player.lyrics);
-  player.lyrics.request = (path, options = {}) =>
-    originalRequest(path, {
-      ...options,
-      headers: {
-        "User-Agent": LYRICS_USER_AGENT,
-        ...options?.headers
+
+  const bucket = player.lyrics.bucket;
+  if (bucket && typeof bucket._request === "function") {
+    const originalBucketRequest = bucket._request.bind(bucket);
+    bucket._request = async function (req, retries = 0) {
+      let lastRetryAfterMs = null;
+      const wrappedReq = async () => {
+        const res = await req();
+        if (res && !res.ok) {
+          const retryHeader = getHeader(res.headers, "retry-after");
+          lastRetryAfterMs = parseRetryAfterHeader(retryHeader);
+        }
+        return res;
+      };
+
+      try {
+        return await originalBucketRequest(wrappedReq, retries);
+      } catch (err) {
+        if (lastRetryAfterMs !== null) {
+          err.retryAfterMs = lastRetryAfterMs;
+        }
+        throw err;
       }
-    });
+    };
+  }
+
+  if (typeof player.lyrics.request === "function") {
+    const originalRequest = player.lyrics.request.bind(player.lyrics);
+    player.lyrics.request = (path, options = {}) =>
+      originalRequest(path, {
+        ...options,
+        headers: {
+          "User-Agent": LYRICS_USER_AGENT,
+          ...options?.headers
+        }
+      });
+  }
+
+  player.lyrics._customClientApplied = true;
   player.lyrics._customUserAgentApplied = true;
+}
+
+function setupLyricsUserAgent(player) {
+  return setupLyricsClient(player);
 }
 
 async function searchLyricsWithRetry(
@@ -149,7 +201,7 @@ async function searchLyricsWithRetry(
   retryDelay = LYRICS_RETRY_DELAY_MS,
   maxRetries = LYRICS_MAX_RETRIES
 ) {
-  setupLyricsUserAgent(player);
+  setupLyricsClient(player);
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await player.lyrics.search(query);
@@ -158,11 +210,117 @@ async function searchLyricsWithRetry(
         err?.name === "ServerOverloaded" ||
         /busy|overload|503/i.test(err?.message || "");
       if (isOverloaded && attempt < maxRetries) {
-        await sleep(retryDelay * (attempt + 1));
+        const delay =
+          typeof err?.retryAfterMs === "number" && err.retryAfterMs > 0
+            ? err.retryAfterMs
+            : retryDelay;
+        const jitter = Math.floor(Math.random() * 200);
+        await sleep(delay + jitter);
         continue;
       }
       throw err;
     }
+  }
+}
+
+async function fetchTrackLyrics(player, track) {
+  if (!track) return null;
+  if (track._lyricsResult !== undefined) {
+    return track._lyricsResult;
+  }
+  if (track._lyricsPromise) {
+    return await track._lyricsPromise;
+  }
+
+  track._lyricsPromise = (async () => {
+    try {
+      const targetDuration = track.durationMS ? track.durationMS / 1000 : 0;
+      const { title, author, cleanTitle, rawTitle } =
+        parseTrackForLyrics(track);
+
+      const queries = [];
+      if (title && title !== cleanTitle && author) {
+        queries.push({ q: `${author} ${title}` });
+      }
+      if (cleanTitle && author) {
+        queries.push({ trackName: cleanTitle, artistName: author });
+      } else if (cleanTitle) {
+        queries.push({ trackName: cleanTitle });
+      }
+      if (
+        queries.length === 0 &&
+        rawTitle &&
+        rawTitle !== `${author} - ${title}`
+      ) {
+        queries.push({ q: rawTitle });
+      }
+
+      const seen = new Set();
+      const uniqueQueries = queries.filter((q) => {
+        const key = JSON.stringify(q);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      let result = null;
+      for (let i = 0; i < uniqueQueries.length; i++) {
+        if (i > 0) {
+          await sleep(LYRICS_QUERY_DELAY_MS);
+        }
+        const res = await searchLyricsWithRetry(player, uniqueQueries[i]);
+        const match = findBestLyricsMatch(res, {
+          targetDuration,
+          rawTitle,
+          title,
+          cleanTitle,
+          author
+        });
+        if (match) {
+          if (match.syncedLyrics) {
+            result = match;
+            break;
+          }
+          if (!result) {
+            result = match;
+          }
+        }
+      }
+
+      track._lyricsResult = result;
+      return result;
+    } catch (err) {
+      const isOverloaded =
+        err?.name === "ServerOverloaded" ||
+        /busy|overload|503/i.test(err?.message || "");
+      if (isOverloaded) {
+        logInfo(
+          `[LYRICS] Service busy, could not fetch lyrics for ${track.title}`
+        );
+      } else {
+        logInfo(`[LYRICS] Error fetching lyrics for ${track.title}`, err);
+      }
+      track._lyricsResult = null;
+      return null;
+    } finally {
+      track._lyricsPromise = null;
+    }
+  })();
+
+  return await track._lyricsPromise;
+}
+
+function prefetchLyrics(track) {
+  if (!track || track._lyricsResult !== undefined || track._lyricsPromise) {
+    return;
+  }
+  try {
+    const player = useMainPlayer();
+    if (player) {
+      fetchTrackLyrics(player, track).catch(() => {});
+    }
+  } catch {
+    return;
   }
 }
 
@@ -196,7 +354,16 @@ async function handleLyrics({ queue, onChange, searchString }) {
         }
       }
     } catch (err) {
-      logInfo(`[LYRICS] Error fetching lyrics for "${searchString}"`, err);
+      const isOverloaded =
+        err?.name === "ServerOverloaded" ||
+        /busy|overload|503/i.test(err?.message || "");
+      if (isOverloaded) {
+        logInfo(
+          `[LYRICS] Service busy, could not fetch lyrics for "${searchString}"`
+        );
+      } else {
+        logInfo(`[LYRICS] Error fetching lyrics for "${searchString}"`, err);
+      }
       return false;
     }
     if (!result) {
@@ -216,76 +383,23 @@ async function handleLyrics({ queue, onChange, searchString }) {
 
   if (!queue?.currentTrack) return;
 
-  const targetDuration = queue.currentTrack.durationMS
-    ? queue.currentTrack.durationMS / 1000
-    : 0;
+  const track = queue.currentTrack;
+  const { title, author } = parseTrackForLyrics(track);
 
-  const { title, author, cleanTitle, rawTitle } = parseTrackForLyrics(
-    queue.currentTrack
-  );
-
-  const queries = [];
-  if (title && title !== cleanTitle && author) {
-    queries.push({ q: `${author} ${title}` });
-  }
-  if (cleanTitle && author) {
-    queries.push({ trackName: cleanTitle, artistName: author });
-  }
-  if (title && title !== cleanTitle && author) {
-    queries.push({ trackName: title, artistName: author });
-  }
-  if (author && cleanTitle) {
-    queries.push({ q: `${author} ${cleanTitle}` });
-  }
-  if (author && title && title !== cleanTitle) {
-    queries.push({ q: `${author} ${title}` });
-  }
-  if (
-    rawTitle &&
-    rawTitle !== `${author} - ${title}` &&
-    rawTitle !== `${author} ${cleanTitle}` &&
-    rawTitle !== `${author} ${title}`
-  ) {
-    queries.push({ q: rawTitle });
-  }
-  if (!author && cleanTitle) {
-    queries.push({ trackName: cleanTitle });
-  }
-
-  const seen = new Set();
-  const uniqueQueries = queries.filter((q) => {
-    const key = JSON.stringify(q);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-
-  let result = null;
+  let result;
   try {
-    for (let i = 0; i < uniqueQueries.length; i++) {
-      if (i > 0) {
-        await sleep(LYRICS_QUERY_DELAY_MS);
-      }
-      const res = await searchLyricsWithRetry(player, uniqueQueries[i]);
-      const match = findBestLyricsMatch(res, {
-        targetDuration,
-        rawTitle,
-        title,
-        cleanTitle,
-        author
-      });
-      if (match) {
-        if (match.syncedLyrics) {
-          result = match;
-          break;
-        }
-        if (!result) {
-          result = match;
-        }
-      }
-    }
+    result = await fetchTrackLyrics(player, track);
   } catch (err) {
-    logInfo(`[LYRICS] Error fetching lyrics for ${author} - ${title}`, err);
+    const isOverloaded =
+      err?.name === "ServerOverloaded" ||
+      /busy|overload|503/i.test(err?.message || "");
+    if (isOverloaded) {
+      logInfo(
+        `[LYRICS] Service busy, could not fetch lyrics for ${author} - ${title}`
+      );
+    } else {
+      logInfo(`[LYRICS] Error fetching lyrics for ${author} - ${title}`, err);
+    }
     return false;
   }
 
@@ -361,9 +475,13 @@ async function handleLyrics({ queue, onChange, searchString }) {
 }
 
 module.exports = {
+  fetchTrackLyrics,
   findBestLyricsMatch,
   handleLyrics,
+  parseRetryAfterHeader,
   parseTrackForLyrics,
+  prefetchLyrics,
   searchLyricsWithRetry,
+  setupLyricsClient,
   setupLyricsUserAgent
 };

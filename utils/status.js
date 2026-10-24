@@ -13,6 +13,7 @@ const { buildEmbedWithButton } = require("./embeds");
 const { t } = require("./i18n");
 const { logInfo } = require("./logger");
 const { handleLyrics } = require("./lyrics");
+const { sleep } = require("./time");
 
 function createButton(id, queue, page = 0, total = 1) {
   const data = BUTTONS[id];
@@ -175,14 +176,43 @@ async function sendStatus(queue, fetchLyrics = false) {
 
       const { perPage, totalPages, page } = getPaginationInfo(queue);
       queue.metadata.page = page;
-      const lyricsLines = queue.metadata.lastLyricsLines || [
-        t("status.loading_lyrics")
-      ];
-      queue.metadata.lastLyricsLines = lyricsLines;
+
+      let lyricsResult = null;
+      let lyricsPromise = null;
+
+      if (fetchLyrics) {
+        lyricsPromise = handleLyrics({
+          queue,
+          onChange: async (lyricsBuffer) =>
+            await handleLyricsOnChange(queue, lyricsBuffer)
+        });
+
+        const fastResult = await Promise.race([
+          lyricsPromise,
+          sleep(350).then(() => "__TIMEOUT__")
+        ]);
+
+        if (fastResult !== "__TIMEOUT__") {
+          lyricsResult = fastResult;
+          lyricsPromise = null;
+        }
+      }
+
+      if (lyricsResult?.synced) {
+        queue.metadata.lastLyricsLines = lyricsResult.initialLines || [
+          t("status.lyrics_coming_soon")
+        ];
+      } else if (lyricsResult?.lyrics) {
+        queue.metadata.lastLyricsLines = [t("status.no_live_lyrics")];
+      } else if (lyricsResult === false) {
+        queue.metadata.lastLyricsLines = [t("status.no_lyrics_found")];
+      } else if (!queue.metadata.lastLyricsLines) {
+        queue.metadata.lastLyricsLines = [t("status.loading_lyrics")];
+      }
 
       const embed = buildStatusEmbed(
         queue,
-        lyricsLines,
+        queue.metadata.lastLyricsLines,
         page,
         perPage,
         totalPages
@@ -201,12 +231,8 @@ async function sendStatus(queue, fetchLyrics = false) {
         });
       }
 
-      if (fetchLyrics) {
-        const result = await handleLyrics({
-          queue,
-          onChange: async (lyricsBuffer) =>
-            await handleLyricsOnChange(queue, lyricsBuffer)
-        });
+      if (lyricsPromise) {
+        const result = await lyricsPromise;
         if (result?.synced) {
           queue.metadata.lastLyricsLines = result.initialLines || [
             t("status.lyrics_coming_soon")

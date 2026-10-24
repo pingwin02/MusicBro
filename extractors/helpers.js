@@ -1,3 +1,4 @@
+const { FFmpeg } = require("@discord-player/ffmpeg");
 const {
   DURATION_DIGITS_REGEX,
   DURATION_LABEL_REGEX,
@@ -5,6 +6,34 @@ const {
   YOUTUBE_PLAYLIST_REGEX,
   YOUTUBE_URL_REGEX
 } = require("../utils/constants");
+
+function patchFFmpegStream() {
+  if (!FFmpeg) return;
+  const { Writable } = require("node:stream");
+  if (
+    !FFmpeg.prototype._write ||
+    FFmpeg.prototype._write === Writable.prototype._write
+  ) {
+    FFmpeg.prototype._write = function (chunk, encoding, callback) {
+      if (!this.process?.stdin?.writable) {
+        return callback
+          ? callback(new Error("FFmpeg stdin not writable"))
+          : undefined;
+      }
+      return this.process.stdin.write(chunk, encoding, callback);
+    };
+  }
+  if (!FFmpeg.prototype._final) {
+    FFmpeg.prototype._final = function (callback) {
+      if (this.process?.stdin) {
+        return this.process.stdin.end(callback);
+      }
+      if (callback) callback();
+    };
+  }
+}
+
+patchFFmpegStream();
 
 function parseDuration(seconds) {
   const hours = Math.floor(seconds / 3600);
@@ -178,7 +207,9 @@ function createHttpStream(url, contentLength, chunkSize = 524288) {
           response.status !== HTTP_STATUS.PARTIAL_CONTENT &&
           response.status !== HTTP_STATUS.OK
         ) {
-          break;
+          throw new Error(
+            `HTTP stream fetch failed with status ${response.status}`
+          );
         }
 
         const arrayBuffer = await response.arrayBuffer();
@@ -227,5 +258,6 @@ module.exports = {
   extractPlaylistId,
   extractVideoId,
   extractVideoProperties,
-  parseDuration
+  parseDuration,
+  patchFFmpegStream
 };

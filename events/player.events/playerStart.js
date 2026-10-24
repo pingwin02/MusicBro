@@ -17,6 +17,10 @@ module.exports = {
       queue.metadata?.unsubscribeLyrics?.();
       queue.metadata.lastLyricsLines = null;
     }
+    const nextTrack = queue.tracks?.at?.(0);
+    if (nextTrack) {
+      utils.prefetchLyrics(nextTrack);
+    }
     await utils.sendStatus(queue, true);
   }
 };
