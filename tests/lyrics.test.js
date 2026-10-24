@@ -3,6 +3,7 @@ const test = require("node:test");
 const { isTestEnvironment } = require("../utils/logger");
 const { LYRICS_USER_AGENT } = require("../utils/constants");
 const {
+  findBestLyricsMatch,
   handleLyrics,
   parseTrackForLyrics,
   searchLyricsWithRetry,
@@ -210,5 +211,75 @@ test(
     setupLyricsUserAgent(mockPlayer);
     await mockPlayer.lyrics.request("search?q=test");
     assert.equal(capturedHeaders?.["User-Agent"], LYRICS_USER_AGENT);
+  }
+);
+
+test(
+  "parseTrackForLyrics - preserves featured artists in parentheses",
+  { concurrency: true },
+  () => {
+    const track = {
+      title: "Morning After Dark (Featuring Nelly Furtado & SoShy)",
+      author: "Timbaland - Topic"
+    };
+
+    const parsed = parseTrackForLyrics(track);
+    assert.equal(parsed.author, "Timbaland");
+    assert.equal(
+      parsed.title,
+      "Morning After Dark (Featuring Nelly Furtado & SoShy)"
+    );
+    assert.equal(parsed.cleanTitle, "Morning After Dark");
+    assert.equal(parsed.rawTitle, track.title);
+  }
+);
+
+test(
+  "findBestLyricsMatch - selects best candidate based on duration and sync",
+  { concurrency: true },
+  () => {
+    const candidates = [
+      {
+        id: 1,
+        trackName: "Morning After Dark",
+        artistName: "Timbaland",
+        duration: 215,
+        syncedLyrics: "[00:15.74] Go Timbo"
+      },
+      {
+        id: 2,
+        trackName: "Morning After Dark (Featuring Nelly Furtado & SoShy)",
+        artistName: "Timbaland feat. Nelly Furtado & SoShy",
+        duration: 233,
+        syncedLyrics: "[00:06.29] Go Timbo"
+      },
+      {
+        id: 3,
+        trackName: "Morning After Dark",
+        artistName: "Timbaland",
+        duration: 232,
+        plainLyrics: "Go Timbo"
+      }
+    ];
+
+    const match = findBestLyricsMatch(candidates, {
+      targetDuration: 232,
+      rawTitle: "Morning After Dark (Featuring Nelly Furtado & SoShy)",
+      title: "Morning After Dark (Featuring Nelly Furtado & SoShy)",
+      cleanTitle: "Morning After Dark",
+      author: "Timbaland"
+    });
+
+    assert.equal(match.id, 2);
+  }
+);
+
+test(
+  "findBestLyricsMatch - handles empty or invalid candidates gracefully",
+  { concurrency: true },
+  () => {
+    assert.equal(findBestLyricsMatch([]), null);
+    assert.equal(findBestLyricsMatch(null), null);
+    assert.equal(findBestLyricsMatch([{ id: 1 }]), null);
   }
 );

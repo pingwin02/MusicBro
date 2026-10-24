@@ -16,7 +16,7 @@ function parseTrackForLyrics(track) {
 
   const rawTitle = track.title || "";
   const cleanedTitle = rawTitle
-    .replace(/[([].*?[)\]]/g, " ")
+    .replace(/[([](?:(?!ft\.?|feat\.?|featuring)[^)\]])*[)\]]/gi, " ")
     .replace(/\\/g, "")
     .replace(/\s+/g, " ")
     .trim();
@@ -34,10 +34,93 @@ function parseTrackForLyrics(track) {
   }
 
   const cleanTitle = title
-    .replace(/\s*(?:ft\.?|feat\.?|featuring)\s+.*$/i, "")
+    .replace(/\s*[([]\s*(?:ft\.?|feat\.?|featuring)\b[^)\]]*[)\]]/gi, "")
+    .replace(/\s*(?:ft\.?|feat\.?|featuring)\b.*$/i, "")
     .trim();
 
   return { title, author, cleanTitle, rawTitle };
+}
+
+function findBestLyricsMatch(
+  results,
+  { targetDuration, rawTitle, title, cleanTitle, author } = {}
+) {
+  if (!Array.isArray(results) || results.length === 0) return null;
+
+  const targetDurationSec =
+    typeof targetDuration === "number" && targetDuration > 0
+      ? targetDuration > 10000
+        ? targetDuration / 1000
+        : targetDuration
+      : 0;
+
+  const normalizedRaw = (rawTitle || "").toLowerCase();
+  const normalizedTitle = (title || "").toLowerCase();
+  const normalizedClean = (cleanTitle || "").toLowerCase();
+  const normalizedAuthor = (author || "").toLowerCase();
+
+  let bestResult = null;
+  let bestScore = -Infinity;
+
+  for (const item of results) {
+    if (!item || (!item.plainLyrics && !item.syncedLyrics)) continue;
+
+    let score = 0;
+
+    if (item.syncedLyrics) {
+      score += 100;
+    }
+
+    if (
+      targetDurationSec > 0 &&
+      typeof item.duration === "number" &&
+      item.duration > 0
+    ) {
+      const diff = Math.abs(item.duration - targetDurationSec);
+      if (diff <= 2) {
+        score += 50;
+      } else if (diff <= 5) {
+        score += 30;
+      } else if (diff <= 10) {
+        score += 10;
+      } else if (diff > 30) {
+        score -= 40;
+      }
+    }
+
+    const itemArtist = (item.artistName || "").toLowerCase();
+    const itemTrack = (item.trackName || "").toLowerCase();
+
+    if (normalizedAuthor && itemArtist.includes(normalizedAuthor)) {
+      score += 20;
+    }
+
+    if (normalizedClean && itemTrack.includes(normalizedClean)) {
+      score += 20;
+    }
+
+    const featuredMatch = (normalizedRaw || normalizedTitle).match(
+      /(?:feat\.?|ft\.?|featuring)\s+([^()\]]+)/i
+    );
+    if (featuredMatch && featuredMatch[1]) {
+      const featuredParts = featuredMatch[1]
+        .split(/[&,]/)
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+      for (const part of featuredParts) {
+        if (itemArtist.includes(part) || itemTrack.includes(part)) {
+          score += 25;
+        }
+      }
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestResult = item;
+    }
+  }
+
+  return bestResult;
 }
 
 function setupLyricsUserAgent(player) {
@@ -94,7 +177,7 @@ async function handleLyrics({ queue, onChange, searchString }) {
       const searchResults = await searchLyricsWithRetry(player, {
         q: searchString
       });
-      result = searchResults?.[0];
+      result = findBestLyricsMatch(searchResults, { rawTitle: searchString });
       if (!result) {
         const cleaned = searchString
           .replace(/[([].*?[)\]]/g, " ")
@@ -106,7 +189,10 @@ async function handleLyrics({ queue, onChange, searchString }) {
           const cleanedResults = await searchLyricsWithRetry(player, {
             q: cleaned
           });
-          result = cleanedResults?.[0];
+          result = findBestLyricsMatch(cleanedResults, {
+            rawTitle: searchString,
+            cleanTitle: cleaned
+          });
         }
       }
     } catch (err) {
@@ -118,7 +204,11 @@ async function handleLyrics({ queue, onChange, searchString }) {
       return false;
     }
     return {
-      lyrics: result.plainLyrics,
+      lyrics:
+        result.plainLyrics ||
+        (result.syncedLyrics
+          ? result.syncedLyrics.replace(/\[\d+:\d+\.\d+\]/g, "").trim()
+          : ""),
       title: result.trackName,
       author: result.artistName
     };
@@ -126,11 +216,18 @@ async function handleLyrics({ queue, onChange, searchString }) {
 
   if (!queue?.currentTrack) return;
 
+  const targetDuration = queue.currentTrack.durationMS
+    ? queue.currentTrack.durationMS / 1000
+    : 0;
+
   const { title, author, cleanTitle, rawTitle } = parseTrackForLyrics(
     queue.currentTrack
   );
 
   const queries = [];
+  if (title && title !== cleanTitle && author) {
+    queries.push({ q: `${author} ${title}` });
+  }
   if (cleanTitle && author) {
     queries.push({ trackName: cleanTitle, artistName: author });
   }
@@ -163,16 +260,28 @@ async function handleLyrics({ queue, onChange, searchString }) {
     return true;
   });
 
-  let result;
+  let result = null;
   try {
     for (let i = 0; i < uniqueQueries.length; i++) {
       if (i > 0) {
         await sleep(LYRICS_QUERY_DELAY_MS);
       }
       const res = await searchLyricsWithRetry(player, uniqueQueries[i]);
-      if (res?.length && (res[0].plainLyrics || res[0].syncedLyrics)) {
-        result = res[0];
-        break;
+      const match = findBestLyricsMatch(res, {
+        targetDuration,
+        rawTitle,
+        title,
+        cleanTitle,
+        author
+      });
+      if (match) {
+        if (match.syncedLyrics) {
+          result = match;
+          break;
+        }
+        if (!result) {
+          result = match;
+        }
       }
     }
   } catch (err) {
@@ -229,17 +338,30 @@ async function handleLyrics({ queue, onChange, searchString }) {
       unsubscribe();
       queue.metadata.unsubscribeLyrics = null;
     };
-    return true;
+
+    const initialLines = entries
+      .slice(0, LYRICS_BUFFER_SIZE)
+      .map(([, text]) => text);
+
+    return {
+      synced: true,
+      initialLines: initialLines.length > 0 ? initialLines : null
+    };
   }
 
   return {
-    lyrics: result.plainLyrics,
+    lyrics:
+      result.plainLyrics ||
+      (result.syncedLyrics
+        ? result.syncedLyrics.replace(/\[\d+:\d+\.\d+\]/g, "").trim()
+        : ""),
     title: result.trackName,
     author: result.artistName
   };
 }
 
 module.exports = {
+  findBestLyricsMatch,
   handleLyrics,
   parseTrackForLyrics,
   searchLyricsWithRetry,

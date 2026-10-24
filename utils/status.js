@@ -207,10 +207,12 @@ async function sendStatus(queue, fetchLyrics = false) {
           onChange: async (lyricsBuffer) =>
             await handleLyricsOnChange(queue, lyricsBuffer)
         });
-        if (result) {
-          queue.metadata.lastLyricsLines = result.lyrics
-            ? [t("status.no_live_lyrics")]
-            : [t("status.lyrics_coming_soon")];
+        if (result?.synced) {
+          queue.metadata.lastLyricsLines = result.initialLines || [
+            t("status.lyrics_coming_soon")
+          ];
+        } else if (result?.lyrics) {
+          queue.metadata.lastLyricsLines = [t("status.no_live_lyrics")];
         } else {
           queue.metadata.lastLyricsLines = [t("status.no_lyrics_found")];
         }
