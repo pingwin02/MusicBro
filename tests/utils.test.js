@@ -344,6 +344,8 @@ test(
     assert.ok(utils.t("errors.no_results").includes("Youtube"));
     assert.equal(typeof utils.BUTTONS, "object");
     assert.equal(typeof utils.LYRICS_BUFFER_SIZE, "number");
+    assert.equal(typeof utils.LYRICS_FAST_TIMEOUT_MS, "number");
+    assert.equal(typeof utils.LYRICS_PREFETCH_DELAY_MS, "number");
     assert.equal(typeof utils.MAX_PLAYLIST_TRACKS, "number");
     assert.equal(typeof utils.MAX_RELATED_TRACKS, "number");
     assert.equal(typeof utils.MAX_RETRY_ATTEMPTS, "number");

@@ -7,6 +7,7 @@ const {
 const {
   BUTTONS,
   DISCORD_API_ERROR_CODES,
+  LYRICS_FAST_TIMEOUT_MS,
   QUEUE_PAGE_SIZE
 } = require("./constants");
 const { buildEmbedWithButton } = require("./embeds");
@@ -189,7 +190,7 @@ async function sendStatus(queue, fetchLyrics = false) {
 
         const fastResult = await Promise.race([
           lyricsPromise,
-          sleep(350).then(() => "__TIMEOUT__")
+          sleep(LYRICS_FAST_TIMEOUT_MS).then(() => "__TIMEOUT__")
         ]);
 
         if (fastResult !== "__TIMEOUT__") {
@@ -199,9 +200,7 @@ async function sendStatus(queue, fetchLyrics = false) {
       }
 
       if (lyricsResult?.synced) {
-        queue.metadata.lastLyricsLines = lyricsResult.initialLines || [
-          t("status.lyrics_coming_soon")
-        ];
+        queue.metadata.lastLyricsLines = [t("status.lyrics_coming_soon")];
       } else if (lyricsResult?.lyrics) {
         queue.metadata.lastLyricsLines = [t("status.no_live_lyrics")];
       } else if (lyricsResult === false) {
@@ -234,9 +233,12 @@ async function sendStatus(queue, fetchLyrics = false) {
       if (lyricsPromise) {
         const result = await lyricsPromise;
         if (result?.synced) {
-          queue.metadata.lastLyricsLines = result.initialLines || [
-            t("status.lyrics_coming_soon")
-          ];
+          if (
+            !queue.metadata.lastLyricsLines ||
+            queue.metadata.lastLyricsLines[0] === t("status.loading_lyrics")
+          ) {
+            queue.metadata.lastLyricsLines = [t("status.lyrics_coming_soon")];
+          }
         } else if (result?.lyrics) {
           queue.metadata.lastLyricsLines = [t("status.no_live_lyrics")];
         } else {

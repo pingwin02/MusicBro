@@ -17,10 +17,15 @@ module.exports = {
       queue.metadata?.unsubscribeLyrics?.();
       queue.metadata.lastLyricsLines = null;
     }
+    await utils.sendStatus(queue, true);
     const nextTrack = queue.tracks?.at?.(0);
     if (nextTrack) {
-      utils.prefetchLyrics(nextTrack);
+      setTimeout(() => {
+        const candidate = queue.tracks?.at?.(0);
+        if (candidate && !queue.isEmpty()) {
+          utils.prefetchLyrics(candidate);
+        }
+      }, utils.LYRICS_PREFETCH_DELAY_MS).unref?.();
     }
-    await utils.sendStatus(queue, true);
   }
 };

@@ -213,7 +213,7 @@ async function searchLyricsWithRetry(
         const delay =
           typeof err?.retryAfterMs === "number" && err.retryAfterMs > 0
             ? err.retryAfterMs
-            : retryDelay;
+            : retryDelay * (attempt + 1);
         const jitter = Math.floor(Math.random() * 200);
         await sleep(delay + jitter);
         continue;
@@ -290,18 +290,9 @@ async function fetchTrackLyrics(player, track) {
       track._lyricsResult = result;
       return result;
     } catch (err) {
-      const isOverloaded =
-        err?.name === "ServerOverloaded" ||
-        /busy|overload|503/i.test(err?.message || "");
-      if (isOverloaded) {
-        logInfo(
-          `[LYRICS] Service busy, could not fetch lyrics for ${track.title}`
-        );
-      } else {
-        logInfo(`[LYRICS] Error fetching lyrics for ${track.title}`, err);
-      }
-      track._lyricsResult = null;
-      return null;
+      delete track._lyricsResult;
+      logInfo(`[LYRICS] Error fetching lyrics for ${track.title}`, err);
+      throw err;
     } finally {
       track._lyricsPromise = null;
     }
@@ -324,10 +315,22 @@ function prefetchLyrics(track) {
   }
 }
 
-async function handleLyrics({ queue, onChange, searchString }) {
+async function handleLyrics({
+  queue,
+  onChange,
+  searchString,
+  player: customPlayer
+}) {
   if (!queue?.currentTrack && !searchString) return;
 
-  const player = useMainPlayer();
+  let player = customPlayer;
+  if (!player) {
+    try {
+      player = useMainPlayer();
+    } catch {
+      player = null;
+    }
+  }
 
   if (searchString) {
     let result;
@@ -354,16 +357,7 @@ async function handleLyrics({ queue, onChange, searchString }) {
         }
       }
     } catch (err) {
-      const isOverloaded =
-        err?.name === "ServerOverloaded" ||
-        /busy|overload|503/i.test(err?.message || "");
-      if (isOverloaded) {
-        logInfo(
-          `[LYRICS] Service busy, could not fetch lyrics for "${searchString}"`
-        );
-      } else {
-        logInfo(`[LYRICS] Error fetching lyrics for "${searchString}"`, err);
-      }
+      logInfo(`[LYRICS] Error fetching lyrics for "${searchString}"`, err);
       return false;
     }
     if (!result) {
@@ -389,17 +383,7 @@ async function handleLyrics({ queue, onChange, searchString }) {
   let result;
   try {
     result = await fetchTrackLyrics(player, track);
-  } catch (err) {
-    const isOverloaded =
-      err?.name === "ServerOverloaded" ||
-      /busy|overload|503/i.test(err?.message || "");
-    if (isOverloaded) {
-      logInfo(
-        `[LYRICS] Service busy, could not fetch lyrics for ${author} - ${title}`
-      );
-    } else {
-      logInfo(`[LYRICS] Error fetching lyrics for ${author} - ${title}`, err);
-    }
+  } catch {
     return false;
   }
 
@@ -441,7 +425,8 @@ async function handleLyrics({ queue, onChange, searchString }) {
     };
 
     syncedLyrics.onChange((line, timestamp) => {
-      if (timestamp) updateBuffer(timestamp);
+      if (timestamp !== undefined && timestamp !== null)
+        updateBuffer(timestamp);
     });
 
     const unsubscribe = syncedLyrics.subscribe();
@@ -453,14 +438,7 @@ async function handleLyrics({ queue, onChange, searchString }) {
       queue.metadata.unsubscribeLyrics = null;
     };
 
-    const initialLines = entries
-      .slice(0, LYRICS_BUFFER_SIZE)
-      .map(([, text]) => text);
-
-    return {
-      synced: true,
-      initialLines: initialLines.length > 0 ? initialLines : null
-    };
+    return { synced: true };
   }
 
   return {

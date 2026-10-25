@@ -116,6 +116,41 @@ test(
 );
 
 test(
+  "handleLyrics - returns synced true without initial lines for synced lyrics",
+  { concurrency: true },
+  async () => {
+    const mockSyncedLyrics = {
+      lyrics: new Map([
+        [15000, "Verse 1 line 1"],
+        [18000, "Verse 1 line 2"]
+      ]),
+      onChange: () => {},
+      subscribe: () => () => {}
+    };
+    const mockQueue = {
+      currentTrack: {
+        title: "Test Song",
+        author: "Test Artist",
+        _lyricsResult: {
+          syncedLyrics: "[00:15.00] Verse 1 line 1\n[00:18.00] Verse 1 line 2",
+          trackName: "Test Song",
+          artistName: "Test Artist"
+        }
+      },
+      metadata: {},
+      syncedLyrics: () => mockSyncedLyrics
+    };
+
+    const res = await handleLyrics({
+      queue: mockQueue,
+      onChange: () => {}
+    });
+
+    assert.deepEqual(res, { synced: true });
+  }
+);
+
+test(
   "isTestEnvironment - returns true in test environment",
   { concurrency: true },
   () => {
@@ -308,6 +343,54 @@ test(
   async () => {
     const res = await fetchTrackLyrics(null, null);
     assert.equal(res, null);
+  }
+);
+
+test(
+  "fetchTrackLyrics - does not cache failure when an error occurs",
+  { concurrency: true },
+  async () => {
+    const mockPlayer = {
+      lyrics: {
+        search: async () => {
+          const err = new Error("The server is busy");
+          err.name = "ServerOverloaded";
+          throw err;
+        }
+      }
+    };
+    const track = {
+      title: "Test Track",
+      author: "Test Artist"
+    };
+
+    await assert.rejects(
+      async () => {
+        await fetchTrackLyrics(mockPlayer, track);
+      },
+      { name: "ServerOverloaded" }
+    );
+    assert.equal(track._lyricsResult, undefined);
+  }
+);
+
+test(
+  "fetchTrackLyrics - caches null when search completes with no match",
+  { concurrency: true },
+  async () => {
+    const mockPlayer = {
+      lyrics: {
+        search: async () => []
+      }
+    };
+    const track = {
+      title: "Test Track",
+      author: "Test Artist"
+    };
+
+    const res = await fetchTrackLyrics(mockPlayer, track);
+    assert.equal(res, null);
+    assert.equal(track._lyricsResult, null);
   }
 );
 
