@@ -18,7 +18,7 @@ const {
   extractVideoProperties,
   parseDuration
 } = require("./helpers");
-const { getPoToken } = require("./tokenGenerator");
+const { clearPoTokenCache, getPoToken } = require("./tokenGenerator");
 
 async function ensureCachePermissions(cacheDir) {
   await fs.promises.mkdir(cacheDir, { recursive: true }).catch(() => {});
@@ -75,6 +75,7 @@ class YouTubeExtractor extends BaseExtractor {
   }
 
   async resetCache() {
+    clearPoTokenCache();
     return this.#reinitInnertube();
   }
 
@@ -165,6 +166,7 @@ class YouTubeExtractor extends BaseExtractor {
       throw new Error("YouTubeExtractor is not initialized");
     }
     if (track.errorAttempts > 0) {
+      clearPoTokenCache();
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
     const videoId = extractVideoId(track.url);
@@ -214,8 +216,10 @@ class YouTubeExtractor extends BaseExtractor {
       return null;
     };
 
-    let stream = await resolveStreamUrl(false);
+    const forceFirst = track.errorAttempts > 0;
+    let stream = await resolveStreamUrl(forceFirst);
     if (!stream) {
+      clearPoTokenCache();
       await this.#reinitInnertube().catch(() => {});
       stream = await resolveStreamUrl(true);
     }

@@ -238,3 +238,13 @@ test(
     assert.equal(typeof FFmpeg.prototype._final, "function");
   }
 );
+
+test(
+  "clearPoTokenCache - resets minter cache without errors",
+  { concurrency: true },
+  () => {
+    const { clearPoTokenCache } = require("../extractors/tokenGenerator");
+    assert.equal(typeof clearPoTokenCache, "function");
+    clearPoTokenCache();
+  }
+);

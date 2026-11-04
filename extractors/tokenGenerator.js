@@ -6,6 +6,7 @@ const REQUEST_KEY = "O43z0dpjhgX20SCx4KAo";
 
 let cachedMinter = null;
 let minterPromise = null;
+let minterExpiresAt = 0;
 
 function setupDomEnvironment(userAgent) {
   const dom = new JSDOM(
@@ -105,13 +106,23 @@ async function initMinter(innertube) {
     throw new Error("Could not get integrity token");
   }
 
+  const estimatedTtlSecs =
+    typeof response[1] === "number" && response[1] > 0 ? response[1] : 3600;
+  minterExpiresAt =
+    Date.now() + Math.min(estimatedTtlSecs * 1000 * 0.8, 3600 * 1000);
+
   return WebPoMinter.create({ integrityToken: response[0] }, webPoSignalOutput);
 }
 
+function clearPoTokenCache() {
+  cachedMinter = null;
+  minterPromise = null;
+  minterExpiresAt = 0;
+}
+
 async function getPoToken(innertube, videoId, forceRefresh = false) {
-  if (forceRefresh) {
-    cachedMinter = null;
-    minterPromise = null;
+  if (forceRefresh || Date.now() >= minterExpiresAt) {
+    clearPoTokenCache();
   }
   if (!cachedMinter) {
     if (!minterPromise) {
@@ -122,7 +133,7 @@ async function getPoToken(innertube, videoId, forceRefresh = false) {
           return minter;
         })
         .catch((err) => {
-          minterPromise = null;
+          clearPoTokenCache();
           throw err;
         });
     }
@@ -133,5 +144,6 @@ async function getPoToken(innertube, videoId, forceRefresh = false) {
 }
 
 module.exports = {
+  clearPoTokenCache,
   getPoToken
 };

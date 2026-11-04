@@ -25,6 +25,10 @@ module.exports = {
         queue.metadata?.textChannel,
         utils.t("errors.player_error", { track: trackTitle })
       );
+      queue.player?.extractors
+        ?.get("com.musicbro.youtube")
+        ?.resetCache?.()
+        ?.catch?.(() => {});
     }
 
     if (queue.isEmpty()) {
