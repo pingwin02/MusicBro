@@ -167,7 +167,7 @@ class YouTubeExtractor extends BaseExtractor {
     }
     if (track.errorAttempts > 0) {
       clearPoTokenCache();
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await this.#reinitInnertube().catch(() => {});
     }
     const videoId = extractVideoId(track.url);
     if (!videoId) {
@@ -186,12 +186,30 @@ class YouTubeExtractor extends BaseExtractor {
       for (const client of clients) {
         try {
           const info = await this.#innertube.getBasicInfo(videoId, { client });
-          if (
-            info.playability_status?.status !== "OK" ||
-            !info.streaming_data
-          ) {
+          const status = info.playability_status?.status;
+          const reason = info.playability_status?.reason;
+
+          if (status && status !== "OK") {
+            if (status === "LOGIN_REQUIRED") {
+              track.unplayableStatus = status;
+              track.unplayableReason = reason || "Sign in to confirm your age";
+              break;
+            }
+            if (
+              client !== "YTMUSIC" &&
+              (status === "UNPLAYABLE" || status === "CONTENT_CHECK_REQUIRED")
+            ) {
+              track.unplayableStatus = status;
+              track.unplayableReason = reason || "Unplayable";
+              break;
+            }
             continue;
           }
+
+          if (!info.streaming_data) {
+            continue;
+          }
+
           const audio = info.chooseFormat({ type: "audio", quality: "best" });
           if (!audio) continue;
 
@@ -217,14 +235,12 @@ class YouTubeExtractor extends BaseExtractor {
     };
 
     const forceFirst = track.errorAttempts > 0;
-    let stream = await resolveStreamUrl(forceFirst);
-    if (!stream) {
-      clearPoTokenCache();
-      await this.#reinitInnertube().catch(() => {});
-      stream = await resolveStreamUrl(true);
-    }
+    const stream = await resolveStreamUrl(forceFirst);
 
     if (!stream) {
+      if (track.unplayableStatus) {
+        throw new Error(track.unplayableReason || "Track is unplayable");
+      }
       throw new Error("No suitable audio format found");
     }
 

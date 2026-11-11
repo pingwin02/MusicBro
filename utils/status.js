@@ -272,8 +272,12 @@ async function sendStatus(queue, fetchLyrics = false) {
 }
 
 function canPlayTrack(track) {
-  const status = track.raw?.playability_status?.status;
-  const reason = track.raw?.playability_status?.reason || t("status.no_reason");
+  const status =
+    track.unplayableStatus || track.raw?.playability_status?.status;
+  const reason =
+    track.unplayableReason ||
+    track.raw?.playability_status?.reason ||
+    t("status.no_reason");
 
   if (!status || status === "OK") {
     return { success: true };

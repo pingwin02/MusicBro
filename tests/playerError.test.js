@@ -162,3 +162,56 @@ test(
     assert.equal(deleted, true);
   }
 );
+
+test(
+  "playerError - does not retry permanent unplayable tracks",
+  { concurrency: true },
+  async () => {
+    const { queue } = createMockQueue(player, client);
+
+    const otherTrack = createMockTrack(player, { title: "Good Track" });
+    queue.addTrack(otherTrack);
+
+    const unplayableTrack = createMockTrack(player, {
+      title: "Age Restricted Song"
+    });
+    unplayableTrack.unplayableStatus = "LOGIN_REQUIRED";
+    unplayableTrack.unplayableReason = "Sign in to confirm your age";
+    const error = new Error("Sign in to confirm your age");
+
+    await playerErrorEvent.execute(queue, error, unplayableTrack);
+
+    assert.equal(unplayableTrack.errorAttempts, 1);
+    assert.equal(queue.tracks.size, 1);
+    assert.equal(queue.tracks.toArray()[0].title, "Good Track");
+
+    queue.delete();
+  }
+);
+
+test(
+  "playerError - skips unplayable track on QUEUE repeat mode",
+  { concurrency: true },
+  async () => {
+    const { queue } = createMockQueue(player, client);
+    queue.setRepeatMode(QueueRepeatMode.QUEUE);
+
+    const otherTrack = createMockTrack(player, { title: "Good Song" });
+    queue.addTrack(otherTrack);
+
+    const unplayableTrack = createMockTrack(player, {
+      title: "Blocked Song"
+    });
+    unplayableTrack.unplayableStatus = "UNPLAYABLE";
+    unplayableTrack.unplayableReason = "Video unavailable";
+    const error = new Error("Video unavailable");
+
+    await playerErrorEvent.execute(queue, error, unplayableTrack);
+
+    assert.equal(unplayableTrack.errorAttempts, 1);
+    assert.equal(queue.tracks.size, 1);
+    assert.equal(queue.tracks.toArray()[0].title, "Good Song");
+
+    queue.delete();
+  }
+);

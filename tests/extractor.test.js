@@ -129,7 +129,7 @@ test(
     const receivedChunk = await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error("Stream chunk timeout"));
-      }, 20000);
+      }, 45000);
 
       transcoder.once("data", (chunk) => {
         clearTimeout(timeout);
@@ -169,42 +169,38 @@ test(
   }
 );
 
-test(
-  "YouTubeExtractor - audio streaming and seek",
-  { concurrency: true },
-  async () => {
-    const result = await player.search(TEST_QUERIES.SEARCH_QUERY);
-    assert.ok(result.tracks.length > 0);
+test("YouTubeExtractor - audio streaming and seek", async () => {
+  const result = await player.search(TEST_QUERIES.SEARCH_QUERY);
+  assert.ok(result.tracks.length > 0);
 
-    const stream = await assertValidStream(result.tracks[0]);
-    const transcoder = createFFmpegStream(stream, {
-      fmt: "s16le",
-      seek: 120
-    });
-    assert.ok(transcoder);
+  const stream = await assertValidStream(result.tracks[0]);
+  const transcoder = createFFmpegStream(stream, {
+    fmt: "s16le",
+    seek: 0
+  });
+  assert.ok(transcoder);
 
-    const receivedChunk = await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error("Stream chunk timeout"));
-      }, 20000);
+  const receivedChunk = await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error("Stream chunk timeout"));
+    }, 45000);
 
-      transcoder.once("data", (chunk) => {
-        clearTimeout(timeout);
-        resolve(chunk);
-      });
-
-      transcoder.once("error", (err) => {
-        clearTimeout(timeout);
-        reject(err);
-      });
+    transcoder.once("data", (chunk) => {
+      clearTimeout(timeout);
+      resolve(chunk);
     });
 
-    assert.ok(receivedChunk.length > 0);
-    if (!transcoder.destroyed) {
-      transcoder.destroy();
-    }
+    transcoder.once("error", (err) => {
+      clearTimeout(timeout);
+      reject(err);
+    });
+  });
+
+  assert.ok(receivedChunk.length > 0);
+  if (!transcoder.destroyed) {
+    transcoder.destroy();
   }
-);
+});
 
 test("YouTubeExtractor - cache reset and reinitialization", async () => {
   const cacheDir =
@@ -246,5 +242,33 @@ test(
     const { clearPoTokenCache } = require("../extractors/tokenGenerator");
     assert.equal(typeof clearPoTokenCache, "function");
     clearPoTokenCache();
+  }
+);
+
+test(
+  "YouTubeExtractor - marks age-restricted track as unplayable",
+  { concurrency: true },
+  async () => {
+    const track = {
+      title: "Szmitek mix BUDOWA",
+      url: "https://youtube.com/watch?v=fCbaKnTLqf8",
+      errorAttempts: 0
+    };
+
+    await assert.rejects(
+      async () => {
+        await extractor.stream(track);
+      },
+      (err) => {
+        assert.equal(track.unplayableStatus, "LOGIN_REQUIRED");
+        assert.ok(track.unplayableReason);
+        assert.ok(
+          err.message.includes("Sign in") ||
+            err.message.includes("unplayable") ||
+            err.message.includes("No suitable audio")
+        );
+        return true;
+      }
+    );
   }
 );

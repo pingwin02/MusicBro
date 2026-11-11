@@ -240,6 +240,13 @@ test(
     });
     assert.equal(utils.isPlayableTrack(unplayableTrack), false);
 
+    const unplayableStatusTrack = createMockTrack(player, {
+      durationMS: 180000
+    });
+    unplayableStatusTrack.unplayableStatus = "LOGIN_REQUIRED";
+    unplayableStatusTrack.unplayableReason = "Sign in to confirm your age";
+    assert.equal(utils.isPlayableTrack(unplayableStatusTrack), false);
+
     const tooLongTrack = createMockTrack(player, {
       duration: "10:00",
       raw: { ["playability_status"]: { status: "OK" } }
