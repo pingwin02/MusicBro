@@ -372,3 +372,20 @@ test(
     assert.ok(utils.YOUTUBE_URL_REGEX instanceof RegExp);
   }
 );
+
+test(
+  "utils.time - timedDelete handles UnknownMessage",
+  { concurrency: true },
+  async () => {
+    const notFoundMessage = {
+      delete: async () => {
+        const err = new Error("Not Found");
+        err.code = utils.DISCORD_API_ERROR_CODES.UNKNOWN_MESSAGE;
+        throw err;
+      }
+    };
+    await assert.doesNotReject(async () => {
+      await utils.timedDelete(notFoundMessage, 10);
+    });
+  }
+);

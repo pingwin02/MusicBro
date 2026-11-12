@@ -1,59 +1,44 @@
 const { BaseExtractor, Playlist, Track } = require("discord-player");
-const fs = require("node:fs");
-const os = require("node:os");
-const path = require("node:path");
-const vm = require("node:vm");
-const { Innertube, Platform, UniversalCache } = require("youtubei.js");
+const { Innertube, UniversalCache } = require("youtubei.js");
 const {
   MAX_PLAYLIST_TRACKS,
   MAX_RELATED_TRACKS,
   MAX_SEARCH_RESULTS,
+  UNPLAYABLE_TRACK_COOLDOWN_MS,
   YOUTUBE_DOMAIN_REGEX
 } = require("../utils/constants");
 const {
+  MemoryCache,
+  cleanCacheDir,
   createHttpStream,
+  createTrackFromProps,
+  ensureCachePermissions,
   extractMusicSongProperties,
   extractPlaylistId,
   extractVideoId,
   extractVideoProperties,
-  parseDuration
+  parseDuration,
+  resolveCacheDir,
+  setupYoutubeJsEvaluator
 } = require("./helpers");
 const { clearPoTokenCache, getPoToken } = require("./tokenGenerator");
 
-async function ensureCachePermissions(cacheDir) {
-  await fs.promises.mkdir(cacheDir, { recursive: true }).catch(() => {});
-  await fs.promises.chown(cacheDir, 1000, 1000).catch(() => {});
-  const files = await fs.promises.readdir(cacheDir).catch(() => []);
-  for (const file of files) {
-    await fs.promises
-      .chown(path.join(cacheDir, file), 1000, 1000)
-      .catch(() => {});
-  }
-}
-
-function setupYoutubeJsEvaluator() {
-  Platform.shim.eval = async (data, env) => {
-    const properties = [];
-    if (env.n) properties.push(`n: exportedVars.nFunction("${env.n}")`);
-    if (env.sig) properties.push(`sig: exportedVars.sigFunction("${env.sig}")`);
-    const code =
-      `(() => { ${data.output}\n` + `return { ${properties.join(", ")} }; })()`;
-    return vm.runInThisContext(code);
-  };
-}
+const { sleep } = require("../utils/time");
+let lastUnplayableTime = 0;
 
 class YouTubeExtractor extends BaseExtractor {
   static identifier = "com.musicbro.youtube";
+  static cooldownMs =
+    process.env.NODE_ENV === "test" ? 0 : UNPLAYABLE_TRACK_COOLDOWN_MS;
+  static resetUnplayableCooldown() {
+    lastUnplayableTime = 0;
+  }
   #innertube = null;
   #refreshPromise = null;
 
   async activate() {
-    setupYoutubeJsEvaluator();
-    const cacheDir =
-      process.env.CACHE_DIR ||
-      (process.platform === "win32"
-        ? path.join(os.tmpdir(), "musicbro")
-        : "/tmp/musicbro");
+    const cacheDir = resolveCacheDir();
+    setupYoutubeJsEvaluator(cacheDir);
     await ensureCachePermissions(cacheDir);
     try {
       this.#innertube = await Innertube.create({
@@ -62,7 +47,7 @@ class YouTubeExtractor extends BaseExtractor {
       await ensureCachePermissions(cacheDir);
     } catch {
       this.#innertube = await this.#reinitInnertube().catch(() =>
-        Innertube.create({ cache: new UniversalCache(false) })
+        Innertube.create({ cache: new MemoryCache() })
       );
     }
     this.protocols = [
@@ -82,20 +67,20 @@ class YouTubeExtractor extends BaseExtractor {
   async #reinitInnertube() {
     if (this.#refreshPromise) return this.#refreshPromise;
     this.#refreshPromise = (async () => {
-      const cacheDir =
-        process.env.CACHE_DIR ||
-        (process.platform === "win32"
-          ? path.join(os.tmpdir(), "musicbro")
-          : "/tmp/musicbro");
-      const files = await fs.promises.readdir(cacheDir).catch(() => []);
-      for (const file of files) {
-        await fs.promises.unlink(path.join(cacheDir, file)).catch(() => {});
+      const cacheDir = resolveCacheDir();
+      setupYoutubeJsEvaluator(cacheDir);
+      await cleanCacheDir(cacheDir);
+      await ensureCachePermissions(cacheDir);
+      try {
+        this.#innertube = await Innertube.create({
+          cache: new UniversalCache(true, cacheDir)
+        });
+        await ensureCachePermissions(cacheDir);
+      } catch {
+        this.#innertube = await Innertube.create({
+          cache: new MemoryCache()
+        });
       }
-      await ensureCachePermissions(cacheDir);
-      this.#innertube = await Innertube.create({
-        cache: new UniversalCache(true, cacheDir)
-      });
-      await ensureCachePermissions(cacheDir);
     })().finally(() => {
       this.#refreshPromise = null;
     });
@@ -182,7 +167,7 @@ class YouTubeExtractor extends BaseExtractor {
         poToken = null;
       }
 
-      const clients = ["YTMUSIC", "VISIONOS", "IOS", "MWEB", "WEB"];
+      const clients = ["VISIONOS", "YTMUSIC", "IOS", "MWEB", "WEB"];
       for (const client of clients) {
         try {
           const info = await this.#innertube.getBasicInfo(videoId, { client });
@@ -206,7 +191,7 @@ class YouTubeExtractor extends BaseExtractor {
             continue;
           }
 
-          if (!info.streaming_data) {
+          if (!info.streaming_data || (client === "YTMUSIC" && !poToken)) {
             continue;
           }
 
@@ -239,6 +224,14 @@ class YouTubeExtractor extends BaseExtractor {
 
     if (!stream) {
       if (track.unplayableStatus) {
+        const cooldown = YouTubeExtractor.cooldownMs;
+        if (cooldown > 0 && lastUnplayableTime > 0) {
+          const elapsed = Date.now() - lastUnplayableTime;
+          if (elapsed < cooldown) {
+            await sleep(cooldown - elapsed);
+          }
+        }
+        lastUnplayableTime = Date.now();
         throw new Error(track.unplayableReason || "Track is unplayable");
       }
       throw new Error("No suitable audio format found");
@@ -262,7 +255,9 @@ class YouTubeExtractor extends BaseExtractor {
       for (const video of relatedVideos.slice(0, MAX_RELATED_TRACKS)) {
         const props = extractVideoProperties(video);
         if (!props.videoId) continue;
-        const relatedTrack = this.#createTrackFromProps(
+        const relatedTrack = createTrackFromProps(
+          this.context.player,
+          this,
           props,
           track.requestedBy,
           video
@@ -369,7 +364,9 @@ class YouTubeExtractor extends BaseExtractor {
       for (const video of rawVideos) {
         const props = extractVideoProperties(video);
         if (!props.videoId) continue;
-        const track = this.#createTrackFromProps(
+        const track = createTrackFromProps(
+          this.context.player,
+          this,
           props,
           context.requestedBy,
           video
@@ -456,7 +453,9 @@ class YouTubeExtractor extends BaseExtractor {
           for (const song of musicSongs.slice(0, MAX_SEARCH_RESULTS)) {
             const props = extractMusicSongProperties(song);
             if (!props.videoId) continue;
-            const track = this.#createTrackFromProps(
+            const track = createTrackFromProps(
+              this.context.player,
+              this,
               props,
               context.requestedBy,
               song
@@ -477,7 +476,9 @@ class YouTubeExtractor extends BaseExtractor {
       for (const video of videos.slice(0, MAX_SEARCH_RESULTS)) {
         const props = extractVideoProperties(video);
         if (!props.videoId) continue;
-        const track = this.#createTrackFromProps(
+        const track = createTrackFromProps(
+          this.context.player,
+          this,
           props,
           context.requestedBy,
           video
@@ -488,22 +489,6 @@ class YouTubeExtractor extends BaseExtractor {
     } catch {
       return this.createResponse();
     }
-  }
-
-  #createTrackFromProps(props, requestedBy, raw) {
-    const track = new Track(this.context.player, {
-      title: props.title,
-      author: props.author,
-      url: `https://youtube.com/watch?v=${props.videoId}`,
-      duration: props.duration,
-      thumbnail: props.thumbnail,
-      views: props.views,
-      requestedBy,
-      source: "youtube",
-      raw
-    });
-    track.extractor = this;
-    return track;
   }
 }
 

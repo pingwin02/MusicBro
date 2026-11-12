@@ -1,3 +1,4 @@
+const { DISCORD_API_ERROR_CODES, HTTP_STATUS } = require("./constants");
 const { t } = require("./i18n");
 const { logInfo } = require("./logger");
 
@@ -71,7 +72,11 @@ async function timedDelete(message, timeout = 3000) {
       await message.delete();
     }
   } catch (err) {
-    if (err.code === 10008 || err.status === 404) return;
+    if (
+      err.code === DISCORD_API_ERROR_CODES.UNKNOWN_MESSAGE ||
+      err.status === HTTP_STATUS.NOT_FOUND
+    )
+      return;
     logInfo("timedDelete", err);
   }
 }

@@ -1,4 +1,10 @@
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const vm = require("node:vm");
+const { Track } = require("discord-player");
 const { FFmpeg } = require("@discord-player/ffmpeg");
+const { Platform } = require("youtubei.js");
 const {
   DURATION_DIGITS_REGEX,
   DURATION_LABEL_REGEX,
@@ -6,6 +12,66 @@ const {
   YOUTUBE_PLAYLIST_REGEX,
   YOUTUBE_URL_REGEX
 } = require("../utils/constants");
+
+class MemoryCache {
+  #store = new Map();
+  get ["cache_dir"]() {
+    return "";
+  }
+  async get(key) {
+    return this.#store.get(key);
+  }
+  async set(key, value) {
+    this.#store.set(key, value);
+  }
+  async remove(key) {
+    this.#store.delete(key);
+  }
+}
+
+async function cleanCacheDir(cacheDir) {
+  const files = await fs.promises.readdir(cacheDir).catch(() => []);
+  for (const file of files) {
+    await fs.promises.unlink(path.join(cacheDir, file)).catch(() => {});
+  }
+}
+
+function resolveCacheDir() {
+  return (
+    process.env.CACHE_DIR ||
+    (process.platform === "win32"
+      ? path.join(os.tmpdir(), "musicbro")
+      : "/tmp/musicbro")
+  );
+}
+
+async function ensureCachePermissions(cacheDir) {
+  await fs.promises.mkdir(cacheDir, { recursive: true }).catch(() => {});
+  await fs.promises.chown(cacheDir, 1000, 1000).catch(() => {});
+  const files = await fs.promises.readdir(cacheDir).catch(() => []);
+  for (const file of files) {
+    await fs.promises
+      .chown(path.join(cacheDir, file), 1000, 1000)
+      .catch(() => {});
+  }
+}
+
+function setupYoutubeJsEvaluator(cacheDir) {
+  Platform.shim.eval = async (data, env) => {
+    const properties = [];
+    if (env.n) properties.push(`n: exportedVars.nFunction("${env.n}")`);
+    if (env.sig) properties.push(`sig: exportedVars.sigFunction("${env.sig}")`);
+    const code =
+      `(() => { ${data.output}\n` + `return { ${properties.join(", ")} }; })()`;
+    return vm.runInThisContext(code);
+  };
+  if (Platform.shim?.Cache) {
+    Object.defineProperty(Platform.shim.Cache, "temp_directory", {
+      get: () => cacheDir,
+      configurable: true
+    });
+  }
+}
 
 function patchFFmpegStream() {
   if (!FFmpeg) return;
@@ -250,8 +316,28 @@ function createHttpStream(url, contentLength, chunkSize = 524288) {
   return stream;
 }
 
+function createTrackFromProps(player, extractor, props, requestedBy, raw) {
+  const track = new Track(player, {
+    title: props.title,
+    author: props.author,
+    url: `https://youtube.com/watch?v=${props.videoId}`,
+    duration: props.duration,
+    thumbnail: props.thumbnail,
+    views: props.views,
+    requestedBy,
+    source: "youtube",
+    raw
+  });
+  track.extractor = extractor;
+  return track;
+}
+
 module.exports = {
+  MemoryCache,
+  cleanCacheDir,
   createHttpStream,
+  createTrackFromProps,
+  ensureCachePermissions,
   extractAuthor,
   extractDuration,
   extractMusicSongProperties,
@@ -259,5 +345,7 @@ module.exports = {
   extractVideoId,
   extractVideoProperties,
   parseDuration,
-  patchFFmpegStream
+  patchFFmpegStream,
+  resolveCacheDir,
+  setupYoutubeJsEvaluator
 };

@@ -1,4 +1,4 @@
-const { ButtonStyle } = require("discord.js");
+const { ButtonStyle, RESTJSONErrorCodes } = require("discord.js");
 
 const BUTTONS = {
   resume: { emoji: "▶", disabled: (q) => !q.node.isPaused() },
@@ -23,9 +23,10 @@ const BUTTONS = {
 };
 
 const DISCORD_API_ERROR_CODES = {
-  INTERACTION_ALREADY_REPLIED: 40060,
-  UNKNOWN_INTERACTION: 10062,
-  UNKNOWN_MESSAGE: 10008
+  INTERACTION_ALREADY_REPLIED:
+    RESTJSONErrorCodes.InteractionHasAlreadyBeenAcknowledged,
+  UNKNOWN_INTERACTION: RESTJSONErrorCodes.UnknownInteraction,
+  UNKNOWN_MESSAGE: RESTJSONErrorCodes.UnknownMessage
 };
 
 const HTTP_STATUS = {
@@ -53,6 +54,7 @@ const MAX_RETRY_ATTEMPTS = 5;
 const MAX_SEARCH_RESULTS = 10;
 const MAX_TRACK_LENGTH_MS = Number.MAX_SAFE_INTEGER;
 const QUEUE_PAGE_SIZE = 10;
+const UNPLAYABLE_TRACK_COOLDOWN_MS = 3000;
 const YOUTUBE_DOMAIN_REGEX = /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//;
 const YOUTUBE_PLAYLIST_REGEX = /[&?]list=([a-zA-Z0-9_-]+)/;
 const YOUTUBE_SHORT_URL_REGEX = new RegExp(
@@ -81,6 +83,7 @@ module.exports = {
   MAX_SEARCH_RESULTS,
   MAX_TRACK_LENGTH_MS,
   QUEUE_PAGE_SIZE,
+  UNPLAYABLE_TRACK_COOLDOWN_MS,
   YOUTUBE_DOMAIN_REGEX,
   YOUTUBE_PLAYLIST_REGEX,
   YOUTUBE_SHORT_URL_REGEX,

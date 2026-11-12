@@ -98,15 +98,30 @@ test(
       title: "Test Broken Song"
     });
 
-    await playerStart.execute(queue, track);
-    assert.equal(queue.metadata.skippedByUser, false);
-    assert.ok(queue.metadata.trackStartTime);
+    const ytExtractor = queue.player?.extractors?.get("com.musicbro.youtube");
+    const originalResetCache = ytExtractor?.resetCache;
+    let resetCacheCalled = false;
+    if (ytExtractor) {
+      ytExtractor.resetCache = async () => {
+        resetCacheCalled = true;
+      };
+    }
 
-    await playerFinish.execute(queue, track);
-    assert.ok(printedError);
-    assert.ok(printedError.includes("Test Broken Song"));
+    try {
+      await playerStart.execute(queue, track);
+      assert.equal(queue.metadata.skippedByUser, false);
+      assert.ok(queue.metadata.trackStartTime);
 
-    queue.delete();
+      await playerFinish.execute(queue, track);
+      assert.ok(printedError);
+      assert.ok(printedError.includes("Test Broken Song"));
+      assert.equal(resetCacheCalled, true);
+    } finally {
+      if (ytExtractor) {
+        ytExtractor.resetCache = originalResetCache;
+      }
+      queue.delete();
+    }
   }
 );
 

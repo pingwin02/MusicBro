@@ -1,4 +1,8 @@
-const { GuildQueueEvent, QueueRepeatMode } = require("discord-player");
+const {
+  ErrorCodes,
+  GuildQueueEvent,
+  QueueRepeatMode
+} = require("discord-player");
 const utils = require("../../utils");
 
 const NON_RETRYABLE_STATUSES = [
@@ -53,7 +57,7 @@ module.exports = {
       })
       : utils.t("errors.player_error", { track: trackTitle });
 
-    utils.printError(
+    await utils.printError(
       queue.metadata?.textChannel,
       errorMsg,
       isPermanentFailure ? null : error
@@ -70,8 +74,14 @@ module.exports = {
       queue.setRepeatMode(QueueRepeatMode.OFF);
     }
 
-    if (queue.tracks.size === 0 && !queue.dispatcher) {
-      queue.delete();
+    if (!queue.deleted && queue.tracks.size === 0 && !queue.dispatcher) {
+      try {
+        queue.delete();
+      } catch (err) {
+        if (err.code !== ErrorCodes.ERR_NO_GUILD_QUEUE) {
+          throw err;
+        }
+      }
     }
   }
 };

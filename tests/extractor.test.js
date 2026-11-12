@@ -111,43 +111,39 @@ test(
   }
 );
 
-test(
-  "YouTubeExtractor - non-music video stream",
-  { concurrency: true },
-  async () => {
-    const result = await player.search(TEST_URLS.NON_MUSIC_VIDEO_URL);
-    assert.ok(result?.tracks.length > 0);
-    assertValidTrack(result.tracks[0]);
+test("YouTubeExtractor - non-music video stream", async () => {
+  const result = await player.search(TEST_URLS.NON_MUSIC_VIDEO_URL);
+  assert.ok(result?.tracks.length > 0);
+  assertValidTrack(result.tracks[0]);
 
-    const stream = await assertValidStream(result.tracks[0]);
-    const transcoder = createFFmpegStream(stream, {
-      fmt: "s16le",
-      seek: 0
-    });
-    assert.ok(transcoder);
+  const stream = await assertValidStream(result.tracks[0]);
+  const transcoder = createFFmpegStream(stream, {
+    fmt: "s16le",
+    seek: 0
+  });
+  assert.ok(transcoder);
 
-    const receivedChunk = await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error("Stream chunk timeout"));
-      }, 45000);
+  const receivedChunk = await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error("Stream chunk timeout"));
+    }, 45000);
 
-      transcoder.once("data", (chunk) => {
-        clearTimeout(timeout);
-        resolve(chunk);
-      });
-
-      transcoder.once("error", (err) => {
-        clearTimeout(timeout);
-        reject(err);
-      });
+    transcoder.once("data", (chunk) => {
+      clearTimeout(timeout);
+      resolve(chunk);
     });
 
-    assert.ok(receivedChunk.length > 0);
-    if (!transcoder.destroyed) {
-      transcoder.destroy();
-    }
+    transcoder.once("error", (err) => {
+      clearTimeout(timeout);
+      reject(err);
+    });
+  });
+
+  assert.ok(receivedChunk.length > 0);
+  if (!transcoder.destroyed) {
+    transcoder.destroy();
   }
-);
+});
 
 test(
   "YouTubeExtractor - mix and radio playlist URL resolution",
@@ -235,40 +231,57 @@ test(
   }
 );
 
-test(
-  "clearPoTokenCache - resets minter cache without errors",
-  { concurrency: true },
-  () => {
-    const { clearPoTokenCache } = require("../extractors/tokenGenerator");
-    assert.equal(typeof clearPoTokenCache, "function");
-    clearPoTokenCache();
-  }
-);
+test("clearPoTokenCache - resets minter cache without errors", () => {
+  const { clearPoTokenCache } = require("../extractors/tokenGenerator");
+  assert.equal(typeof clearPoTokenCache, "function");
+  clearPoTokenCache();
+});
 
-test(
-  "YouTubeExtractor - marks age-restricted track as unplayable",
-  { concurrency: true },
-  async () => {
-    const track = {
-      title: "Szmitek mix BUDOWA",
-      url: "https://youtube.com/watch?v=fCbaKnTLqf8",
-      errorAttempts: 0
-    };
+test("YouTubeExtractor - handles age-restricted as unplayable", async () => {
+  const track = {
+    title: "Szmitek mix BUDOWA",
+    url: "https://youtube.com/watch?v=fCbaKnTLqf8",
+    errorAttempts: 0
+  };
 
-    await assert.rejects(
-      async () => {
-        await extractor.stream(track);
-      },
-      (err) => {
-        assert.equal(track.unplayableStatus, "LOGIN_REQUIRED");
-        assert.ok(track.unplayableReason);
-        assert.ok(
-          err.message.includes("Sign in") ||
-            err.message.includes("unplayable") ||
-            err.message.includes("No suitable audio")
-        );
-        return true;
-      }
-    );
-  }
-);
+  await assert.rejects(
+    async () => {
+      await extractor.stream(track);
+    },
+    (err) => {
+      assert.equal(track.unplayableStatus, "LOGIN_REQUIRED");
+      assert.ok(track.unplayableReason);
+      assert.ok(
+        err.message.includes("Sign in") ||
+          err.message.includes("unplayable") ||
+          err.message.includes("No suitable audio")
+      );
+      return true;
+    }
+  );
+});
+
+test("YouTubeExtractor - delays consecutive unplayable tracks", async () => {
+  extractor.constructor.cooldownMs = 150;
+  extractor.constructor.resetUnplayableCooldown();
+
+  const track1 = {
+    title: "Szmitek mix BUDOWA",
+    url: "https://youtube.com/watch?v=fCbaKnTLqf8",
+    errorAttempts: 0
+  };
+  const track2 = {
+    title: "Szmitek mix BUDOWA",
+    url: "https://youtube.com/watch?v=fCbaKnTLqf8",
+    errorAttempts: 0
+  };
+
+  const start = Date.now();
+  await assert.rejects(async () => extractor.stream(track1));
+  await assert.rejects(async () => extractor.stream(track2));
+  const duration = Date.now() - start;
+
+  extractor.constructor.cooldownMs = 0;
+  extractor.constructor.resetUnplayableCooldown();
+  assert.ok(duration >= 130);
+});
